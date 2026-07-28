@@ -1,9 +1,10 @@
-import type { LeafTopicPage, Meta, OpportunityRow, VideoRow } from "@/lib/types"
+import type { LeafTopicPage, OpportunityRow, TopicCommentsFile, VideoRow } from "@/lib/types"
 import type { TrailRow } from "@/lib/topic"
 import { insufficientText, multText } from "@/lib/topic"
 import { visibleEdges } from "@/lib/chain"
 import { agoText, fmtDate, fmtInt, initials, SCORE_FORMULA, scoreText } from "@/lib/trust"
 import { ChainMap } from "./chain-map"
+import { CommentTable } from "./comment-table"
 import { Chip, Derived, VerdictBadge } from "./trust"
 
 export function TopicLeaf({
@@ -11,13 +12,15 @@ export function TopicLeaf({
   opp,
   videos,
   trail,
-  commentHealth,
+  topicComments,
+  creatorNames,
 }: {
   topic: LeafTopicPage
   opp: OpportunityRow | null
   videos: VideoRow[]
   trail: TrailRow[]
-  commentHealth: Meta["comment_health"]
+  topicComments: TopicCommentsFile | null
+  creatorNames: Record<string, string>
 }) {
   const edges = visibleEdges(topic.edges)
   return (
@@ -93,10 +96,16 @@ export function TopicLeaf({
           <span className="rule" />
           <span className="cap">real from step 6</span>
         </div>
-        <div className="empty">
-          comment table not built yet · {fmtInt(commentHealth.ingested)} comments ingested ·{" "}
-          {commentHealth.classified} classified · ships with the channel pages plan
-        </div>
+        {topicComments ? (
+          <CommentTable rows={topicComments.topic.top} byCategory={topicComments.topic.by_category}
+            totals={{
+              ingested: topicComments.topic.totals.comments,
+              classified: topicComments.topic.totals.comments - topicComments.topic.by_category.unsorted,
+            }}
+            creatorNames={creatorNames} />
+        ) : (
+          <p className="note">no comments ingested for this topic yet</p>
+        )}
       </section>
 
       <details className="sect">

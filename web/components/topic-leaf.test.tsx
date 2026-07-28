@@ -4,14 +4,8 @@
 // rendering as an ordinary scored topic.
 import { renderToStaticMarkup } from "react-dom/server"
 import { describe, expect, it } from "vitest"
-import type { LeafTopicPage, Meta } from "@/lib/types"
+import type { LeafTopicPage } from "@/lib/types"
 import { TopicLeaf } from "./topic-leaf"
-
-const commentHealth: Meta["comment_health"] = {
-  ingested: 0,
-  classified: 0,
-  channels_with_comments: 0,
-}
 
 function leaf(overrides: Partial<LeafTopicPage>): LeafTopicPage {
   return {
@@ -35,7 +29,8 @@ function leaf(overrides: Partial<LeafTopicPage>): LeafTopicPage {
 
 function render(topic: LeafTopicPage) {
   return renderToStaticMarkup(
-    <TopicLeaf topic={topic} opp={null} videos={[]} trail={[]} commentHealth={commentHealth} />
+    <TopicLeaf topic={topic} opp={null} videos={[]} trail={[]}
+      topicComments={null} creatorNames={{}} />
   )
 }
 

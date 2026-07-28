@@ -1,8 +1,8 @@
 import { notFound } from "next/navigation"
 import {
   loadChannels,
-  loadMeta,
   loadOpportunities,
+  loadTopicComments,
   loadTopicPages,
   videosById,
 } from "@/lib/bundles"
@@ -44,13 +44,15 @@ export default async function TopicPage({ params }: { params: Promise<{ id: stri
 
   const channels = loadChannels().channels
   const videos = videosById(topic.video_ids)
+  const names = Object.fromEntries(channels.map((c) => [c.channel_id, c.name]))
   return (
     <TopicLeaf
       topic={topic}
       opp={findOpp(loadOpportunities().rows, id)}
       videos={videos}
       trail={creatorTrail(videos, channels)}
-      commentHealth={loadMeta().comment_health}
+      topicComments={loadTopicComments(id)}
+      creatorNames={names}
     />
   )
 }

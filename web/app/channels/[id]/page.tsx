@@ -1,10 +1,15 @@
 import Link from "next/link"
 import { notFound } from "next/navigation"
-import { channelVideos, hasChannelAvatar, loadChannels, loadSnapshots } from "@/lib/bundles"
+import {
+  channelVideos, hasChannelAvatar, loadChannelComments, loadChannels, loadMeta, loadSnapshots,
+  videosById,
+} from "@/lib/bundles"
 import { CADENCE_FORMULA, cadenceDays } from "@/lib/channel"
 import { bucketText, fmtInt, initials } from "@/lib/trust"
 import { Chip, Derived } from "@/components/trust"
 import { ChannelGrowth } from "@/components/channel-growth"
+import { CommentTable } from "@/components/comment-table"
+import { StillPulling } from "@/components/still-pulling"
 
 export default async function ChannelPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -17,6 +22,21 @@ export default async function ChannelPage({ params }: { params: Promise<{ id: st
   const uploads = channelVideos(channel.channel_id)
   const cadence = cadenceDays(uploads.map((v) => v.published_at))
   const avatarClass = `avatar av56${channel.is_self ? " av-you" : ""}`
+
+  const comments = loadChannelComments(channel.channel_id)
+  const growing = videosById(channel.still_growing_video_ids)
+    .sort((a, b) => (b.view_count ?? 0) - (a.view_count ?? 0))
+  const stillRows = growing.map((v) => ({
+    video_id: v.video_id,
+    title: v.title,
+    published_at: v.published_at,
+    view_count: v.view_count,
+    gained7d: v.traction.views_gained["7d"] ?? null,
+    multiplier: v.multiplier.value,
+    topic_id: (v.topic_assignments as { topic_id: string }[])[0]?.topic_id ?? null,
+    comments: comments?.videos[v.video_id] ?? null,
+  }))
+  const channelsWithComments = loadMeta().comment_health.channels_with_comments
 
   return (
     <section>
@@ -85,8 +105,32 @@ export default async function ChannelPage({ params }: { params: Promise<{ id: st
         bucket={channel.subscriber_bucket}
       />
 
-      {/* still pulling views: Task 5 */}
-      {/* what viewers ask: Task 5 */}
+      <div className="section-kicker">
+        <span className="kicker">▸ still pulling views</span><span className="rule" />
+      </div>
+      <StillPulling rows={stillRows} channelClassified={comments?.channel.totals.classified ?? 0} />
+
+      <div className="section-kicker">
+        <span className="kicker">▸ what {channel.is_self ? "your" : "their"} viewers ask</span>
+        <span className="rule" />
+        {comments && (
+          <span className="cap">
+            {fmtInt(comments.channel.totals.ingested)} in {comments.channel.totals.window_days}d
+          </span>
+        )}
+      </div>
+      {comments ? (
+        <CommentTable rows={comments.channel.top} byCategory={comments.channel.by_category}
+          totals={comments.channel.totals} />
+      ) : (
+        <div className="card pad">
+          <p className="note" style={{ margin: 0 }}>
+            The comment ledger has not reached this channel yet. It fills on the next daily
+            sweep with spare quota; {channelsWithComments} of {bundle.channels.length} channels
+            are in so far.
+          </p>
+        </div>
+      )}
     </section>
   )
 }
