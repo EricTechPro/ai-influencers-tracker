@@ -25,8 +25,18 @@ export default function RootLayout({ children }: { children: ReactNode }) {
               </span>
               <span
                 className="livedot"
+                role="status"
+                title={
+                  meta.partial_run
+                    ? "today's sweep did not finish for every channel"
+                    : "today's sweep finished for every channel"
+                }
                 style={meta.partial_run ? { background: "var(--warning)" } : undefined}
-              />
+              >
+                <span className="sr-only">
+                  {meta.partial_run ? "sweep incomplete" : "sweep complete"}
+                </span>
+              </span>
             </div>
           </header>
         </div>

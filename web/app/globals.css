@@ -52,6 +52,7 @@ h1 { font-size: 1.6rem; line-height: 2.1rem; font-weight: 700; color: var(--prim
 .appnav nav a.active { text-decoration: underline 2px wavy var(--primary); text-underline-offset: 8px; }
 .appnav .right { margin-left: auto; display: flex; align-items: center; gap: 8px; font-size: 11px; color: var(--muted-foreground); }
 .livedot { width: 7px; height: 7px; border-radius: 999px; background: var(--v-make); display: inline-block; }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
 .navrule { border-bottom: 1px solid var(--border); }
 
 /* trust tiers */
