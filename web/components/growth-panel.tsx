@@ -74,6 +74,8 @@ export function GrowthPanel({
       </div>
       {building ? (
         <BuildingCallout state={building} />
+      ) : top5.length === 0 ? (
+        <div className="empty">no channels in this niche</div>
       ) : (
         <>
           <div className="cardgrid">
