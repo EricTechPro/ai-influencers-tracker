@@ -106,9 +106,10 @@ class CostGuard:
         self.spent = 0
 
     def check(self, cost: int, label: str) -> None:
-        if cost > self.ceiling:
+        if self.spent + cost > self.ceiling:
             raise CostGuardError(
-                f"{label} costs {cost}, over the {self.ceiling}-credit per-run ceiling")
+                f"{label} costs {cost} (already spent {self.spent} this run), over the "
+                f"{self.ceiling}-credit per-run ceiling")
         if self.balance - self.spent - cost < self.reserve:
             raise CostGuardError(
                 f"{label} costs {cost}, which breaks the {self.reserve}-credit reserve "
@@ -167,7 +168,12 @@ def merge_backfill(existing: list[dict], bought: list[dict]) -> list[dict]:
 
 def backfill(roster: list[dict], client: VidIQ, guard: CostGuard, days: int = 365,
              today: dt.date | None = None, dry_run: bool = True) -> dict:
-    """Buy the daily history for every roster channel. 5 credits each, 360 for 72, once."""
+    """Buy the daily history for every roster channel. 5 credits each, 360 for 72, once.
+
+    Resumable: a channel whose _raw/backfill/<channel_id>.json already exists is skipped rather
+    than re-bought, so a run interrupted partway through (a raised CostGuardError, a network
+    failure) never re-spends on channels it already paid for.
+    """
     today = today or util.today()
     start = today - dt.timedelta(days=days)
     cost = CHANNEL_STATS_COST * len(roster)
@@ -176,14 +182,19 @@ def backfill(roster: list[dict], client: VidIQ, guard: CostGuard, days: int = 36
         return {"channels": len(roster), "credits": cost, "spent": 0, "dry_run": True}
 
     written = 0
+    skipped = 0
     for row in roster:
+        path = config.raw_dir() / "backfill" / f"{row['channel_id']}.json"
+        if path.exists():
+            skipped += 1
+            continue
         guard.check(CHANNEL_STATS_COST, f"channel_stats {row['handle']}")
         series = channel_stats_series(client, row["channel_id"], start, today)
         guard.record(CHANNEL_STATS_COST)
-        path = config.raw_dir() / "backfill" / f"{row['channel_id']}.json"
         util.write_json(path, {"channel_id": row["channel_id"], "series": series})
         written += 1
-    return {"channels": written, "credits": cost, "spent": guard.spent, "dry_run": False}
+    return {"channels": written, "skipped": skipped, "credits": cost,
+            "spent": guard.spent, "dry_run": False}
 
 
 def keyword_sweep(leaf_topics: list, client: VidIQ, guard: CostGuard,

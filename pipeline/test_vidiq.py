@@ -90,6 +90,45 @@ def test_the_backfill_dry_run_costs_nothing_and_reports_the_bill(ait_root):
     assert plan["channels"] == 3 and plan["credits"] == 15 and plan["spent"] == 0
 
 
+def test_the_ceiling_fires_mid_backfill_through_the_real_call_path(ait_root):
+    """The ceiling must be cumulative across a run, not just checked against one item's cost.
+
+    5 channels at 5 credits each = 25 total. A ceiling of 22 lets the first 4 through (20 spent)
+    and must refuse the 5th (20 + 5 = 25 > 22) via backfill()'s own guard.check call, not a
+    guard.check the test drives directly. Nothing past the refusal may be spent or written.
+    """
+    roster = [{"handle": f"ch{i}", "channel_id": f"UCfake{i}"} for i in range(5)]
+    payload = {"history": [{"date": "2026-07-27", "subscribers": 1000, "views": 100, "videos": 1}]}
+    replies = [sse(payload) for _ in range(4)]      # only the 4 that should succeed
+    client = vidiq.VidIQ("KEY", "http://mcp", transport=FakeTransport(replies))
+    guard = vidiq.CostGuard(balance=1000, reserve=0, ceiling=22)
+    with pytest.raises(vidiq.CostGuardError, match="ceiling"):
+        vidiq.backfill(roster, client, guard, dry_run=False)
+    written = sorted((config.raw_dir() / "backfill").glob("*.json"))
+    assert len(written) == 4
+    assert guard.spent == 20
+
+
+def test_backfill_skips_a_channel_already_bought(ait_root):
+    """A channel whose backfill file already exists is resumed past, not re-bought."""
+    roster = config.roster()
+    already_bought = roster[0]
+    path = config.raw_dir() / "backfill" / f"{already_bought['channel_id']}.json"
+    util.write_json(path, {"channel_id": already_bought["channel_id"], "series": []})
+
+    payload = {"history": [{"date": "2026-07-27", "subscribers": 1000, "views": 100, "videos": 1}]}
+    replies = [sse(payload) for _ in range(len(roster) - 1)]   # one fewer: the first is skipped
+    client = vidiq.VidIQ("KEY", "http://mcp", transport=FakeTransport(replies))
+    guard = vidiq.CostGuard(balance=1141, reserve=200)
+
+    result = vidiq.backfill(roster, client, guard, dry_run=False)
+
+    assert result["channels"] == len(roster) - 1
+    assert result["skipped"] == 1
+    assert guard.spent == vidiq.CHANNEL_STATS_COST * (len(roster) - 1)
+    assert util.read_json(path)["series"] == []          # untouched, not re-bought
+
+
 def test_the_keyword_sweep_only_touches_leaves(ait_root):
     from pipeline import topics
     leaves = topics.leaves(topics.load())
