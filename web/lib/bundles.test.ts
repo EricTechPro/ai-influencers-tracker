@@ -1,10 +1,12 @@
 import { readFileSync } from "node:fs"
 import { describe, expect, it } from "vitest"
 import {
+  loadChannelComments,
   loadChannels,
   loadMeta,
   loadOpportunities,
   loadSnapshots,
+  loadTopicComments,
   loadTopicPages,
   videosById,
 } from "./bundles"
@@ -191,5 +193,41 @@ describe("videos.json server-side slice", () => {
   it("the bundles module never touches comments.json", () => {
     const src = readFileSync(new URL("./bundles.ts", import.meta.url), "utf8")
     expect(src.includes("comments.json")).toBe(false)
+  })
+})
+
+describe("comment loaders", () => {
+  it("loads a real per-channel comments file with full row shape", () => {
+    const withComments = loadChannels().channels.find(
+      (c) => loadChannelComments(c.channel_id) !== null,
+    )
+    expect(withComments).toBeDefined()
+    const file = loadChannelComments(withComments!.channel_id)!
+    expect(file.channel.totals.ingested).toBeGreaterThan(0)
+    const row = file.channel.top[0]
+    for (const key of [
+      "comment_id", "video_id", "video_title", "video_url", "author", "text",
+      "like_count", "reply_count", "published_at", "answered", "lag_days",
+      "topic_ids", "category", "channel_id",
+    ]) expect(row).toHaveProperty(key)
+    expect(row.lag_days).toBeGreaterThanOrEqual(0)
+    // every embedded video belongs to this channel
+    for (const vc of Object.values(file.videos)) {
+      expect(vc.top[0]?.channel_id ?? withComments!.channel_id).toBe(withComments!.channel_id)
+    }
+  })
+
+  it("returns null for a channel the ledger has not reached", () => {
+    expect(loadChannelComments("UC_does_not_exist")).toBeNull()
+  })
+
+  it("loads a real per-topic comments file", () => {
+    const leaf = loadTopicPages().topics.find(
+      (t) => t.is_leaf && loadTopicComments(t.topic_id) !== null,
+    )
+    expect(leaf).toBeDefined()
+    const file = loadTopicComments(leaf!.topic_id)!
+    expect(file.topic.totals.comments).toBeGreaterThan(0)
+    expect(file.topic.by_category).toHaveProperty("unsorted")
   })
 })

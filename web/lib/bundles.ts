@@ -1,14 +1,19 @@
-// The ONLY file in web/ that touches the filesystem. Reads _db/ and nothing
+// The only file in web/ that reads the JSON bundles. Reads _db/ and nothing
 // else: never _raw/, _synthesize/, config/, .env, or pipeline/. videos.json
 // (16.7 MB) is parsed once per process and served as id slices so it is never
-// shipped wholesale; the 59 MB comments bundle is not read at all in this build.
-import { readFileSync } from "node:fs"
+// shipped wholesale; the 59 MB comments monolith no longer exists, comments
+// are read as per-channel and per-topic slices under _db/comments/.
+// (app/assets/channels/[id]/route.ts also touches the filesystem, but only to
+// stream a single avatar image straight through; it never reads a bundle.)
+import { existsSync, readFileSync } from "node:fs"
 import path from "node:path"
 import type {
+  ChannelCommentsFile,
   ChannelsBundle,
   Meta,
   OpportunitiesBundle,
   SnapshotsBundle,
+  TopicCommentsFile,
   TopicPagesBundle,
   VideoRow,
   VideosBundle,
@@ -61,4 +66,20 @@ export function videosById(ids: string[]): VideoRow[] {
     if (v) out.push(v)
   }
   return out
+}
+
+/** Per-channel comment slice (T13). null is a state: the comment ledger has
+ *  not reached this channel yet. Never invent an empty bundle for it. */
+export function loadChannelComments(channelId: string): ChannelCommentsFile | null {
+  const rel = path.join("comments", "channel", `${channelId}.json`)
+  if (!existsSync(path.join(DB_DIR, rel))) return null
+  return load<ChannelCommentsFile>(rel)
+}
+
+/** Per-topic comment slice (T13). null is a state: the comment ledger has
+ *  not reached this topic yet. Never invent an empty bundle for it. */
+export function loadTopicComments(topicId: string): TopicCommentsFile | null {
+  const rel = path.join("comments", "topic", `${topicId}.json`)
+  if (!existsSync(path.join(DB_DIR, rel))) return null
+  return load<TopicCommentsFile>(rel)
 }

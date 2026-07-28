@@ -234,6 +234,78 @@ export interface SnapshotsBundle {
   channels: Record<string, { handle: string; series: SnapshotDay[] }>
 }
 
+export type CommentCategory =
+  | "video_request"
+  | "question"
+  | "correction"
+  | "suggestion"
+  | "other"
+
+export interface CategoryCounts {
+  video_request: number
+  question: number
+  correction: number
+  suggestion: number
+  other: number
+  /** rows the classification pass has not labeled; they render, just unlabeled */
+  unsorted: number
+}
+
+export interface CommentRow {
+  comment_id: string
+  video_id: string
+  video_title: string
+  video_url: string
+  video_published_at: string
+  author: string
+  author_channel_id: string | null
+  text: string
+  like_count: number
+  reply_count: number
+  published_at: string
+  answered: boolean
+  /** Derived: comment published_at minus video published_at, in whole days */
+  lag_days: number
+  topic_ids: string[]
+  /** Inference when present; null until the classification pass (build step 12) runs */
+  category: {
+    key: CommentCategory
+    trust: string
+    model: string
+    classified_at: string
+  } | null
+  channel_id: string
+}
+
+export interface VideoComments {
+  totals: { comments: number }
+  by_category: CategoryCounts
+  top: CommentRow[]
+}
+
+export interface ChannelCommentsFile {
+  version: number
+  generated_at: string
+  channel: {
+    totals: { ingested: number; classified: number; window_days: number }
+    top: CommentRow[]
+    by_category: CategoryCounts
+    most_discussed_video_ids: string[]
+  }
+  videos: Record<string, VideoComments>
+}
+
+export interface TopicCommentsFile {
+  version: number
+  generated_at: string
+  topic: {
+    totals: { comments: number; videos: number; creators: number }
+    top: CommentRow[]
+    by_category: CategoryCounts
+    unserved: unknown[]
+  }
+}
+
 export interface Meta {
   version: number
   generated_at: string
