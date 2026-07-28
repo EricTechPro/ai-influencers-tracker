@@ -1745,3 +1745,23 @@ rtk git commit -m "feat(web): craft pass over channel pages and compare, docs to
 - Writing or modifying the avatar serving route: it exists in the tree from a concurrent session; this plan only consumes it (Task 4 Step 2b) and falls back to initials when a file is missing.
 - `view_growth_pct`, `breakout_count`, `top_topics` on channels.json: still deferred, still unrendered. Cadence is now computed web-side as Derived with its formula shown; the other three stay absent rather than invented.
 - The vidIQ backfill (4a) and keyword sweep (4b): authorization unchanged from the handoff; growth charts render `building` states until bought or accumulated.
+
+---
+
+## Execution outcome (2026-07-28)
+
+All 7 tasks executed subagent-driven on feat/data-spine, ccb49a4..992e176 (19 commits), per-task
+spec+quality reviews with fix rounds, final whole-branch review "ready with fixes", fix wave
+applied and re-reviewed clean. Out-of-plan work landed under controller rulings: vidIQ 4a backfill
+(360 credits, 72/72 channels) and 4b keyword sweep (250 credits across two runs; the first was
+lost to the nested-payload parser bug fixed in cdd3884), the corrupt-flag delta fix (76daa51), and
+the per-field headline selection fix (34d27a9, refined in 0538cd2). vidIQ balance after: 491.
+
+Deferred to the next phase, deliberately:
+- The cross-source seam guard (refuse deltas when the vidIQ and youtube values disagree beyond
+  5x bucket width at the seam): waits for the concurrent filter_monotonic rework in the working
+  tree (growth.py, vidiq.py, read.py, thresholds.json) to land first; both touch the same code.
+- Comment-table per-tab footer counts: unreachable until classification (build step 12) runs.
+- Re-buy decision for channels whose purchased view series carries vendor humps (anthropic-ai,
+  cynthia.unlimited, robinebers): 5 credits each, only worth it if view-based growth cells matter
+  before the daily sweep accumulates its own history.
