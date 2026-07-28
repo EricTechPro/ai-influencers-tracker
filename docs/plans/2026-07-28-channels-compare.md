@@ -23,6 +23,8 @@ Copied from `CLAUDE.md`, `docs/system.md`, and the locked visual language. Every
 - Eric's craft bar: the UI must end up **better** than social-invest, not a faithful copy: real hover/focus states, tabular numerals, sticky table headers on long tables, `prefers-reduced-motion` respected, no dead links, no layout shift on expansion. No fake polish (no count-up animations on real numbers, no skeletons for data that is simply absent).
 - No em dashes in any copy, comment, or doc text this plan writes.
 - Prefix every shell command with `rtk`. Conventional commits (`feat`, `fix`, `test`, `docs`, `data`, `chore`). Python: `ruff` line-length 100, tests beside code as `test_*.py`, run `pytest -q` from repo root. Web: `cd web && npx vitest run`.
+- **Concurrent session**: another session has uncommitted work in this tree (avatar serving: `web/app/assets/channels/[id]/route.ts` + test, `pipeline/avatars.py`, a comment tweak in `web/lib/bundles.ts`, `web/vitest.config.ts`, `web/components/opportunity-table.tsx`). Never revert it. Stage only the exact files your task created or edited (`rtk git add <explicit paths>`, never a directory). If your task edits a file that carries their uncommitted tweak (`bundles.ts`, `vitest.config.ts`), keep their edit intact; it may ride along in your commit.
+- **Images**: channel avatars are served at `/assets/channels/<channel_id>` by the existing route (streams `_db/assets/channels/<id>.jpg`; 72 files exist). Render real avatars with an initials fallback decided server-side. Video thumbnails hotlink YouTube: `https://i.ytimg.com/vi/<video_id>/mqdefault.jpg`, `loading="lazy"`, fixed box, `alt=""`.
 - Branch: continue on `feat/data-spine` (plan 2 lives there, unmerged). Commit task by task.
 - Port 3002. Dev server: `cd web && npm run dev` (predev rebuilds `_db/`, which takes ~60s; for route checks prefer a server that is already running or start once and reuse).
 
@@ -891,6 +893,31 @@ export default async function ChannelPage({ params }: { params: Promise<{ id: st
 }
 ```
 
+- [ ] **Step 2b: Real avatars with a server-side fallback**
+
+Add to `web/lib/bundles.ts`:
+
+```ts
+/** True when the downloaded avatar exists on disk; the page then renders the
+ *  image route, otherwise initials. Decided server-side so no broken img flashes. */
+export function hasChannelAvatar(channelId: string): boolean {
+  return existsSync(path.join(DB_DIR, "assets", "channels", `${channelId}.jpg`))
+}
+```
+
+In the channel header (and everywhere this plan renders an avatar circle: `/channels` index, compare picker row), render:
+
+```tsx
+{hasChannelAvatar(channel.channel_id) ? (
+  <img className={`avatar av56${channel.is_self ? " av-you" : ""}`}
+    src={`/assets/channels/${channel.channel_id}`} alt="" width={56} height={56} />
+) : (
+  <span className={`avatar av56${channel.is_self ? " av-you" : ""}`}>{initials(channel.name)}</span>
+)}
+```
+
+with `img.avatar { object-fit: cover }` added to globals.css if not present. The serving route `web/app/assets/channels/[id]/route.ts` already exists in the tree (another session's work); do not rewrite it, just consume it. Pass a `hasAvatar` boolean from server components into any client component that draws the circle; client components never call `hasChannelAvatar` themselves.
+
 - [ ] **Step 3: Fix the cadence input honestly**
 
 `still_growing_video_ids` is not "the channel's uploads". Add to `web/lib/bundles.ts`:
@@ -1252,7 +1279,13 @@ function FragmentRow({ row, open, onToggle }: {
     <>
       <tr className="rowlink" onClick={onToggle} aria-expanded={open}
         style={{ cursor: "pointer" }}>
-        <td>{open ? "▾" : "▸"} {row.title}</td>
+        <td style={{ display: "flex", gap: 8, alignItems: "center" }}>
+          <span className="mono10">{open ? "▾" : "▸"}</span>
+          <img src={`https://i.ytimg.com/vi/${row.video_id}/mqdefault.jpg`} alt=""
+            width={64} height={36} loading="lazy"
+            style={{ objectFit: "cover", borderRadius: 2, flexShrink: 0 }} />
+          <span>{row.title}</span>
+        </td>
         <td className="r num">{fmtDate(row.published_at)}</td>
         <td className="r num">{row.view_count === null ? "—" : fmtInt(row.view_count)}</td>
         <td className="r num gain">{row.gained7d ? deltaText(row.gained7d) : "—"}</td>
@@ -1376,7 +1409,7 @@ Expected: both greps ≥ 1.
 - [ ] **Step 9: Commit**
 
 ```bash
-rtk git add web/components web/app
+rtk git add web/components/comment-table.tsx web/components/comment-table.test.tsx web/components/still-pulling.tsx web/components/topic-leaf.tsx web/components/topic-leaf.test.tsx "web/app/channels/[id]/page.tsx" "web/app/topics/[id]/page.tsx" web/app/globals.css
 rtk git commit -m "feat(web): comment tables with honest unclassified state, still-pulling expansion, topic cross-creator view"
 ```
 
@@ -1709,6 +1742,6 @@ rtk git commit -m "feat(web): craft pass over channel pages and compare, docs to
 - Comment classification (T22 / build step 12): every `category` stays null; the UI's unclassified state is the deliverable here.
 - The reply queue (own-channel section): needs classification for the question filter and LLM drafts; `answered` detection already ships in the data.
 - `web/e2e/monday.spec.ts`: still deferred; the curl checks cover this surface, and the Monday flow is worth scripting once classification and synthesis give it content. Deferred twice now; if it defers a third time, question whether it earns existence.
-- Avatar images in the UI: `_db/assets/channels/*.jpg` exist (72 files) but serving them needs either a public/ symlink or an asset route; initials render everywhere, matching the mockups. One decision, one small task, next plan.
+- Writing or modifying the avatar serving route: it exists in the tree from a concurrent session; this plan only consumes it (Task 4 Step 2b) and falls back to initials when a file is missing.
 - `view_growth_pct`, `breakout_count`, `top_topics` on channels.json: still deferred, still unrendered. Cadence is now computed web-side as Derived with its formula shown; the other three stay absent rather than invented.
 - The vidIQ backfill (4a) and keyword sweep (4b): authorization unchanged from the handoff; growth charts render `building` states until bought or accumulated.
