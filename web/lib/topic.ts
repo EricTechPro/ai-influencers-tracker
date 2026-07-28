@@ -46,3 +46,10 @@ export function multText(m: VideoRow["multiplier"]): string {
   if (m.state === "no_baseline") return "no baseline"
   return "--"
 }
+
+/** C1's videos-below-min_videos gate (spec.md:347,352): the shortfall a topic
+ *  page shows instead of rendering as an ordinary scored topic or hiding the
+ *  route. Verbatim wording from spec.md's own example, "1 video, need 3". */
+export function insufficientText(videoCount: number, minVideos: number): string {
+  return `${videoCount} video${videoCount === 1 ? "" : "s"}, need ${minVideos}`
+}

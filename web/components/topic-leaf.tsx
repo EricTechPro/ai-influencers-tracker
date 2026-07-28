@@ -1,6 +1,6 @@
 import type { LeafTopicPage, Meta, OpportunityRow, VideoRow } from "@/lib/types"
 import type { TrailRow } from "@/lib/topic"
-import { multText } from "@/lib/topic"
+import { insufficientText, multText } from "@/lib/topic"
 import { visibleEdges } from "@/lib/chain"
 import { agoText, fmtDate, fmtInt, initials, scoreText } from "@/lib/trust"
 import { ChainMap } from "./chain-map"
@@ -43,6 +43,11 @@ export function TopicLeaf({
           {topic.label} · {topic.shape ?? "shape unset"} · {topic.video_count} videos ·{" "}
           {topic.creator_count} creators · {topic.window_days}d
         </p>
+        {topic.state === "insufficient_data" && (
+          <p className="callout warn" style={{ display: "inline-block" }}>
+            {insufficientText(topic.video_count, topic.min_videos)}
+          </p>
+        )}
         {opp &&
           (opp.own_coverage.covered ? (
             <p className="callout inf" style={{ display: "inline-block" }}>
