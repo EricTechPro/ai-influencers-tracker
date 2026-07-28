@@ -6,7 +6,7 @@ import type { OppRowModel } from "@/lib/opportunity"
 import { scoreSortValue, topicSortValue } from "@/lib/opportunity"
 import type { SortValue } from "@/lib/sort"
 import type { OpportunityRow, Verdict } from "@/lib/types"
-import { agoText, fmtDate, fmtInt, scoreText, VERDICT_RANK } from "@/lib/trust"
+import { agoText, fmtDate, fmtInt, SCORE_FORMULA, scoreText, VERDICT_RANK } from "@/lib/trust"
 import { SortableHeader, useTableSort, type SortColumn } from "./sortable-table"
 import { AvatarCluster } from "./avatar-cluster"
 import { Chip, Derived, VerdictBadge } from "./trust"
@@ -21,7 +21,7 @@ const COLUMNS: SortColumn<Key>[] = [
     key: "score",
     label: "score",
     align: "right",
-    tip: "score = 40·velocity + 25·keyword + 25·supply gap + 10·staleness; -- sorts last both ways",
+    tip: `${SCORE_FORMULA}; -- sorts last both ways`,
   },
   { key: "newest", label: "newest", align: "right", tip: "days since the newest video on this topic" },
 ]
@@ -148,7 +148,7 @@ function Row({
           <AvatarCluster creators={model.creators} />
         </td>
         <td className="r num">
-          <Derived formula="score = 40·velocity + 25·keyword + 25·supply gap + 10·staleness">
+          <Derived formula={SCORE_FORMULA}>
             {scoreText(r.score)}
           </Derived>
         </td>

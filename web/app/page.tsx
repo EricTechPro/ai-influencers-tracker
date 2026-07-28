@@ -8,6 +8,7 @@ import {
 } from "@/lib/bundles"
 import { slimChannel, sparkAll } from "@/lib/growth"
 import { oppRowModels } from "@/lib/opportunity"
+import { SCORE_FORMULA } from "@/lib/trust"
 import { GrowthPanel } from "@/components/growth-panel"
 import { OpportunityTable } from "@/components/opportunity-table"
 
@@ -46,7 +47,7 @@ export default function HomePage() {
         <div className="section-kicker">
           <span className="kicker bigsec">WHAT TO MAKE NEXT</span>
           <span className="rule" />
-          <span className="cap num">score = 40·velocity + 25·keyword + 25·supply gap + 10·staleness</span>
+          <span className="cap num">{SCORE_FORMULA}</span>
         </div>
         <OpportunityTable models={models} />
       </section>

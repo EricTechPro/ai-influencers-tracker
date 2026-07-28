@@ -2,7 +2,7 @@ import type { LeafTopicPage, Meta, OpportunityRow, VideoRow } from "@/lib/types"
 import type { TrailRow } from "@/lib/topic"
 import { insufficientText, multText } from "@/lib/topic"
 import { visibleEdges } from "@/lib/chain"
-import { agoText, fmtDate, fmtInt, initials, scoreText } from "@/lib/trust"
+import { agoText, fmtDate, fmtInt, initials, SCORE_FORMULA, scoreText } from "@/lib/trust"
 import { ChainMap } from "./chain-map"
 import { Chip, Derived, VerdictBadge } from "./trust"
 
@@ -29,7 +29,7 @@ export function TopicLeaf({
             <>
               <VerdictBadge verdict={opp.verdict} />
               <span className="num">
-                <Derived formula="score = 40·velocity + 25·keyword + 25·supply gap + 10·staleness">
+                <Derived formula={SCORE_FORMULA}>
                   {scoreText(opp.score)}
                 </Derived>
               </span>

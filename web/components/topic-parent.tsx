@@ -2,7 +2,7 @@ import Link from "next/link"
 import type { LeafTopicPage, OpportunityRow, ParentTopicPage } from "@/lib/types"
 import type { WeekPoint } from "@/lib/rollup"
 import { rollupLine } from "@/lib/rollup"
-import { agoText, scoreText } from "@/lib/trust"
+import { agoText, SCORE_FORMULA, scoreText } from "@/lib/trust"
 import { Chip, Derived, VerdictBadge } from "./trust"
 import { TrendArea } from "./trend-area"
 
@@ -60,7 +60,7 @@ export function TopicParent({
               <td className="r num">{leaf.creator_count}</td>
               <td className="r num">
                 {opp ? (
-                  <Derived formula="score = 40·velocity + 25·keyword + 25·supply gap + 10·staleness">
+                  <Derived formula={SCORE_FORMULA}>
                     {scoreText(opp.score)}
                   </Derived>
                 ) : (

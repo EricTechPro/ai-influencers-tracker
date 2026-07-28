@@ -49,6 +49,8 @@ export function pctText(cell: StateCell): string {
   return "--"
 }
 
+export const SCORE_FORMULA = "score = 40·velocity + 25·keyword + 25·supply gap + 10·staleness"
+
 export function scoreText(score: ScoreBlock): string {
   if (score.value === null || score.out_of === null) return "--"
   const v = score.value.toFixed(1)
