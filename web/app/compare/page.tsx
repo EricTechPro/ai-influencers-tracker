@@ -28,7 +28,6 @@ export default async function ComparePage({
     coverageByTopic(channelVideos(you.channel_id), you.channel_id),
     opps,
   )
-  const bucketsDiffer = him.subscriber_bucket !== you.subscriber_bucket
   const options = bundle.channels.map((c) => ({
     channel_id: c.channel_id, name: c.name, is_self: c.is_self,
   }))
@@ -39,11 +38,11 @@ export default async function ComparePage({
   return (
     <section>
       <div style={{ display: "flex", gap: 10, alignItems: "center", marginTop: "1.2rem", fontSize: 13 }}>
-        <Avatar src={channelAvatarUrl(him.channel_id)} name={him.name} size={36} />
+        <Avatar src={channelAvatarUrl(him.channel_id)} name={him.name} size={36} isSelf={him.is_self} />
         <ComparePicker side="a" value={him.channel_id} options={options}
           selfId={bundle.self_channel_id} />
         <span className="mono10">vs</span>
-        <Avatar src={channelAvatarUrl(you.channel_id)} name={you.name} size={36} isSelf />
+        <Avatar src={channelAvatarUrl(you.channel_id)} name={you.name} size={36} isSelf={you.is_self} />
         <ComparePicker side="b" value={you.channel_id} options={options}
           selfId={bundle.self_channel_id} />
       </div>
@@ -104,10 +103,14 @@ export default async function ComparePage({
       <div className="section-kicker">
         <span className="kicker">the numbers</span><span className="rule" />
       </div>
-      {bucketsDiffer && (
+      {/* Both sides need a real bucket width for this comparison to mean anything; a null on
+          either side is missing data, not a zero, so the callout stays silent rather than
+          claiming a channel "rounds to 0". */}
+      {him.subscriber_bucket !== null && you.subscriber_bucket !== null &&
+        him.subscriber_bucket !== you.subscriber_bucket && (
         <div className="callout warn" style={{ marginBottom: 8, fontSize: 12 }}>
-          ⚠ Different bucket widths. {him.name} rounds to {fmtInt(him.subscriber_bucket ?? 0)},{" "}
-          {you.is_self ? "you round" : `${you.name} rounds`} to {fmtInt(you.subscriber_bucket ?? 0)}.
+          ⚠ Different bucket widths. {him.name} rounds to {fmtInt(him.subscriber_bucket)},{" "}
+          {you.is_self ? "you round" : `${you.name} rounds`} to {fmtInt(you.subscriber_bucket)}.
           A subscriber comparison across this size gap is not like-for-like. Views carry no such caveat.
         </div>
       )}
