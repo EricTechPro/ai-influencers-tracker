@@ -36,7 +36,8 @@ def test_a_row_is_written_for_every_roster_channel(ait_root):
     api = _api({"UCself": _item("UCself", 68700, 4102880, 210),
                 "UCcole": _item("UCcole", 219000, 11991545, 412),
                 "UCdan": _item("UCdan", 2930000, 90000000, 900)})
-    rows = snapshot.channel_rows(config.roster(), api, TODAY)
+    roster = config.roster()
+    rows = snapshot.channel_rows(roster, snapshot.fetch_channels(roster, api), TODAY)
     assert set(rows) == {"UCself", "UCcole", "UCdan"}
     assert rows["UCcole"] == {"date": "2026-07-27", "status": "ok", "view_count": 11991545,
                               "subscriber_count": 219000, "subscriber_bucket": 1000,
@@ -46,7 +47,8 @@ def test_a_row_is_written_for_every_roster_channel(ait_root):
 def test_a_channel_missing_from_the_response_is_absent_never_zero(ait_root):
     api = _api({"UCself": _item("UCself", 68700, 4102880, 210),
                 "UCcole": _item("UCcole", 219000, 11991545, 412)})
-    rows = snapshot.channel_rows(config.roster(), api, TODAY)
+    roster = config.roster()
+    rows = snapshot.channel_rows(roster, snapshot.fetch_channels(roster, api), TODAY)
     assert rows["UCdan"] == {"date": "2026-07-27", "status": "absent", "view_count": None,
                              "subscriber_count": None, "subscriber_bucket": None,
                              "video_count": None, "source": "youtube_api"}
