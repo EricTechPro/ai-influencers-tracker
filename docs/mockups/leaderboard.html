@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AIT mockups · /leaderboard</title>
+<link rel="stylesheet" href="board.css">
+</head>
+<body>
+<div class="wrap">
+<h1>/leaderboard — the full 72</h1>
+<p class="lede">Same data as home, no cap, more columns. The floor is per channel: a 2,380-sub channel is measurable over a week, a 2.93M one is not measurable over a quarter. All three versions keep that; they differ in density and how loudly your row and the bounded rows speak.</p>
+
+<!-- ═════════ A ═════════ -->
+<div class="pageframe va" data-group="leaderboard" data-v="A">
+  <div class="framebar"><span class="dots"><i></i><i></i><i></i></span><span class="url">localhost:3002/leaderboard</span>
+    <span class="vlabel">VERSION A</span><span class="vdesc">dense terminal · every column, tight rows</span>
+    <button class="pickbtn">pick this</button></div>
+  <div class="framebody">
+    <div class="appnav"><span class="logo">ai influencers</span>
+      <nav><a href="#">home</a><a class="active" href="#">leaderboard</a><a href="#">topics</a><a href="#">channels</a><a href="#">compare</a></nav>
+      <div class="right"><span>snapshot 2026-07-27 09:00</span><span class="livedot"></span></div></div>
+    <div class="page">
+      <div class="section-kicker" style="margin-top:1rem"><span class="kicker">all channels</span><span class="rule"></span><span class="cap">72 tracked</span></div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px;align-items:center;font-size:11px">
+        <span class="mono10">rank by</span><span class="tabs"><button class="on">growth</button><button>general</button><button>subscribers</button><button>views</button></span>
+        <span class="mono10">window</span><span class="tabs"><button class="on">90d</button><button>30d</button><button>7d</button></span>
+        <span class="chip">all niches ▾</span><span class="chip">competitors ✓</span><span class="chip">company ✓</span><span class="chip">adjacent ☐</span></div>
+      <div class="card" style="overflow-x:auto">
+        <table class="tbl" style="font-size:12px">
+          <tr><th>#</th><th>channel</th><th class="r">subs</th><th class="r"><span class="derived" title="subscriberCount delta over window">Δsubs 90d</span></th><th class="r"><span class="derived" title="Δsubs ÷ subs at window start">growth</span></th><th class="r">views Δ</th><th class="r"><span class="derived" title="Δsubs ÷ Δviews × 1000">subs/1k</span></th><th class="r">vids</th></tr>
+          <tr class="rowlink"><td class="num">1</td><td><span class="avatar av20">CM</span> Cole Medin</td><td class="r num">219,000</td><td class="r num gain">+15,000</td><td class="r num gain">+7.4%</td><td class="r num">+3.1M</td><td class="r num">12.4</td><td class="r num">12</td></tr>
+          <tr class="rowlink"><td class="num">2</td><td><span class="avatar av20">NH</span> Nate Herk</td><td class="r num">873,000</td><td class="r num gain">+53,000</td><td class="r num gain">+6.1%</td><td class="r num">+8.0M</td><td class="r num">9.8</td><td class="r num">8</td></tr>
+          <tr class="rowlink"><td class="num">3</td><td><span class="avatar av20">MB</span> Matthew Berman</td><td class="r num">626,000</td><td class="r num gain">+30,000</td><td class="r num gain">+4.8%</td><td class="r num">+7.3M</td><td class="r num">4.1</td><td class="r num">22</td></tr>
+          <tr class="rowlink" style="background:color-mix(in srgb, var(--primary) 4%, transparent)"><td class="num">7</td><td><span class="avatar av20 av-you">ET</span> Eric Tech <span class="chip you">★ YOU</span></td><td class="r num">68,700</td><td class="r num">+2,100</td><td class="r num">+3.1%</td><td class="r num">+0.4M</td><td class="r num">5.2</td><td class="r num">6</td></tr>
+          <tr class="rowlink"><td class="num">31</td><td><span class="avatar av20">DM</span> Dan Martell</td><td class="r num">2,930,000</td><td class="r num muted">&lt; 50,000</td><td class="r num muted">&lt; 2.0%</td><td class="r num">+12.1M</td><td class="r num muted">—</td><td class="r num">14</td></tr>
+          <tr class="rowlink"><td class="num">68</td><td><span class="avatar av20">JI</span> AI Systems by Jimi</td><td class="r num">2,380</td><td class="r num gain">+180</td><td class="r num gain">+8.2%</td><td class="r num">+0.02M</td><td class="r num">14.1</td><td class="r num">9</td></tr>
+          <tr class="rowlink"><td class="num">71</td><td><span class="avatar av20">?</span> someprivatechannel</td><td class="r num muted">—</td><td class="r num muted">—</td><td class="r num muted">—</td><td class="r num muted">—</td><td class="r num muted">—</td><td class="r num muted">—</td></tr>
+        </table>
+      </div>
+      <p class="note" style="margin-top:8px">Bounded renders muted "&lt; N" and sorts below every measured row · absent renders — everywhere, never zero.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ═════════ B ═════════ -->
+<div class="pageframe vb" data-group="leaderboard" data-v="B">
+  <div class="framebar"><span class="dots"><i></i><i></i><i></i></span><span class="url">localhost:3002/leaderboard</span>
+    <span class="vlabel">VERSION B</span><span class="vdesc">visual table · inline growth bars, strong YOU row</span>
+    <button class="pickbtn">pick this</button></div>
+  <div class="framebody">
+    <div class="appnav navrule"><span class="logo">ai influencers</span>
+      <nav><a href="#">home</a><a class="active" href="#">leaderboard</a><a href="#">topics</a><a href="#">channels</a><a href="#">compare</a></nav>
+      <div class="right"><span>snapshot 2026-07-27</span><span class="livedot"></span></div></div>
+    <div class="page">
+      <div style="display:flex;align-items:baseline;gap:12px;margin:1.6rem 0 0.6rem"><span class="bigsec">All channels</span><span class="mono10">72 tracked · growth · 90d</span>
+        <span style="margin-left:auto"><span class="tabs"><button class="on">growth</button><button>general</button><button>subs</button><button>views</button></span></span></div>
+      <div style="display:flex;gap:6px;margin-bottom:10px;font-size:11px;flex-wrap:wrap">
+        <span class="cattabs"><button class="t on">all niches</button><button class="t">ai-agents</button><button class="t">claude-code</button><button class="t">n8n</button><button class="t">no-code</button><button class="t">chinese</button><button class="t">business</button></span></div>
+      <div class="card" style="overflow-x:auto">
+        <table class="tbl">
+          <tr><th>#</th><th>channel</th><th class="r">subs</th><th style="width:11rem"><span class="derived" title="growth vs the #1 channel">growth 90d</span></th><th class="r">Δsubs</th><th class="r"><span class="derived" title="Δsubs ÷ Δviews × 1000">subs/1k</span></th><th class="r">vids</th></tr>
+          <tr class="rowlink"><td class="num">1</td><td><span class="avatar av20">CM</span> <b>Cole Medin</b></td><td class="r num">219,000</td>
+            <td><div style="display:flex;align-items:center;gap:6px"><div style="flex:1;height:8px;background:var(--secondary)"><div style="width:100%;height:8px;background:var(--v-make)"></div></div><span class="num gain" style="font-size:12px">+7.4%</span></div></td>
+            <td class="r num">+15,000 <span class="chip">±1k</span></td><td class="r num">12.4</td><td class="r num">12</td></tr>
+          <tr class="rowlink"><td class="num">2</td><td><span class="avatar av20">NH</span> <b>Nate Herk</b></td><td class="r num">873,000</td>
+            <td><div style="display:flex;align-items:center;gap:6px"><div style="flex:1;height:8px;background:var(--secondary)"><div style="width:82%;height:8px;background:var(--v-make)"></div></div><span class="num gain" style="font-size:12px">+6.1%</span></div></td>
+            <td class="r num">+53,000 <span class="chip">±1k</span></td><td class="r num">9.8</td><td class="r num">8</td></tr>
+          <tr class="rowlink"><td class="num">3</td><td><span class="avatar av20">MB</span> <b>Matthew Berman</b></td><td class="r num">626,000</td>
+            <td><div style="display:flex;align-items:center;gap:6px"><div style="flex:1;height:8px;background:var(--secondary)"><div style="width:65%;height:8px;background:var(--v-make)"></div></div><span class="num gain" style="font-size:12px">+4.8%</span></div></td>
+            <td class="r num">+30,000 <span class="chip">±10k</span></td><td class="r num">4.1</td><td class="r num">22</td></tr>
+          <tr class="rowlink" style="background:color-mix(in srgb, var(--primary) 6%, transparent);border-left:3px solid var(--primary)"><td class="num"><b>7</b></td><td><span class="avatar av20 av-you">ET</span> <b>Eric Tech</b> <span class="chip you">★ YOU</span></td><td class="r num">68,700</td>
+            <td><div style="display:flex;align-items:center;gap:6px"><div style="flex:1;height:8px;background:var(--secondary)"><div style="width:42%;height:8px;background:var(--primary)"></div></div><span class="num" style="font-size:12px;color:var(--primary)">+3.1%</span></div></td>
+            <td class="r num">+2,100 <span class="chip">±100</span></td><td class="r num">5.2</td><td class="r num">6</td></tr>
+          <tr class="rowlink"><td class="num">31</td><td><span class="avatar av20">DM</span> Dan Martell</td><td class="r num">2,930,000</td>
+            <td><div style="display:flex;align-items:center;gap:6px"><div style="flex:1;height:8px;background:repeating-linear-gradient(45deg,var(--secondary),var(--secondary) 4px,#fff 4px,#fff 8px)"></div><span class="num muted" style="font-size:12px">&lt; 2.0%</span></div></td>
+            <td class="r num muted">&lt; 50,000</td><td class="r num muted">—</td><td class="r num">14</td></tr>
+          <tr class="rowlink"><td class="num">68</td><td><span class="avatar av20">JI</span> AI Systems by Jimi</td><td class="r num">2,380</td>
+            <td><div style="display:flex;align-items:center;gap:6px"><div style="flex:1;height:8px;background:var(--secondary)"><div style="width:100%;height:8px;background:var(--v-make);opacity:0.55"></div></div><span class="num gain" style="font-size:12px">+8.2%</span></div></td>
+            <td class="r num">+180 <span class="chip">±10</span></td><td class="r num">14.1</td><td class="r num">9</td></tr>
+        </table>
+      </div>
+      <p class="note" style="margin-top:8px">Hatched bar = bounded (unmeasurable at this window). Your row gets the primary bar and a left rule.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ═════════ C ═════════ -->
+<div class="pageframe vc" data-group="leaderboard" data-v="C">
+  <div class="framebar"><span class="dots"><i></i><i></i><i></i></span><span class="url">localhost:3002/leaderboard</span>
+    <span class="vlabel">VERSION C</span><span class="vdesc">editorial ledger · airy rows, niche groupings</span>
+    <button class="pickbtn">pick this</button></div>
+  <div class="framebody">
+    <div class="appnav"><span class="logo" style="font-weight:400">ai<b>influencers</b></span>
+      <nav><a href="#">home</a><a class="active" href="#">leaderboard</a><a href="#">topics</a><a href="#">channels</a><a href="#">compare</a></nav>
+      <div class="right"><span>snapshot Jul 27</span></div></div>
+    <div class="page" style="max-width:56rem">
+      <div style="margin-top:1.5rem"><span class="kicker">all channels · growth · 90d</span></div>
+      <p class="note" style="margin:4px 0 14px">72 tracked. The measurement floor is per channel, not per window — small channels measure over days, huge ones may not measure over a quarter.</p>
+      <div class="card">
+        <table class="tbl">
+          <tr><th>#</th><th>channel</th><th>niche</th><th class="r">subs</th><th class="r">growth</th><th class="r">subs/1k</th></tr>
+          <tr class="rowlink"><td class="num">1</td><td><span class="avatar av20">CM</span> Cole Medin</td><td class="mono10">ai-agents</td><td class="r num">219,000</td><td class="r num gain">+7.4%</td><td class="r num derived" title="Δsubs ÷ Δviews × 1000">12.4</td></tr>
+          <tr class="rowlink"><td class="num">2</td><td><span class="avatar av20">NH</span> Nate Herk</td><td class="mono10">n8n</td><td class="r num">873,000</td><td class="r num gain">+6.1%</td><td class="r num">9.8</td></tr>
+          <tr class="rowlink"><td class="num">3</td><td><span class="avatar av20">MB</span> Matthew Berman</td><td class="mono10">ai-agents</td><td class="r num">626,000</td><td class="r num gain">+4.8%</td><td class="r num">4.1</td></tr>
+          <tr class="rowlink" style="background:color-mix(in srgb, var(--primary) 3%, transparent)"><td class="num">7</td><td><span class="avatar av20 av-you">ET</span> Eric Tech <span class="chip you">you</span></td><td class="mono10">claude-code</td><td class="r num">68,700</td><td class="r num" style="color:var(--primary)">+3.1%</td><td class="r num">5.2</td></tr>
+          <tr class="rowlink"><td class="num muted">31</td><td class="muted"><span class="avatar av20">DM</span> Dan Martell</td><td class="mono10">business</td><td class="r num muted">2,930,000</td><td class="r num muted">&lt; 2.0%</td><td class="r num muted">—</td></tr>
+          <tr class="rowlink"><td class="num">68</td><td><span class="avatar av20">JI</span> AI Systems by Jimi</td><td class="mono10">claude-code</td><td class="r num">2,380</td><td class="r num gain">+8.2%</td><td class="r num">14.1</td></tr>
+          <tr class="rowlink"><td class="num muted">71</td><td class="muted"><span class="avatar av20">?</span> someprivatechannel</td><td class="mono10">—</td><td class="r num muted">—</td><td class="r num muted">absent</td><td class="r num muted">—</td></tr>
+        </table>
+      </div>
+      <p class="note" style="margin-top:8px">Fewer columns by default; Δviews, video counts and cadence live behind a "more columns" toggle.</p>
+    </div>
+  </div>
+</div>
+
+<div class="pagenav"><a href="home.html">← / home</a><a href="topic-leaf.html">next: /topics leaf →</a></div>
+</div>
+<div id="picks"></div>
+<script src="board.js"></script>
+</body>
+</html>

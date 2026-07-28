@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AIT mockups · /channels</title>
+<link rel="stylesheet" href="board.css">
+</head>
+<body>
+<div class="wrap">
+<h1>/channels/[id] — channel page</h1>
+<p class="lede">Three collapsible sections in locked order: growth, still pulling views, what his viewers ask. Versions differ in the header treatment and how the chart and comment tables sit.</p>
+
+<!-- ═════════ A ═════════ -->
+<div class="pageframe va" data-group="channel" data-v="A">
+  <div class="framebar"><span class="dots"><i></i><i></i><i></i></span><span class="url">localhost:3002/channels/colemedin</span>
+    <span class="vlabel">VERSION A</span><span class="vdesc">dense terminal · flat header, kicker sections</span>
+    <button class="pickbtn">pick this</button></div>
+  <div class="framebody">
+    <div class="appnav"><span class="logo">ai influencers</span>
+      <nav><a href="#">home</a><a href="#">leaderboard</a><a href="#">topics</a><a class="active" href="#">channels</a><a href="#">compare</a></nav>
+      <div class="right"><span>snapshot 2026-07-27</span><span class="livedot"></span></div></div>
+    <div class="page">
+      <div class="card pad" style="margin-top:1.2rem">
+        <div style="display:flex;gap:14px;align-items:flex-start">
+          <span class="avatar av56">CM</span>
+          <div style="flex:1;min-width:0">
+            <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap"><b style="font-size:1.2rem">Cole Medin</b><span class="mono10">@ColeMedin · ai-agents · en</span>
+              <span class="chip rank1">★ #1 by growth 90d</span><a href="#" style="margin-left:auto;font-size:12px">compare with you →</a></div>
+            <div style="margin-top:8px;display:flex;gap:18px;flex-wrap:wrap;font-size:13px" class="num">
+              <span><b>219,000</b> subs <span class="chip">±1,000</span></span><span><b>11,991,545</b> views</span><span><b>412</b> videos</span>
+              <span><b class="derived" title="median days between uploads, last 10">3.4d</b> cadence</span></div>
+            <p class="inference" style="margin:10px 0 0;font-size:12px;max-width:36rem">Builds AI agent tutorials focused on n8n, MCP and local-first stacks. Long-form, heavy on live builds. <a href="#">more ↓</a> <span class="src-chip">AI-written · 20 Jul</span></p></div></div></div>
+
+      <div class="section-kicker"><span class="kicker">▸ growth</span><span class="rule"></span><span class="cap"><span class="tabs"><button class="on">subscribers</button><button>views</button><button>view growth</button></span> · 90d ▾</span></div>
+      <div class="card pad">
+        <svg width="100%" height="90" viewBox="0 0 560 90" preserveAspectRatio="none">
+          <line x1="40" y1="72" x2="550" y2="72" stroke="#ece9e9"/>
+          <text x="6" y="20" font-size="9" fill="#6b6a6b">219k</text><text x="6" y="70" font-size="9" fill="#6b6a6b">204k</text>
+          <polyline points="40,66 140,64 240,52 340,38 440,22 550,12" fill="none" stroke="#006cac" stroke-width="1.5"/>
+          <text x="40" y="86" font-size="10" fill="#6b6a6b">Apr 28</text><text x="280" y="86" font-size="10" fill="#6b6a6b">Jun 09</text><text x="500" y="86" font-size="10" fill="#6b6a6b">Jul 21</text></svg>
+        <div style="font-size:12px"><span class="num gain derived" title="last snapshot − first snapshot in window">+15,000 subs</span> over 90d · bucket 1,000 · ±7%</div></div>
+
+      <div class="section-kicker"><span class="kicker">▸ still pulling views</span><span class="rule"></span></div>
+      <div class="card" style="overflow-x:auto"><table class="tbl" style="font-size:12px">
+        <tr><th>video</th><th class="r">published</th><th class="r">views</th><th class="r"><span class="derived" title="exact viewCount delta over last 7 daily snapshots">+7d</span></th><th class="r"><span class="derived" title="30d views ÷ channel median">mult</span></th></tr>
+        <tr class="rowlink"><td>▸ Google Just Dropped a Masterclass…</td><td class="r num">25 Jun</td><td class="r num">146,102</td><td class="r num gain">+5,221</td><td class="r num">4.8×</td></tr>
+        <tr class="rowlink" style="background:color-mix(in srgb, var(--accent) 50%, transparent)"><td>▾ This RAG Trick Makes Agents Smarter</td><td class="r num">02 May</td><td class="r num">88,410</td><td class="r num gain">+2,090</td><td class="r num">2.9×</td></tr>
+        <tr><td colspan="5" class="sub" style="padding:0.8rem 1rem">
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:11px"><span><b class="num">213</b> comments · topic: <a href="#">rag-pipelines</a></span>
+            <div class="cattabs" style="margin-left:8px"><button class="t">req <b>12</b></button><button class="t on">que <b>84</b></button><button class="t">cor <b>3</b></button><button class="t">sug <b>21</b></button><button class="t">other <b>93</b></button></div>
+            <a href="#" style="margin-left:auto">open video ↗</a></div>
+          <table class="tbl" style="margin-top:6px;font-size:12px">
+            <tr><td class="mono10">marco</td><td>how do you handle rate limits when the agent loops</td><td><span class="cat">que</span></td><td class="r num">190</td><td class="r num">96d</td></tr>
+            <tr><td class="mono10">jenn_b</td><td>would be great to see this with a local model</td><td><span class="cat">req</span></td><td class="r num">140</td><td class="r num">12d</td></tr></table>
+          <div class="mono10" style="margin-top:4px">showing 2 of 213 · <a href="#">more →</a></div></td></tr>
+      </table></div>
+
+      <div class="section-kicker"><span class="kicker">▸ what his viewers ask</span><span class="rule"></span></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+        <div class="cattabs"><button class="t on">all <b>642</b></button><button class="t">requests <b>84</b></button><button class="t">questions <b>210</b></button><button class="t">corrections <b>12</b></button><button class="t">suggestions <b>96</b></button><button class="t">other <b>240</b></button></div>
+        <span style="margin-left:auto" class="mono10">sort likes ▾ · 365d ▾</span></div>
+      <div class="card" style="margin-top:8px;overflow-x:auto"><table class="tbl" style="font-size:12px">
+        <tr><th>who</th><th>comment</th><th>cat</th><th class="r">likes</th><th class="r">repl</th><th>video</th><th>topic</th><th class="r"><span class="derived" title="days after publish">lag</span></th></tr>
+        <tr class="rowlink"><td class="mono10">someguy</td><td>Would love to see this on Windows, WSL keeps breaking</td><td><span class="cat">req</span></td><td class="r num">412</td><td class="r num">7</td><td class="mono10"><a href="#">Google Just… ↗</a></td><td class="mono10"><a href="#">mcp-setup</a></td><td class="r num">3d</td></tr>
+        <tr class="rowlink"><td class="mono10">devanne</td><td>the mcp add command is deprecated now, use .mcp.json</td><td><span class="cat">cor</span></td><td class="r num">288</td><td class="r num">22</td><td class="mono10"><a href="#">Google Just… ↗</a></td><td class="mono10"><a href="#">mcp-setup</a></td><td class="r num">41d</td></tr>
+        <tr class="rowlink"><td class="mono10">marco</td><td>how do you handle rate limits when the agent loops</td><td><span class="cat">que</span></td><td class="r num">190</td><td class="r num">4</td><td class="mono10"><a href="#">This RAG… ↗</a></td><td class="mono10"><a href="#">rag-pipelines</a></td><td class="r num">96d</td></tr>
+      </table></div>
+      <div class="mono10" style="margin-top:6px">showing 5 of 213 · topic links jump to that topic's cross-creator comment view</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═════════ B ═════════ -->
+<div class="pageframe vb" data-group="channel" data-v="B">
+  <div class="framebar"><span class="dots"><i></i><i></i><i></i></span><span class="url">localhost:3002/channels/colemedin</span>
+    <span class="vlabel">VERSION B</span><span class="vdesc">card-forward · hero header, stat blocks, chart card</span>
+    <button class="pickbtn">pick this</button></div>
+  <div class="framebody">
+    <div class="appnav navrule"><span class="logo">ai influencers</span>
+      <nav><a href="#">home</a><a href="#">leaderboard</a><a href="#">topics</a><a class="active" href="#">channels</a><a href="#">compare</a></nav>
+      <div class="right"><span>snapshot 2026-07-27</span><span class="livedot"></span></div></div>
+    <div class="page">
+      <div style="display:flex;gap:16px;align-items:center;margin-top:1.4rem;flex-wrap:wrap">
+        <span class="avatar" style="width:64px;height:64px;font-size:20px">CM</span>
+        <div><div style="display:flex;align-items:baseline;gap:10px"><span class="bigsec" style="font-size:1.5rem">Cole Medin</span><span class="chip rank1">★ #1 growth 90d</span></div>
+          <div class="mono10">@ColeMedin · ai-agents · en</div></div>
+        <button class="btn primary" style="margin-left:auto">compare with you →</button></div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:0.75rem;margin-top:1rem">
+        <div class="card pad"><div class="kicker">subs</div><div class="num" style="font-size:1.3rem;font-weight:700">219,000</div><div class="mono10">±1,000 bucket</div></div>
+        <div class="card pad"><div class="kicker">views</div><div class="num" style="font-size:1.3rem;font-weight:700">11.99M</div><div class="mono10">exact: 11,991,545</div></div>
+        <div class="card pad"><div class="kicker">videos</div><div class="num" style="font-size:1.3rem;font-weight:700">412</div><div class="mono10">12 in window</div></div>
+        <div class="card pad"><div class="kicker">cadence</div><div class="num derived" style="font-size:1.3rem;font-weight:700" title="median days between uploads">3.4d</div><div class="mono10">between uploads</div></div></div>
+      <p class="inference" style="margin:12px 0 0;font-size:12px;max-width:40rem">Builds AI agent tutorials focused on n8n, MCP and local-first stacks. Long-form, heavy on live builds. <span class="src-chip">AI-written · 20 Jul</span></p>
+
+      <div style="display:flex;align-items:baseline;gap:10px;margin:2rem 0 0.6rem"><span class="bigsec">Growth</span>
+        <span style="margin-left:auto"><span class="tabs"><button class="on">subscribers</button><button>views</button><button>view growth</button></span></span></div>
+      <div class="card pad">
+        <svg width="100%" height="110" viewBox="0 0 560 110" preserveAspectRatio="none">
+          <polygon points="40,80 140,78 240,62 340,44 440,26 550,14 550,96 40,96" fill="#006cac" opacity="0.07"/>
+          <polyline points="40,80 140,78 240,62 340,44 440,26 550,14" fill="none" stroke="#006cac" stroke-width="2"/>
+          <text x="40" y="106" font-size="10" fill="#6b6a6b">Apr 28</text><text x="280" y="106" font-size="10" fill="#6b6a6b">Jun 09</text><text x="500" y="106" font-size="10" fill="#6b6a6b">Jul 21</text></svg>
+        <div style="display:flex;gap:14px;align-items:baseline"><span class="num gain" style="font-size:1.2rem;font-weight:700">+15,000</span><span class="mono10">subs over 90d · bucket 1,000 · ±7%</span></div></div>
+
+      <div style="display:flex;align-items:baseline;gap:10px;margin:2rem 0 0.6rem"><span class="bigsec">Still pulling views</span></div>
+      <div class="card" style="overflow-x:auto"><table class="tbl">
+        <tr><th>video</th><th class="r">published</th><th class="r">views</th><th class="r">+7d</th><th style="width:9rem">mult</th></tr>
+        <tr class="rowlink"><td><b>Google Just Dropped a Masterclass…</b></td><td class="r num">25 Jun</td><td class="r num">146,102</td><td class="r num gain">+5,221</td>
+          <td><div style="display:flex;align-items:center;gap:6px"><div style="flex:1;height:8px;background:var(--secondary)"><div style="width:96%;height:8px;background:var(--v-make)"></div></div><b class="num">4.8×</b></div></td></tr>
+        <tr class="rowlink"><td>This RAG Trick Makes Agents Smarter <span class="mono10">▸ 213 comments</span></td><td class="r num">02 May</td><td class="r num">88,410</td><td class="r num gain">+2,090</td>
+          <td><div style="display:flex;align-items:center;gap:6px"><div style="flex:1;height:8px;background:var(--secondary)"><div style="width:58%;height:8px;background:var(--v-make)"></div></div><b class="num">2.9×</b></div></td></tr>
+      </table></div>
+
+      <div style="display:flex;align-items:baseline;gap:10px;margin:2rem 0 0.6rem"><span class="bigsec">What his viewers ask</span><span class="mono10">642 in 365d</span></div>
+      <div style="display:flex;gap:8px"><div class="cattabs"><button class="t on">all <b>642</b></button><button class="t">requests <b>84</b></button><button class="t">questions <b>210</b></button><button class="t">corrections <b>12</b></button><button class="t">suggestions <b>96</b></button><button class="t">other <b>240</b></button></div></div>
+      <div class="card" style="margin-top:8px"><table class="tbl" style="font-size:12px">
+        <tr class="rowlink"><td class="mono10">someguy</td><td>Would love to see this on Windows, WSL keeps breaking</td><td><span class="cat">req</span></td><td class="r num">412 ♥</td><td class="mono10"><a href="#">mcp-setup</a></td><td class="r num">3d</td></tr>
+        <tr class="rowlink"><td class="mono10">devanne</td><td>the mcp add command is deprecated now, use .mcp.json</td><td><span class="cat">cor</span></td><td class="r num">288 ♥</td><td class="mono10"><a href="#">mcp-setup</a></td><td class="r num">41d</td></tr>
+      </table></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═════════ C ═════════ -->
+<div class="pageframe vc" data-group="channel" data-v="C">
+  <div class="framebar"><span class="dots"><i></i><i></i><i></i></span><span class="url">localhost:3002/channels/colemedin</span>
+    <span class="vlabel">VERSION C</span><span class="vdesc">editorial ledger · inline header, quiet everything</span>
+    <button class="pickbtn">pick this</button></div>
+  <div class="framebody">
+    <div class="appnav"><span class="logo" style="font-weight:400">ai<b>influencers</b></span>
+      <nav><a href="#">home</a><a href="#">leaderboard</a><a href="#">topics</a><a class="active" href="#">channels</a><a href="#">compare</a></nav>
+      <div class="right"><span>snapshot Jul 27</span></div></div>
+    <div class="page" style="max-width:52rem">
+      <div style="display:flex;gap:12px;align-items:center;margin-top:1.5rem">
+        <span class="avatar" style="width:44px;height:44px;font-size:15px">CM</span>
+        <div><b style="font-size:1.15rem">Cole Medin</b> <span class="mono10">@ColeMedin · ai-agents</span> <span class="chip rank1">#1 growth</span></div>
+        <a href="#" style="margin-left:auto;font-size:12px">compare with you →</a></div>
+      <p class="note" style="margin:10px 0 0"><span class="num" style="color:var(--foreground)">219,000 subs (±1,000) · 11,991,545 views · 412 videos · <span class="derived" title="median days between uploads">3.4d cadence</span></span></p>
+      <p class="inference" style="margin:10px 0 0;font-size:12px">Builds AI agent tutorials focused on n8n, MCP and local-first stacks. <span class="src-chip">AI · 20 Jul</span></p>
+
+      <div style="margin-top:2rem"><span class="kicker">growth · subscribers · 90d</span></div>
+      <svg width="100%" height="70" viewBox="0 0 520 70" preserveAspectRatio="none" style="margin-top:8px">
+        <polyline points="10,58 110,56 210,44 310,31 410,17 510,9" fill="none" stroke="#006cac" stroke-width="1.2"/>
+        <text x="10" y="69" font-size="9" fill="#6b6a6b">Apr</text><text x="480" y="69" font-size="9" fill="#6b6a6b">Jul</text></svg>
+      <p class="note" style="margin:4px 0 0">+15,000 over 90d · bucket 1,000 · ±7%</p>
+
+      <div style="margin-top:2rem"><span class="kicker">still pulling views</span></div>
+      <div class="card" style="margin-top:8px"><table class="tbl">
+        <tr class="rowlink"><td>Google Just Dropped a Masterclass…</td><td class="r num muted">25 Jun</td><td class="r num">146,102</td><td class="r num gain">+5,221 /7d</td><td class="r num"><b>4.8×</b></td></tr>
+        <tr class="rowlink"><td>This RAG Trick Makes Agents Smarter</td><td class="r num muted">02 May</td><td class="r num">88,410</td><td class="r num gain">+2,090 /7d</td><td class="r num"><b>2.9×</b></td></tr>
+      </table></div>
+
+      <div style="margin-top:2rem"><span class="kicker">what his viewers ask · 642</span></div>
+      <p class="note" style="margin:4px 0 8px">requests 84 · questions 210 · corrections 12 · suggestions 96 · other 240</p>
+      <div class="card"><table class="tbl">
+        <tr class="rowlink"><td class="mono10">someguy</td><td>Would love to see this on Windows, WSL keeps breaking</td><td><span class="cat">req</span></td><td class="r num">412</td><td class="r num">3d</td></tr>
+        <tr class="rowlink"><td class="mono10">devanne</td><td>the mcp add command is deprecated now, use .mcp.json</td><td><span class="cat">cor</span></td><td class="r num">288</td><td class="r num">41d</td></tr>
+        <tr class="rowlink"><td class="mono10">marco</td><td>how do you handle rate limits when the agent loops</td><td><span class="cat">que</span></td><td class="r num">190</td><td class="r num">96d</td></tr>
+      </table></div>
+    </div>
+  </div>
+</div>
+
+<div class="pagenav"><a href="topic-parent.html">← /topics parent</a><a href="own-channel.html">next: reply queue →</a></div>
+</div>
+<div id="picks"></div>
+<script src="board.js"></script>
+</body>
+</html>
