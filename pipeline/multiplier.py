@@ -38,7 +38,7 @@ def baselines(videos: list[dict], today: dt.date, thresholds: dict) -> dict[str,
 def for_video(video: dict, channel_baselines: dict[str, dict]) -> dict:
     """The videos.json multiplier block. no_baseline renders as unknown, never as low."""
     base = channel_baselines.get(video.get("type"), {"state": "no_baseline", "value": None, "n": 0})
-    if base["state"] != "ok" or video.get("view_count") is None:
+    if base["state"] != "ok" or base["value"] <= 0 or video.get("view_count") is None:
         return {"value": None, "state": "no_baseline", "baseline": None,
                 "baseline_n": base.get("n", 0), "source": "computed"}
     return {"value": video["view_count"] / base["value"], "state": "ok",

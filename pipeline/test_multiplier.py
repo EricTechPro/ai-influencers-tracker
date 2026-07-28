@@ -62,3 +62,16 @@ def test_a_short_is_measured_against_the_short_baseline():
                  "short": {"state": "ok", "value": 5000, "n": 20}}
     got = multiplier.for_video(video("s1", 15000, "short"), baselines)
     assert got["value"] == 3.0 and got["baseline"] == 5000
+
+
+def test_a_zero_valued_baseline_degrades_to_no_baseline_instead_of_dividing_by_zero():
+    """A channel whose mature sample is all zero-view uploads has an ok, 0-valued baseline.
+
+    Dividing by it would crash the run where the honest answer is a state, not a number.
+    """
+    videos = [video(f"v{i}", 0) for i in range(6)]
+    base = multiplier.baselines(videos, TODAY, M)
+    assert base["long"] == {"state": "ok", "value": 0, "n": 6}
+    got = multiplier.for_video(video("v1", 0), base)
+    assert got == {"value": None, "state": "no_baseline", "baseline": None,
+                   "baseline_n": 6, "source": "computed"}
