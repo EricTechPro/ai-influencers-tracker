@@ -70,7 +70,7 @@ export function GrowthPanel({
         </select>
       </div>
       {building ? (
-        <BuildingCallout have={building.have} need={building.need} />
+        <BuildingCallout state={building} />
       ) : (
         <>
           <div className="cardgrid">

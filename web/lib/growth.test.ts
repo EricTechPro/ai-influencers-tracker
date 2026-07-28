@@ -69,7 +69,7 @@ function rankAt(n: number | null) {
 describe("panelBuilding: the cold-start default", () => {
   it("fires when no channel has a measured or bounded growth cell", () => {
     const out = panelBuilding([chan({}), chan({ channel_id: "c2" })], W)
-    expect(out).toEqual({ have: 1, need: 90 })
+    expect(out).toEqual({ kind: "building", have: 1, need: 90 })
   })
   it("stands down as soon as one channel is measurable", () => {
     const warm = chan({
@@ -89,6 +89,37 @@ describe("panelBuilding: the cold-start default", () => {
       },
     })
     expect(panelBuilding([bounded], W)).toBeNull()
+  })
+})
+
+describe("panelBuilding: no_data is not building", () => {
+  it("all-insufficient_data channels render no_data, never a fabricated 0 of 0 days", () => {
+    const noData = chan({
+      subscriber_growth_rate: {
+        ...chan({}).subscriber_growth_rate,
+        "90d": cell({ state: "insufficient_data" }),
+      },
+    })
+    const out = panelBuilding([noData], W)
+    expect(out).toEqual({ kind: "no_data" })
+    expect(out).not.toEqual({ kind: "building", have: 0, need: 0 })
+  })
+  it("one building channel among insufficient_data ones still reports real have/need", () => {
+    const noData = chan({
+      channel_id: "nodata",
+      subscriber_growth_rate: {
+        ...chan({}).subscriber_growth_rate,
+        "90d": cell({ state: "insufficient_data" }),
+      },
+    })
+    const building = chan({
+      channel_id: "building",
+      subscriber_growth_rate: {
+        ...chan({}).subscriber_growth_rate,
+        "90d": cell({ state: "building", have: 5, need: 90 }),
+      },
+    })
+    expect(panelBuilding([noData, building], W)).toEqual({ kind: "building", have: 5, need: 90 })
   })
 })
 

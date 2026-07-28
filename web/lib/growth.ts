@@ -106,19 +106,31 @@ export function rankedChannels(
     )
 }
 
+/** The panel-level state when no channel is measurable. `building` means at
+ *  least one channel has a real, in-progress window (real have/need); `no_data`
+ *  means every unmeasurable channel has no usable snapshot at all yet
+ *  (insufficient_data / unavailable), which is a different fact and must never
+ *  be spelled as a fabricated "0 of 0 days". */
+export type PanelBuildingState =
+  | { kind: "building"; have: number; need: number }
+  | { kind: "no_data" }
+
 /** Whole-panel cold start: nothing measured, nothing bounded, so the grid
- *  would be five building cards. Render one callout instead. */
+ *  would be five unmeasurable cards. Render one callout instead. */
 export function panelBuilding(
   channels: SlimChannel[],
   window: WindowKey
-): { have: number; need: number } | null {
+): PanelBuildingState | null {
   const cells = channels
     .filter((c) => c.status === "ok")
     .map((c) => c.subscriber_growth_rate[window])
   if (cells.length === 0) return null
   if (cells.some((c) => c.state === "ok" || c.state === "bounded")) return null
   const building = cells.find((c) => c.state === "building")
-  return { have: building?.have ?? 0, need: building?.need ?? 0 }
+  if (building) {
+    return { kind: "building", have: building.have ?? 0, need: building.need ?? 0 }
+  }
+  return { kind: "no_data" }
 }
 
 /** Full subscriber-count series for one channel; the client slices per window. */
