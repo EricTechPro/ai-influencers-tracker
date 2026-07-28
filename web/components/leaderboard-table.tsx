@@ -145,16 +145,32 @@ export function LeaderboardTable({ channels }: { channels: SlimChannel[] }) {
           </label>
         ))}
       </div>
-      <table className="tbl tbl-sticky tbl-hover">
-        <SortableHeader columns={columns} sortKey={sortKey} sortDir={sortDir} onSort={toggle} />
-        <tbody>
-          {sorted.map((c) => (
-            <LeaderRow key={c.channel_id} c={c} mode={mode} win={win} />
-          ))}
-        </tbody>
-      </table>
+      {/* Nine columns and a one-line name cap need more width than a narrow
+          viewport has. Scrolling sideways beats wrapping every row to two
+          lines, and matches how the other dense tables behave. */}
+      <div className="tblwrap">
+        <table className="tbl tbl-sticky tbl-hover" style={{ minWidth: "60rem" }}>
+          <SortableHeader columns={columns} sortKey={sortKey} sortDir={sortDir} onSort={toggle} />
+          <tbody>
+            {sorted.map((c) => (
+              <LeaderRow key={c.channel_id} c={c} mode={mode} win={win} />
+            ))}
+          </tbody>
+        </table>
+      </div>
     </>
   )
+}
+
+/** The same state, short enough for a numeric column. "building, 89 of 90 days"
+ *  is right on a card and too wide here: it either wraps every second row to
+ *  two lines or pushes the table out past the page. Still a state, still shows
+ *  how far along it is, never a zero. */
+function stateText(cell: SlimChannel["subscriber_delta"][WindowKey]): string {
+  if (cell.state === "building" && cell.have !== undefined && cell.need !== undefined) {
+    return `building ${cell.have}/${cell.need}`
+  }
+  return deltaText(cell)
 }
 
 function LeaderRow({ c, mode, win }: { c: SlimChannel; mode: RankMode; win: WindowKey }) {
@@ -163,8 +179,9 @@ function LeaderRow({ c, mode, win }: { c: SlimChannel; mode: RankMode; win: Wind
       <tr>
         <td className="muted num">--</td>
         <td>
-          <Link href={`/channels/${c.channel_id}`}>
-            <AvatarPeek src={c.avatarUrl} name={c.name} handle={c.handle} size={28} /> {c.name}
+          <Link href={`/channels/${c.channel_id}`} className="chcell">
+            <AvatarPeek src={c.avatarUrl} name={c.name} handle={c.handle} size={28} />
+            <span className="chname" title={c.name}>{c.name}</span>
           </Link>{" "}
           <Chip variant="warn">absent</Chip>
         </td>
@@ -184,10 +201,10 @@ function LeaderRow({ c, mode, win }: { c: SlimChannel; mode: RankMode; win: Wind
     <tr className={c.is_self ? "youcard" : undefined}>
       <td className="num">{c.rank[mode][win] ?? "--"}</td>
       <td>
-        <Link href={`/channels/${c.channel_id}`}>
+        <Link href={`/channels/${c.channel_id}`} className="chcell">
           <AvatarPeek src={c.avatarUrl} name={c.name} handle={c.handle} size={28}
-            isSelf={c.is_self} />{" "}
-          {c.name}
+            isSelf={c.is_self} />
+          <span className="chname" title={c.name}>{c.name}</span>
         </Link>
         {c.is_self && (
           <>
@@ -197,7 +214,7 @@ function LeaderRow({ c, mode, win }: { c: SlimChannel; mode: RankMode; win: Wind
         )}
       </td>
       <td className="r num">{c.subscriber_count !== null ? fmtInt(c.subscriber_count) : "--"}</td>
-      <td className="r num">
+      <td className="r num nowrap">
         <Derived formula={`subscriber_count newest minus oldest, ${win}; bucket ${bucketText(c.subscriber_bucket)}`}>
           {deltaText(delta)}
         </Derived>{" "}
@@ -206,22 +223,22 @@ function LeaderRow({ c, mode, win }: { c: SlimChannel; mode: RankMode; win: Wind
       <td className="r num">
         <Derived formula="subscriber delta ÷ subscribers at window start">{pctText(growth)}</Derived>
       </td>
-      <td className="r num">
+      <td className="r num nowrap">
         {views.state === "ok" ? (
           <Derived formula={`view_count newest minus oldest, ${win}`}>
             {compactM(views.value ?? 0)}
           </Derived>
         ) : (
-          <span className="muted">{deltaText(views)}</span>
+          <span className="muted">{stateText(views)}</span>
         )}
       </td>
-      <td className="r num">
+      <td className="r num nowrap">
         {per1k.state === "ok" ? (
           <Derived formula="subscriber delta ÷ (view delta ÷ 1000)">
             {(per1k.value ?? 0).toFixed(1)}
           </Derived>
         ) : (
-          <span className="muted">{deltaText(per1k)}</span>
+          <span className="muted">{stateText(per1k)}</span>
         )}
       </td>
       <td className="r num">{c.videos_published["30d"] ?? "--"}</td>

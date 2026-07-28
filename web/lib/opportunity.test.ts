@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest"
 import { loadChannels, loadOpportunities, loadTopicPages, videosById } from "./bundles"
-import { oppRowModels, scoreSortValue, topicSortValue } from "./opportunity"
+import {
+  firedThreshold,
+  oppRowModels,
+  scoreSortValue,
+  topicSortValue,
+  verdictSentence,
+} from "./opportunity"
 import type { OppRowModel } from "./opportunity"
 import type { OpportunityRow } from "./types"
 
@@ -27,6 +33,68 @@ describe("scoreSortValue", () => {
   it("INSUFFICIENT_DATA is tier 0: sorts last in both directions, never zero", () => {
     const r = oppRow({ verdict: "INSUFFICIENT_DATA", score: { components: [], out_of: null, value: null } })
     expect(scoreSortValue(r)).toEqual({ tier: 0, v: 0 })
+  })
+})
+
+describe("firedThreshold: the number a band was measured against", () => {
+  it("reads the threshold off the comparison that fired", () => {
+    expect(firedThreshold(["keyword_volume >= 5000"], "keyword_volume")).toBe(5000)
+    expect(firedThreshold(["repo_velocity >= 100.0"], "repo_velocity")).toBe(100)
+  })
+  it("reads it just the same when the comparison failed", () => {
+    expect(firedThreshold(["keyword_volume < 5000"], "keyword_volume")).toBe(5000)
+  })
+  it("picks the named metric out of a mixed list", () => {
+    const fired = ["videos >= 5", "creators >= 3"]
+    expect(firedThreshold(fired, "videos")).toBe(5)
+    expect(firedThreshold(fired, "creators")).toBe(3)
+  })
+  it("a metric nobody compared has no threshold to draw, and says so", () => {
+    expect(firedThreshold(["videos >= 5"], "keyword_volume")).toBeNull()
+    expect(firedThreshold([], "videos")).toBeNull()
+  })
+})
+
+describe("verdictSentence: the band restated in its own numbers", () => {
+  it("names both demand signals and the supply it is measured against", () => {
+    const row = oppRow({
+      verdict: "ONLY_IF_UNSERVED",
+      demand: {
+        band: "HIGH",
+        fired: ["keyword_volume >= 5000", "repo_velocity >= 100.0"],
+        keyword_volume: 9883,
+        repo_velocity: 964.46,
+      },
+      supply: {
+        band: "CROWDED",
+        fired: ["videos >= 5", "creators >= 3"],
+        videos: 324,
+        creators: 50,
+        window_days: 90,
+      },
+    })
+    const s = verdictSentence(row)
+    expect(s).toContain("9,883")
+    expect(s).toContain("5,000")
+    expect(s).toContain("324 videos")
+    expect(s).toContain("50 creators")
+    expect(s).toContain("90d")
+  })
+
+  // A measured zero is a fact about the keyword, and demand can still be HIGH
+  // on the other signal — thresholds.demand.high_requires is "either".
+  it("a zero-volume keyword still explains why demand is HIGH on velocity", () => {
+    const row = oppRow({
+      demand: {
+        band: "HIGH",
+        fired: ["keyword_volume < 5000", "repo_velocity >= 100.0"],
+        keyword_volume: 0,
+        repo_velocity: 376,
+      },
+    })
+    const s = verdictSentence(row)
+    expect(s).toContain("376")
+    expect(s).toMatch(/0 searches/)
   })
 })
 

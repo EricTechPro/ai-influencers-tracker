@@ -98,6 +98,98 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: 13px; }
 .muted { color: var(--muted-foreground); }
 .gain { color: var(--v-make); }
 
+/* Segmented gauges.
+   A band name is the output of a comparison; the notch puts the number it was
+   compared against back on screen, so "crowded" is legible as a distance past
+   a line rather than as a word you take on faith. Discrete segments, not a
+   smooth fill: the page is a monospace console, and blocks also stop a 1px
+   difference from reading as a meaningful one. */
+.meter {
+  position: relative; display: inline-flex; gap: 1px; align-items: stretch;
+  width: 100%; max-width: 9rem; height: 9px; margin-left: auto;
+  --mc: var(--muted-foreground);
+}
+.meter .seg { flex: 1; background: var(--muted); border-radius: 1px; }
+.meter .seg.on { background: var(--mc); }
+.meter.tone-hot { --mc: var(--v-make); }
+.meter.tone-cool { --mc: var(--primary); }
+.meter.tone-warn { --mc: var(--v-crowded); }
+/* The threshold, drawn through the bar and just past it so it reads as a line
+   on a scale rather than as one more lit segment. */
+.meter .notch {
+  position: absolute; top: -3px; bottom: -3px; width: 0;
+  border-left: 1px dashed var(--foreground); opacity: 0.55; pointer-events: none;
+}
+.meter .over {
+  position: absolute; right: -10px; top: 50%; transform: translateY(-50%);
+  font-size: 9px; color: var(--mc); line-height: 1;
+}
+
+/* The number is the truth; the bar is only for comparing rows at a glance. */
+.gauge { display: flex; flex-direction: column; align-items: flex-end; gap: 3px; min-width: 8rem; }
+.gauge-n { font-size: 14px; font-weight: 600; line-height: 1.1; }
+.gauge-u { font-size: 10px; color: var(--muted-foreground); white-space: nowrap; }
+
+.legend { display: inline-flex; align-items: center; gap: 7px; margin-left: auto; }
+.legend .meter { width: 3.5rem; max-width: none; margin-left: 0; }
+
+/* A section that needs more than the page's reading measure. Centres itself on
+   the viewport instead of the 64rem column, and stops growing at 90rem so the
+   table never becomes a scan across a whole ultrawide display. */
+.breakout {
+  width: min(90rem, calc(100vw - 3rem));
+  margin-left: 50%;
+  transform: translateX(-50%);
+}
+
+/* Column widths for the opportunity table.
+   Left to itself the browser hands the topic column whatever the gauges do not
+   want, which is not much — so the fixed-size things (gauges, badge, score)
+   get declared widths and the prose column takes the remainder. Under
+   table-layout: fixed the header row is what sets them, hence nth-child here
+   rather than a class on every cell.
+   Order: topic · volume · competition · verdict · who · score · newest. */
+.opptbl { table-layout: fixed; }
+.opptbl thead th:nth-child(2),
+.opptbl thead th:nth-child(3) { width: 10.5rem; }
+.opptbl thead th:nth-child(4) { width: 12rem; }
+.opptbl thead th:nth-child(5) { width: 11rem; }
+.opptbl thead th:nth-child(6) { width: 5.5rem; }
+.opptbl thead th:nth-child(7) { width: 5rem; }
+.opptbl td { vertical-align: top; }
+/* Long labels wrap; identifiers and repo names break rather than push the
+   column open, since a fixed layout has no give to hand them. */
+.opptbl .opptopic, .opptbl .whynow { overflow-wrap: anywhere; }
+@media (max-width: 75rem) {
+  .opptbl thead th:nth-child(2),
+  .opptbl thead th:nth-child(3) { width: 8.5rem; }
+  .opptbl thead th:nth-child(5) { width: 8rem; }
+}
+
+/* Topic identity: the human label leads, the slug is the filename underneath.
+   "claude-code-hooks-config" is what the row is keyed on; "Hooks, settings and
+   permissions" is what it is about. */
+.opptopic { font-size: 13px; font-weight: 500; }
+.oppsub { margin-top: 1px; line-height: 1.4; }
+
+/* The concrete thing the topic slug stands in for. A folder name is not a
+   video; a 13-day-old repo taking 964 stars a day is. */
+.whynow {
+  margin-top: 5px; padding-left: 7px; font-size: 11px;
+  border-left: 2px solid color-mix(in srgb, var(--v-make) 40%, transparent);
+  color: var(--muted-foreground); line-height: 1.45;
+}
+.whynow-lbl {
+  font-size: 9px; text-transform: uppercase; letter-spacing: 0.07em;
+  color: color-mix(in srgb, var(--v-make) 75%, var(--foreground));
+}
+
+/* The verdict restated in its own numbers, at the top of the derivation. */
+.verdictline {
+  margin: 0 0 10px; font-size: 12px; line-height: 1.6;
+  padding: 8px 11px; background: var(--card); border: 1px solid var(--border);
+}
+
 .section-kicker { display: flex; align-items: center; gap: 10px; margin: 2.2rem 0 0.8rem; }
 .section-kicker .rule { flex: 1; border-top: 1px solid var(--border); }
 .section-kicker .cap { font-size: 11px; color: var(--muted-foreground); white-space: nowrap; }
@@ -209,6 +301,33 @@ img.avatar { object-fit: cover; background: var(--secondary); }
 .gfoot { margin-top: auto; padding-top: 8px; border-top: 1px solid var(--border); display: flex; justify-content: space-between; font-size: 10px; color: var(--muted-foreground); }
 .statline { font-size: 11px; color: var(--muted-foreground); margin-top: 3px; }
 .statline .v { color: var(--foreground); font-variant-numeric: tabular-nums; }
+
+/* The count under the hero: what actually happened, and the width it is
+   rounded to. Bigger than a statline, quieter than the hero. */
+.gained { font-size: 13px; color: var(--muted-foreground); margin-top: 5px; }
+.gained .v { color: var(--foreground); font-weight: 600; font-variant-numeric: tabular-nums; }
+
+/* A state where a number would go. Never hero-sized: at hero weight a phrase
+   like "building, 89 of 90 days" reads as a broken value rather than as the
+   honest answer that the measurement is not in yet. */
+.herostate {
+  font-size: 12px; line-height: 1.4; color: var(--muted-foreground);
+  border-left: 2px solid var(--muted); padding-left: 7px; align-self: flex-start;
+}
+.statline .state { font-style: italic; }
+
+/* Channel names cap on one line wherever they sit in a row or a card. The
+   roster is full of "<First Last> | AI Automation", which wraps a table row to
+   two lines and ragged the column. The full name stays in the title attribute,
+   and the channel page header still renders it whole. */
+.chname {
+  display: inline-block; max-width: 13rem; overflow: hidden;
+  text-overflow: ellipsis; white-space: nowrap; vertical-align: middle;
+}
+/* Keeps the face and the name on one line. Capping the text alone was not
+   enough: the name is an inline-block, so once it no longer fit beside the
+   avatar it wrapped under it and the row was two lines tall anyway. */
+.chcell { display: inline-flex; align-items: center; gap: 6px; max-width: 100%; }
 .gcard.youcard { border-color: color-mix(in srgb, var(--primary) 55%, var(--border)); background: color-mix(in srgb, var(--primary) 3%, var(--card)); }
 
 .chain { font-size: 12px; line-height: 1.9; white-space: pre; overflow-x: auto; font-family: inherit; }
@@ -363,6 +482,10 @@ details.sect[open] > summary .kicker::before { content: "\25BE  "; }
 .tbl-fixed td.num, .tbl-fixed td.nowrap, .tbl-fixed th.nowrap {
   white-space: nowrap; overflow-wrap: normal;
 }
+/* Also outside fixed tables: a state like "building, 89 of 90 days" wraps in a
+   narrow numeric column and doubles the height of over half the leaderboard.
+   The table already scrolls sideways, so it can afford the width. */
+.tbl td.nowrap { white-space: nowrap; }
 /* Handles and display names are identifiers, so they truncate at the column
    edge rather than breaking across lines. Full value stays in the title. */
 .ell { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

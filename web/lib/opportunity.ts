@@ -18,6 +18,70 @@ export interface OppRowModel {
   creators: CreatorRef[]
 }
 
+/**
+ * The number a band was measured against, read out of its own `fired` list.
+ *
+ * config/thresholds.json is the authority, but web/ may only read _db/, so the
+ * threshold reaches the UI the one honest way it can: every emitted band
+ * carries the literal comparisons that produced it (spec: "so a page can show
+ * its work"), in both directions — ">= 5000" when it cleared the bar, "< 5000"
+ * when it did not. Either way the number on the right is the bar, which is
+ * what a meter needs to draw the line the badge is asserting.
+ */
+export function firedThreshold(fired: string[], metric: string): number | null {
+  for (const clause of fired) {
+    const m = clause.match(/^(\w+)\s*(?:>=|<=|>|<|==)\s*([\d.]+)$/)
+    if (m && m[1] === metric) {
+      const n = Number(m[2])
+      if (Number.isFinite(n)) return n
+    }
+  }
+  return null
+}
+
+const int = (n: number) => Math.round(n).toLocaleString("en-US")
+
+/**
+ * The verdict restated as the comparison it actually is.
+ *
+ * "crowded" is a word for a number, and the badge alone leaves you to guess
+ * which number and how far past it. This says it: what the demand signals
+ * measured, what bar they were held to, and how much supply already exists in
+ * the window. Pure restatement of Oracle values — it introduces no judgment
+ * the pipeline did not already make.
+ */
+export function verdictSentence(row: OpportunityRow): string {
+  const { demand, supply } = row
+  const volBar = firedThreshold(demand.fired, "keyword_volume")
+  const velBar = firedThreshold(demand.fired, "repo_velocity")
+  const vidBar = firedThreshold(supply.fired, "videos")
+
+  const signals: string[] = []
+  if (demand.keyword_volume !== null) {
+    signals.push(
+      `${int(demand.keyword_volume)} searches/mo${volBar !== null ? ` against a ${int(volBar)} bar` : ""}`
+    )
+  }
+  if (demand.repo_velocity !== null) {
+    signals.push(
+      `${int(demand.repo_velocity)} stars/day on the fastest repo${
+        velBar !== null ? ` against a ${int(velBar)} bar` : ""
+      }`
+    )
+  }
+  const demandPart =
+    signals.length === 0
+      ? `Demand is ${demand.band} (no signal recorded)`
+      : `Demand is ${demand.band}: ${signals.join(", and ")}`
+
+  const supplyPart =
+    `Supply is ${supply.band}: ${int(supply.videos)} videos from ${int(supply.creators)} ` +
+    `creators in the last ${supply.window_days}d` +
+    (vidBar !== null ? `, where ${int(vidBar)} videos is the crowding line` : "")
+
+  return `${demandPart}. ${supplyPart}.`
+}
+
 /** null score is tier 0: -- sorts last in BOTH directions, never zero. */
 export function scoreSortValue(row: OpportunityRow): Tiered {
   return row.score.value === null ? { tier: 0, v: 0 } : { tier: 2, v: row.score.value }

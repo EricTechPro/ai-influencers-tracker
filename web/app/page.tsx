@@ -45,12 +45,22 @@ export default function HomePage() {
         </p>
         <GrowthPanel channels={slim} sparks={sparks} />
       </section>
-      <section>
+      {/* Seven columns, two of them gauges, do not fit the 64rem reading
+          measure the rest of the app is set to. This section breaks out to the
+          viewport instead of asking the topic column to wrap every label. */}
+      <section className="breakout">
         <div className="section-kicker">
           <span className="kicker bigsec">WHAT TO MAKE NEXT</span>
           <span className="rule" />
           <span className="cap num">{SCORE_FORMULA}</span>
         </div>
+        <p className="note">
+          <b>search volume</b> is vidIQ searches/mo for the topic&apos;s keyword ·{" "}
+          <b>competition</b> is videos published on it in the last 90d across all tracked creators ·
+          the dashed notch on each bar is the threshold that decides the band ·{" "}
+          <b>why now</b> names the fastest-moving repo behind the demand · click a row for the
+          full derivation
+        </p>
         <OpportunityTable models={models} />
       </section>
     </div>

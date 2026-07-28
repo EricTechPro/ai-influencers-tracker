@@ -3,18 +3,52 @@
 import { useMemo, useState } from "react"
 import Link from "next/link"
 import type { OppRowModel } from "@/lib/opportunity"
-import { scoreSortValue, topicSortValue } from "@/lib/opportunity"
+import { firedThreshold, scoreSortValue, topicSortValue, verdictSentence } from "@/lib/opportunity"
 import type { SortValue } from "@/lib/sort"
 import type { OpportunityRow, Verdict } from "@/lib/types"
-import { agoText, fmtDate, fmtInt, SCORE_FORMULA, scoreText, VERDICT_RANK } from "@/lib/trust"
+import {
+  agoText,
+  fmtDate,
+  fmtInt,
+  SCORE_FORMULA,
+  scoreText,
+  VERDICT_LABEL,
+  VERDICT_RANK,
+} from "@/lib/trust"
 import { SortableHeader, useTableSort, type SortColumn } from "./sortable-table"
 import { AvatarCluster } from "./avatar-cluster"
+import { Meter } from "./meter"
 import { Chip, Derived, VerdictBadge } from "./trust"
 
-type Key = "topic" | "verdict" | "who" | "score" | "newest"
+type Key = "topic" | "volume" | "competition" | "verdict" | "who" | "score" | "newest"
+
+/**
+ * Fixed ceilings for the two meters, just above the roster's observed maxima
+ * (9,883 searches/mo and 489 videos/90d as of build 3).
+ *
+ * Deliberately not "the max of the visible rows": a bar that rescales when you
+ * change a filter makes the same topic look different for no reason, and turns
+ * a glance-level comparison into a lie. Fixed means the bar is comparable
+ * everywhere; a row past the ceiling fills it and shows a ▸ rather than being
+ * clipped without saying so.
+ */
+const VOLUME_CEILING = 10_000
+const COMPETITION_CEILING = 500
 
 const COLUMNS: SortColumn<Key>[] = [
   { key: "topic", label: "topic" },
+  {
+    key: "volume",
+    label: "search volume",
+    align: "right",
+    tip: "vidIQ searches per month for this topic's keyword; the notch is the bar demand is held to",
+  },
+  {
+    key: "competition",
+    label: "competition",
+    align: "right",
+    tip: "videos published on this topic in the supply window, across all tracked creators",
+  },
   { key: "verdict", label: "verdict", tip: "demand band × supply band; expand a row for what fired" },
   { key: "who", label: "who's on it", sortable: false },
   {
@@ -55,6 +89,10 @@ export function OpportunityTable({ models }: { models: OppRowModel[] }) {
       switch (key) {
         case "topic":
           return topicSortValue(m)
+        case "volume":
+          return m.row.demand.keyword_volume
+        case "competition":
+          return m.row.supply.videos
         case "verdict":
           return VERDICT_RANK[m.row.verdict]
         case "who":
@@ -78,7 +116,7 @@ export function OpportunityTable({ models }: { models: OppRowModel[] }) {
           <option value="all">all verdicts</option>
           {VERDICTS.map((v) => (
             <option key={v} value={v}>
-              {v}
+              {VERDICT_LABEL[v]}
             </option>
           ))}
         </select>
@@ -90,22 +128,26 @@ export function OpportunityTable({ models }: { models: OppRowModel[] }) {
           />{" "}
           hide covered
         </label>
+        <span className="legend mono10">
+          <Meter value={7} max={10} threshold={5} tone="hot" segments={8} />
+          notch = the threshold the band is measured against
+        </span>
       </div>
-      <table className="tbl">
-        <SortableHeader columns={COLUMNS} sortKey={sortKey} sortDir={sortDir} onSort={toggle} />
-        <tbody>
-          {sorted.map((m) => (
-            <Row
-              key={m.row.topic_id}
-              model={m}
-              expanded={expanded === m.row.topic_id}
-              onToggle={() =>
-                setExpanded(expanded === m.row.topic_id ? null : m.row.topic_id)
-              }
-            />
-          ))}
-        </tbody>
-      </table>
+      <div className="tblwrap">
+        <table className="tbl tbl-hover opptbl">
+          <SortableHeader columns={COLUMNS} sortKey={sortKey} sortDir={sortDir} onSort={toggle} />
+          <tbody>
+            {sorted.map((m) => (
+              <Row
+                key={m.row.topic_id}
+                model={m}
+                expanded={expanded === m.row.topic_id}
+                onToggle={() => setExpanded(expanded === m.row.topic_id ? null : m.row.topic_id)}
+              />
+            ))}
+          </tbody>
+        </table>
+      </div>
       {sorted.length === 0 && <div className="empty">no rows match these filters</div>}
     </>
   )
@@ -121,26 +163,102 @@ function Row({
   onToggle: () => void
 }) {
   const r = model.row
+  const vol = r.demand.keyword_volume
+  const volBar = firedThreshold(r.demand.fired, "keyword_volume")
+  const vidBar = firedThreshold(r.supply.fired, "videos")
+
+  // The fastest repo behind this topic. It is the concrete thing a topic slug
+  // stands in for: "codex-workflows" is a folder name, "Codex-Dream-Skin,
+  // 12,538 stars, 964 a day, 13 days old" is a video.
+  const lead = r.evidence[0] ?? null
+
   return (
     <>
       <tr className="rowlink" onClick={onToggle}>
         <td>
-          <Link href={`/topics/${r.topic_id}`} onClick={(e) => e.stopPropagation()}>
-            {r.topic_id}
+          <Link
+            className="opptopic"
+            href={`/topics/${r.topic_id}`}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {model.label}
           </Link>
-          {r.hunch && (
-            <>
-              {" "}
-              <Chip>hunch</Chip>
-            </>
-          )}
-          {r.own_coverage.covered && (
-            <>
-              {" "}
-              <Chip>{r.own_coverage.suppressed ? "covered" : "covered, stale"}</Chip>
-            </>
+          <div className="oppsub">
+            <span className="mono10">{r.topic_id}</span>
+            {r.shape && <span className="mono10"> · {r.shape}</span>}
+            {r.hunch && (
+              <>
+                {" "}
+                <Chip>hunch</Chip>
+              </>
+            )}
+            {r.own_coverage.covered && (
+              <>
+                {" "}
+                <Chip>{r.own_coverage.suppressed ? "covered" : "covered, stale"}</Chip>
+              </>
+            )}
+          </div>
+          {lead && (
+            <div className="whynow" title="The fastest-moving repo behind this topic's demand.">
+              <span className="whynow-lbl">why now</span>{" "}
+              <a
+                href={`https://github.com/${lead.full_name}`}
+                target="_blank"
+                rel="noreferrer"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {lead.full_name}
+              </a>{" "}
+              <span className="num">
+                {fmtInt(lead.stars)}★ · +{lead.velocity.toFixed(0)}/day · {lead.age_days}d old
+              </span>
+            </div>
           )}
         </td>
+
+        <td className="r">
+          {vol === null ? (
+            <span className="muted">--</span>
+          ) : (
+            <div className="gauge">
+              <span className="gauge-n num">{fmtInt(vol)}</span>
+              <span className="gauge-u">searches/mo</span>
+              <Meter
+                value={vol}
+                max={VOLUME_CEILING}
+                threshold={volBar ?? undefined}
+                tone={volBar !== null && vol >= volBar ? "hot" : "cool"}
+                label={
+                  volBar !== null
+                    ? `${fmtInt(vol)} searches/mo · high demand starts at ${fmtInt(volBar)}`
+                    : `${fmtInt(vol)} searches/mo`
+                }
+              />
+            </div>
+          )}
+        </td>
+
+        <td className="r">
+          <div className="gauge">
+            <span className="gauge-n num">{fmtInt(r.supply.videos)}</span>
+            <span className="gauge-u">
+              videos · {fmtInt(r.supply.creators)} creators · {r.supply.window_days}d
+            </span>
+            <Meter
+              value={r.supply.videos}
+              max={COMPETITION_CEILING}
+              threshold={vidBar ?? undefined}
+              tone="warn"
+              label={
+                vidBar !== null
+                  ? `${fmtInt(r.supply.videos)} videos · crowded starts at ${fmtInt(vidBar)}`
+                  : `${fmtInt(r.supply.videos)} videos`
+              }
+            />
+          </div>
+        </td>
+
         <td>
           <VerdictBadge verdict={r.verdict} />
         </td>
@@ -148,9 +266,7 @@ function Row({
           <AvatarCluster creators={model.creators} />
         </td>
         <td className="r num">
-          <Derived formula={SCORE_FORMULA}>
-            {scoreText(r.score)}
-          </Derived>
+          <Derived formula={SCORE_FORMULA}>{scoreText(r.score)}</Derived>
         </td>
         <td className="r num">{agoText(model.newest_video_at)}</td>
       </tr>
@@ -166,7 +282,12 @@ function Row({
 function Derivation({ row }: { row: OpportunityRow }) {
   const fired = [...row.demand.fired, ...row.supply.fired]
   return (
-    <td colSpan={5}>
+    <td colSpan={7}>
+      {/* The badge in one sentence of its own numbers, before any table of
+          them: "crowded" is a word for a comparison, and this is that
+          comparison written out. */}
+      <p className="verdictline">{verdictSentence(row)}</p>
+
       <table className="tbl">
         <thead>
           <tr>

@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { bucketText, capDeltaText, capPctText, deltaText, fmtInt, heroScale } from "@/lib/trust"
+import { bucketText, capDeltaText, capPctText, deltaText, heroScale } from "@/lib/trust"
 import type { CardModel } from "@/lib/growth"
 import { AvatarPeek } from "./avatar"
 import { Chip, Derived } from "./trust"
@@ -56,52 +56,52 @@ export function GrowthCard({ card, window }: { card: CardModel; window: string }
         )}
       </div>
 
-      {/* Two headline figures, not one.
-          A single "+8.0% subscriber growth" left the obvious question — 8% of
-          what? — unanswered on the card, and the count that answers it was
-          buried in the stat lines below. Rate and count now sit side by side:
-          the rate is what the ranking sorts on, the count is what actually
-          happened. */}
+      {/* One hero, then the count that answers "percent of what", then a single
+          secondary stat. The card is read in about ten seconds off a grid of
+          five, so anything that is not the ranking number, the thing that
+          actually happened, or the shape of it belongs on the channel page.
+          The 30d videos/median line went there: it was 30d data wearing a 90d
+          card, which asked the reader to hold two windows at once. */}
       <div className="heroes">
         <div className="hero">
-          <span
-            className={measurable ? "n" : "n muted"}
-            style={{ fontSize: `calc(1.6rem * ${heroScale(rate.text)})` }}
-            title={rate.exact ?? undefined}
-          >
-            {measurable ? <Derived formula={rateFormula}>{rate.text}</Derived> : rate.text}
-          </span>
-          <span className="u">growth rate · {window}</span>
-        </div>
-        {measurable && (
-          <div className="hero">
+          {measurable ? (
             <span
               className="n"
-              style={{ fontSize: `calc(1.6rem * ${heroScale(gained.text)})` }}
-              title={gained.exact ?? undefined}
+              style={{ fontSize: `calc(1.9rem * ${heroScale(rate.text)})` }}
+              title={rate.exact ?? undefined}
             >
-              <Derived formula={gainedFormula}>{gained.text}</Derived>
+              <Derived formula={rateFormula}>{rate.text}</Derived>
             </span>
-            <span className="u">subscribers gained</span>
-          </div>
-        )}
+          ) : (
+            // Hero typography on a non-number reads as a broken value. A state
+            // gets state styling: quiet, one line, still unmistakably not zero.
+            <span className="herostate">{rate.text}</span>
+          )}
+          <span className="u">growth rate · {window}</span>
+        </div>
       </div>
 
       {measurable && (
         <>
-          <div className="statline">
-            <span className="v">
-              <Derived formula="subscriber delta ÷ (view delta ÷ 1000)">
-                {card.subsPer1k.state === "ok"
-                  ? (card.subsPer1k.value ?? 0).toFixed(1)
-                  : deltaText(card.subsPer1k)}
-              </Derived>
+          <div className="gained">
+            <span className="v" title={gained.exact ?? undefined}>
+              <Derived formula={gainedFormula}>{gained.text}</Derived>
             </span>{" "}
-            subs / 1k views
+            subs <span className="muted">{bucketText(card.bucket)}</span>
           </div>
           <div className="statline">
-            {card.videos30d ?? "--"} videos ·{" "}
-            {card.medianViews30d !== null ? fmtInt(card.medianViews30d) : "--"} med · 30d
+            {card.subsPer1k.state === "ok" ? (
+              <>
+                <span className="v">
+                  <Derived formula="subscriber delta ÷ (view delta ÷ 1000)">
+                    {(card.subsPer1k.value ?? 0).toFixed(1)}
+                  </Derived>
+                </span>{" "}
+                subs / 1k views
+              </>
+            ) : (
+              <span className="state">subs / 1k views · {deltaText(card.subsPer1k)}</span>
+            )}
           </div>
           {g.state === "bounded" ? (
             <p className="note">
@@ -120,7 +120,6 @@ export function GrowthCard({ card, window }: { card: CardModel; window: string }
       )}
       <div className="gfoot">
         <span>subscribers · {window}</span>
-        <span>{bucketText(card.bucket)}</span>
       </div>
     </Link>
   )

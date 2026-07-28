@@ -43,11 +43,10 @@ export default function ChannelsPage() {
                 <tr key={c.channel_id} className={c.is_self ? "youcard" : undefined}>
                   <td className="num muted">{rank ?? "--"}</td>
                   <td>
-                    <Link href={`/channels/${c.channel_id}`}>
+                    <Link href={`/channels/${c.channel_id}`} className="chcell">
                       <Avatar src={channelAvatarUrl(c.channel_id)} name={c.name} size={30}
-                        isSelf={c.is_self}
-                        style={{ marginRight: 8, verticalAlign: "middle" }} />
-                      {c.name}
+                        isSelf={c.is_self} />
+                      <span className="chname" title={c.name}>{c.name}</span>
                     </Link>
                     {c.is_self && (
                       <>
