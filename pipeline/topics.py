@@ -38,6 +38,19 @@ class Topic:
     depth: int
 
 
+def _check_shape(node_id: str, has_children: bool, shape: str | None) -> None:
+    """The one shape invariant, shared by load()'s walk and validate()'s re-check:
+    only leaves carry shape, and every leaf's shape must be tutorial or review."""
+    if has_children and shape is not None:
+        raise TopicError(
+            f"{node_id!r} has children and a shape: only leaves carry shape"
+        )
+    if not has_children and shape not in SHAPES:
+        raise TopicError(
+            f"leaf {node_id!r} has shape {shape!r}, expected one of tutorial|review"
+        )
+
+
 def load(tree: dict | None = None) -> dict[str, Topic]:
     """Flatten config/topics.json into an id-keyed index, validating as it walks."""
     data = tree if tree is not None else config.topics_config()
@@ -51,14 +64,7 @@ def load(tree: dict | None = None) -> dict[str, Topic]:
             raise TopicError(f"duplicate topic id {node_id!r}")
         children = node.get("children") or []
         shape = node.get("shape")
-        if children and shape is not None:
-            raise TopicError(
-                f"{node_id!r} has children and a shape: only leaves carry shape"
-            )
-        if not children and shape not in SHAPES:
-            raise TopicError(
-                f"leaf {node_id!r} has shape {shape!r}, expected one of tutorial|review"
-            )
+        _check_shape(node_id, bool(children), shape)
         index[node_id] = Topic(
             id=node_id,
             label=node.get("label") or node_id,
@@ -94,8 +100,18 @@ def ancestors(index: dict[str, Topic], topic_id: str) -> list[str]:
 
 
 def validate(index: dict[str, Topic]) -> list[str]:
-    """Soft warnings over an already-loaded index. load() raises on hard failures as it walks;
-    this is for checks that don't need to abort the walk, e.g. an alias reused across topics."""
+    """Re-check an index that may not have gone through load() (built or mutated
+    programmatically), not one already loaded from config/topics.json — load() enforces its
+    invariants as it walks and never hands back a broken index.
+
+    Raises TopicError on the same structural hard failures load() enforces: a parent carrying
+    a shape, or a leaf with a missing or invalid shape. Returns warnings for an alias shared
+    across leaves: n:m matching is by design and primary selection is deterministic, so a
+    collision is worth flagging but not fatal.
+    """
+    for topic in index.values():
+        _check_shape(topic.id, not is_leaf(topic), topic.shape)
+
     warnings: list[str] = []
     seen: dict[str, str] = {}
     for topic in leaves(index):

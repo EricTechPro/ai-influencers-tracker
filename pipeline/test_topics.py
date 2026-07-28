@@ -69,6 +69,41 @@ def test_leaf_becoming_a_parent_warns_and_lists_its_videos(write_config):
                           "new_children": ["mcp-http"]}]
 
 
+def test_validate_raises_when_a_parent_carries_a_shape():
+    index = {
+        "a": topics.Topic(id="a", label="A", shape="tutorial", aliases=(),
+                           parent_id=None, children_ids=("b",), depth=0),
+        "b": topics.Topic(id="b", label="B", shape="tutorial", aliases=("x",),
+                           parent_id="a", children_ids=(), depth=1),
+    }
+    with pytest.raises(topics.TopicError, match="only leaves carry shape"):
+        topics.validate(index)
+
+
+def test_validate_raises_when_a_leaf_has_an_invalid_shape():
+    index = {
+        "a": topics.Topic(id="a", label="A", shape="explainer", aliases=("x",),
+                           parent_id=None, children_ids=(), depth=0),
+    }
+    with pytest.raises(topics.TopicError, match="tutorial|review"):
+        topics.validate(index)
+
+
+def test_validate_warns_when_two_leaves_share_an_alias():
+    index = {
+        "a": topics.Topic(id="a", label="A", shape="tutorial", aliases=("x",),
+                           parent_id=None, children_ids=(), depth=0),
+        "b": topics.Topic(id="b", label="B", shape="review", aliases=("x",),
+                           parent_id=None, children_ids=(), depth=0),
+    }
+    assert topics.validate(index) == ["alias 'x' is shared by 'a' and 'b'"]
+
+
+def test_validate_of_a_clean_index_returns_no_warnings(ait_root):
+    index = topics.load()
+    assert topics.validate(index) == []
+
+
 def test_matching_is_n_to_m_with_exactly_one_primary(ait_root):
     index = topics.load()
     video = {"video_id": "v1",
