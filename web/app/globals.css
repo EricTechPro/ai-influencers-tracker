@@ -144,7 +144,7 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: 13px; }
 
 /* Column widths for the opportunity table.
    Left to itself the browser hands the topic column whatever the gauges do not
-   want, which is not much — so the fixed-size things (gauges, badge, score)
+   want, which is not much, so the fixed-size things (gauges, badge, score)
    get declared widths and the prose column takes the remainder. Under
    table-layout: fixed the header row is what sets them, hence nth-child here
    rather than a class on every cell.
@@ -197,8 +197,8 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: 13px; }
 /* Faces.
    The roster is 72 people whose names are largely "<First Last> | AI
    Automation", so the photo is the identifier and the string is the label.
-   Size comes in as an inline style from components/avatar.tsx — one number per
-   surface — and everything here is the shape around it. The hairline ring is
+   Size comes in as an inline style from components/avatar.tsx (one number per
+   surface) and everything here is the shape around it. The hairline ring is
    what keeps a light-background thumbnail from dissolving into the card. */
 .avatar {
   border-radius: 999px; flex-shrink: 0; display: inline-flex;
@@ -250,7 +250,7 @@ img.avatar { object-fit: cover; background: var(--secondary); }
 
 /* The card is a button to the channel page.
    It used to mark rank 1 with a green border, which spent the palette's
-   strongest "go" signal on a position rather than on a finding — and the card
+   strongest "go" signal on a position rather than on a finding, and the card
    still did not look like the link it wanted to be. So: no rank tint, and a
    press affordance instead. Colour now only ever means a verdict. */
 .gcard {
@@ -287,8 +287,8 @@ img.avatar { object-fit: cover; background: var(--secondary); }
 /* Hero stack, not a row.
    Baseline-aligning the unit beside the number is what made "+200.8%" shove
    "SUBSCRIBER GROWTH 90D" onto a second line and leave every card in the row a
-   different height. Stacked, the number owns the full width — so the 365d
-   window's +5,480.6% has somewhere to go — and the label is one fixed line. */
+   different height. Stacked, the number owns the full width (so the 365d
+   window's +5,480.6% has somewhere to go) and the label is one fixed line. */
 .heroes { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem 0.9rem; margin-top: 0.7rem; }
 .heroes .hero:only-child { grid-column: 1 / -1; }
 .hero { display: flex; flex-direction: column; gap: 2px; min-width: 0; }

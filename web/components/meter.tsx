@@ -8,7 +8,7 @@
  * that it cleared the line.
  *
  * Segments rather than a smooth fill because the surrounding page is a
- * monospace research console — a gauge here should read like a meter in a
+ * monospace research console: a gauge here should read like a meter in a
  * terminal, and discrete blocks also stop a 1px difference from looking like a
  * meaningful one. The exact figure always renders beside it; the bar is for
  * comparing rows at a glance, never for reading a value off.

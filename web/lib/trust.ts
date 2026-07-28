@@ -27,7 +27,7 @@ export function compactM(n: number): string {
  * Card-width rounding for a signed count: exact under 100k, then k, then M.
  *
  * A card is a fixed-width object and the roster's real deltas run to
- * +1,230,000 — ten characters that push the hero's own unit label off the
+ * +1,230,000, ten characters that push the hero's own unit label off the
  * card. Rounding here is a layout decision, never a claim: every caller pairs
  * the compact string with the exact one (see capDeltaText), so the precise
  * figure is always one hover away and nothing is quietly lost.
@@ -41,7 +41,7 @@ export function compactSigned(n: number): string {
 }
 
 /** A rendered figure plus, when the rendering rounded, the exact string it
- *  came from. `exact: null` means the text IS exact — nothing to disclose. */
+ *  came from. `exact: null` means the text IS exact, nothing to disclose. */
 export interface CappedText {
   text: string
   exact: string | null
@@ -98,7 +98,7 @@ export function capDeltaText(cell: StateCell): CappedText {
 /**
  * Font multiplier for a hero figure, so the one line that will not fit shrinks
  * instead of wrapping. Capping handles the numbers; this handles the strings
- * capping deliberately leaves long, above all "building, 1 of 90 days" — a
+ * capping deliberately leaves long, above all "building, 1 of 90 days", a
  * state that must render as itself and so cannot be shortened.
  */
 export function heroScale(text: string): number {
@@ -172,7 +172,7 @@ export const VERDICT_CLASS: Record<Verdict, string> = {
  * The verdict grid (spec §"The verdict grid") in words rather than in its
  * internal enum. The keys are the pipeline's contract and never change; these
  * are only what a person reads. SCREAMING_SNAKE_CASE told you the name of the
- * cell, not what to do about it — and "ONLY_IF_UNSERVED" in particular reads
+ * cell, not what to do about it, and "ONLY_IF_UNSERVED" in particular reads
  * as a condition with its subject missing.
  */
 export const VERDICT_LABEL: Record<Verdict, string> = {

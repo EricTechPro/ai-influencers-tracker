@@ -14,7 +14,7 @@ import { fmtInt, signedInt } from "@/lib/trust"
  * change from where the window started.
  *
  * The counts are Oracle values straight from snapshots.json, and the readout
- * shows the one the cursor is nearest — never an interpolation between two
+ * shows the one the cursor is nearest, never an interpolation between two
  * days, which would be a number nobody measured.
  */
 export function Sparkline({ points, label }: { points: number[]; label?: string }) {

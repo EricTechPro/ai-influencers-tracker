@@ -82,7 +82,7 @@ describe("verdictSentence: the band restated in its own numbers", () => {
   })
 
   // A measured zero is a fact about the keyword, and demand can still be HIGH
-  // on the other signal — thresholds.demand.high_requires is "either".
+  // on the other signal: thresholds.demand.high_requires is "either".
   it("a zero-volume keyword still explains why demand is HIGH on velocity", () => {
     const row = oppRow({
       demand: {

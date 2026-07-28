@@ -157,7 +157,7 @@ export function sparkAll(snapshots: SnapshotsBundle, channelId: string): SparkPo
 /**
  * The part of a channel's series that the given window actually covers.
  *
- * Slicing the last N points instead — which is what the card used to do —
+ * Slicing the last N points instead (which is what the card used to do)
  * assumes the series is dense and runs to today. Neither holds: Pat Simmons'
  * snapshots stop on 2025-10-13 while his 90d delta window is 2026-04-30 to
  * 2026-07-28, so "the last 90 points" drew a 2025 line directly beneath a 2026

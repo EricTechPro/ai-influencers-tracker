@@ -86,8 +86,8 @@ export function hasChannelAvatar(channelId: string): boolean {
  * channels.json carries an `avatar` path for every row, but that is the path
  * the pipeline intends, not proof of a file: a channel whose thumbnail fetch
  * failed still gets one (see pipeline/avatars.py, where a failure is a state).
- * Resolving against the directory keeps a missing face a missing face — the
- * monogram fallback — instead of a broken image.
+ * Resolving against the directory keeps a missing face a missing face, the
+ * monogram fallback, instead of a broken image.
  */
 export function channelAvatarUrl(channelId: string): string | null {
   return avatarIds().has(channelId) ? `/assets/channels/${channelId}.jpg` : null

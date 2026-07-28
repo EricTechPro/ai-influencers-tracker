@@ -24,7 +24,7 @@ export interface OppRowModel {
  * config/thresholds.json is the authority, but web/ may only read _db/, so the
  * threshold reaches the UI the one honest way it can: every emitted band
  * carries the literal comparisons that produced it (spec: "so a page can show
- * its work"), in both directions — ">= 5000" when it cleared the bar, "< 5000"
+ * its work"), in both directions: ">= 5000" when it cleared the bar, "< 5000"
  * when it did not. Either way the number on the right is the bar, which is
  * what a meter needs to draw the line the badge is asserting.
  */
@@ -47,7 +47,7 @@ const int = (n: number) => Math.round(n).toLocaleString("en-US")
  * "crowded" is a word for a number, and the badge alone leaves you to guess
  * which number and how far past it. This says it: what the demand signals
  * measured, what bar they were held to, and how much supply already exists in
- * the window. Pure restatement of Oracle values — it introduces no judgment
+ * the window. Pure restatement of Oracle values: it introduces no judgment
  * the pipeline did not already make.
  */
 export function verdictSentence(row: OpportunityRow): string {
