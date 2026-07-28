@@ -21,7 +21,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
             <div className="right">
               <span className="num">
                 snapshot {meta.generated_at.slice(0, 10)} · {meta.snapshot_health.days_present} of{" "}
-                {meta.target.window_days} days
+                {meta.snapshot_health.days_present + meta.snapshot_health.days_missing} days
               </span>
               <span
                 className="livedot"
