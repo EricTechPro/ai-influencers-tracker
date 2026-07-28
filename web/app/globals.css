@@ -44,7 +44,7 @@ h1 { font-size: 1.6rem; line-height: 2.1rem; font-weight: 700; color: var(--prim
 
 .page { max-width: 64rem; margin: 0 auto; padding: 0 1.5rem; }
 
-/* ————— app chrome ————— */
+/* app chrome */
 .appnav { display: flex; align-items: center; gap: 1.5rem; height: 5rem; padding: 0 1.5rem; max-width: 64rem; margin: 0 auto; }
 .appnav .logo { font-size: 1.125rem; font-weight: 700; letter-spacing: -0.02em; white-space: nowrap; }
 .appnav nav { display: flex; gap: 1.25rem; font-size: 13px; }
@@ -54,13 +54,13 @@ h1 { font-size: 1.6rem; line-height: 2.1rem; font-weight: 700; color: var(--prim
 .livedot { width: 7px; height: 7px; border-radius: 999px; background: var(--v-make); display: inline-block; }
 .navrule { border-bottom: 1px solid var(--border); }
 
-/* ————— trust tiers ————— */
+/* trust tiers */
 .derived { border-bottom: 1px dotted var(--muted-foreground); cursor: help; }
 .inference { background: color-mix(in srgb, var(--inf) 7%, transparent); border-left: 2px solid color-mix(in srgb, var(--inf) 45%, transparent); padding: 0.15rem 0.4rem; }
 .src-chip { display: inline-flex; align-items: center; gap: 3px; font-size: 10px; color: color-mix(in srgb, var(--inf) 80%, var(--foreground)); border: 1px solid color-mix(in srgb, var(--inf) 35%, transparent); border-radius: 999px; padding: 0 6px; line-height: 16px; white-space: nowrap; }
 .cat { font-size: 10px; background: color-mix(in srgb, var(--inf) 8%, transparent); color: color-mix(in srgb, var(--inf) 85%, var(--foreground)); padding: 0 5px; line-height: 16px; display: inline-block; }
 
-/* ————— badges ————— */
+/* badges */
 .badge { display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 500; line-height: 16px; padding: 1px 8px; border: 1px solid; border-radius: 999px; white-space: nowrap; }
 .v-make { --vc: var(--v-make); } .v-unserved { --vc: var(--v-unserved); } .v-early { --vc: var(--v-early); } .v-crowded { --vc: var(--v-crowded); } .v-none { --vc: var(--v-none); }
 .b-filled { color: var(--vc); border-color: color-mix(in srgb, var(--vc) 40%, transparent); background: color-mix(in srgb, var(--vc) 5%, transparent); }
@@ -72,7 +72,7 @@ h1 { font-size: 1.6rem; line-height: 2.1rem; font-weight: 700; color: var(--prim
 .chip.you { border-color: color-mix(in srgb, var(--primary) 50%, transparent); color: var(--primary); font-weight: 600; }
 .chip.rank1 { border-color: color-mix(in srgb, var(--v-make) 50%, transparent); color: var(--v-make); }
 
-/* ————— cards, tables, misc ————— */
+/* cards, tables, misc */
 .card { background: var(--card); border: 1px solid var(--border); }
 .pad { padding: 1rem; }
 .code-surface, .codechip { border-radius: var(--radius-code); }
@@ -154,7 +154,7 @@ svg text { font-family: inherit; }
 /* variant B: gamified — heavier section titles */
 .vb .bigsec { font-size: 1.15rem; font-weight: 700; letter-spacing: -0.01em; }
 
-/* ————— picks bar + page nav ————— */
+/* picks bar + page nav */
 #picks { position: fixed; bottom: 0; left: 0; right: 0; z-index: 50; background: var(--card); border-top: 1px solid #d9d5d2; padding: 10px 1.5rem; font-size: 12px; display: flex; gap: 0.8rem; align-items: center; flex-wrap: wrap; }
 #picks .lbl { font-weight: 700; text-transform: uppercase; font-size: 10px; letter-spacing: 0.06em; color: var(--muted-foreground); }
 #picks .pick { border: 1px solid var(--primary); color: var(--primary); padding: 1px 8px; }
