@@ -78,3 +78,27 @@ def test_the_filter_compares_against_the_last_good_point_not_the_previous_one():
          {"date": "2026-07-26", "status": "ok", "view_count": 5},
          {"date": "2026-07-27", "status": "ok", "view_count": 50}]
     assert [row["status"] for row in growth.filter_monotonic(s)] == ["ok", "corrupt", "corrupt"]
+
+
+CORRUPT_VIEW_CLEAN_SUBS = [
+    {"date": "2026-07-25", "status": "ok", "view_count": 100, "subscriber_count": 1000},
+    {"date": "2026-07-26", "status": "corrupt", "view_count": 5, "subscriber_count": 1010},
+    {"date": "2026-07-27", "status": "ok", "view_count": 300, "subscriber_count": 1020}]
+
+
+def test_a_corrupt_view_count_day_does_not_block_a_clean_subscriber_delta():
+    """subscriber_count is never checked for monotonicity, so a view_count corruption flag on a
+    row must not also mask that row's otherwise-usable subscriber_count."""
+    assert growth.delta(CORRUPT_VIEW_CLEAN_SUBS, "subscriber_count", 3, TODAY) == {
+        "state": "ok", "value": 20, "from": "2026-07-25", "to": "2026-07-27"}
+
+
+def test_the_same_series_still_refuses_a_views_gained_delta_over_the_corrupt_day():
+    assert growth.delta(CORRUPT_VIEW_CLEAN_SUBS, "view_count", 3, TODAY)["state"] == "building"
+
+
+def test_a_missing_subscriber_count_day_still_counts_as_missing():
+    s = [{"date": "2026-07-25", "status": "ok", "view_count": 100, "subscriber_count": 1000},
+         {"date": "2026-07-26", "status": "ok", "view_count": 200, "subscriber_count": None},
+         {"date": "2026-07-27", "status": "ok", "view_count": 300, "subscriber_count": 1020}]
+    assert growth.delta(s, "subscriber_count", 3, TODAY)["state"] == "building"

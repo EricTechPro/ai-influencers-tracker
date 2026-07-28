@@ -63,8 +63,15 @@ def delta(series: list[dict], metric: str, window_days: int, today: dt.date) -> 
     stated rule, and understating is the safe direction.
     """
     by_date = load_series(series)
-    usable = {d: r for d, r in by_date.items()
-              if r.get("status") == "ok" and r.get(metric) is not None}
+    # status only ever reflects a MONOTONIC_KEYS violation, so it only gates those metrics.
+    # subscriber_count is never monotonicity-checked and has its own noise guard downstream
+    # (measurement_floor), so a view_count/video_count corruption flag on a row must not also
+    # mask that row's otherwise-usable subscriber_count.
+    if metric in MONOTONIC_KEYS:
+        usable = {d: r for d, r in by_date.items()
+                  if r.get("status") == "ok" and r.get(metric) is not None}
+    else:
+        usable = {d: r for d, r in by_date.items() if r.get(metric) is not None}
     if not usable:
         return {"state": "insufficient_data", "value": None}
     required = util.last_n_dates(today, window_days)
