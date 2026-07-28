@@ -134,10 +134,10 @@ function Row({
               <Chip>hunch</Chip>
             </>
           )}
-          {r.own_coverage.suppressed && (
+          {r.own_coverage.covered && (
             <>
               {" "}
-              <Chip>covered</Chip>
+              <Chip>{r.own_coverage.suppressed ? "covered" : "covered, stale"}</Chip>
             </>
           )}
         </td>

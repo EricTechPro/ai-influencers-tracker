@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation"
 import {
+  channelAvatarUrl,
   loadChannels,
   loadOpportunities,
   loadTopicComments,
@@ -50,7 +51,7 @@ export default async function TopicPage({ params }: { params: Promise<{ id: stri
       topic={topic}
       opp={findOpp(loadOpportunities().rows, id)}
       videos={videos}
-      trail={creatorTrail(videos, channels)}
+      trail={creatorTrail(videos, channels, channelAvatarUrl)}
       topicComments={loadTopicComments(id)}
       creatorNames={names}
     />

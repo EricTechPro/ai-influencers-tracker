@@ -5,7 +5,7 @@
 // are read as per-channel and per-topic slices under _db/comments/.
 // (app/assets/channels/[id]/route.ts also touches the filesystem, but only to
 // stream a single avatar image straight through; it never reads a bundle.)
-import { existsSync, readFileSync } from "node:fs"
+import { existsSync, readdirSync, readFileSync } from "node:fs"
 import path from "node:path"
 import type {
   ChannelCommentsFile,
@@ -77,7 +77,34 @@ export function videosById(ids: string[]): VideoRow[] {
 /** True when the downloaded avatar exists on disk; the page then renders the
  *  image route, otherwise initials. Decided server-side so no broken img flashes. */
 export function hasChannelAvatar(channelId: string): boolean {
-  return existsSync(path.join(DB_DIR, "assets", "channels", `${channelId}.jpg`))
+  return avatarIds().has(channelId)
+}
+
+/**
+ * The avatar route for a channel, or null when no file was ever downloaded.
+ *
+ * channels.json carries an `avatar` path for every row, but that is the path
+ * the pipeline intends, not proof of a file: a channel whose thumbnail fetch
+ * failed still gets one (see pipeline/avatars.py, where a failure is a state).
+ * Resolving against the directory keeps a missing face a missing face — the
+ * monogram fallback — instead of a broken image.
+ */
+export function channelAvatarUrl(channelId: string): string | null {
+  return avatarIds().has(channelId) ? `/assets/channels/${channelId}.jpg` : null
+}
+
+let avatarIdCache: Set<string> | null = null
+
+/** One readdir per process instead of an existsSync per rendered face; a
+ *  72-row table asks this 72 times. Cleared with the bundle cache in tests. */
+function avatarIds(): Set<string> {
+  if (avatarIdCache) return avatarIdCache
+  const dir = path.join(DB_DIR, "assets", "channels")
+  if (!existsSync(dir)) return (avatarIdCache = new Set())
+  const ids = readdirSync(dir)
+    .filter((f) => f.endsWith(".jpg"))
+    .map((f) => f.slice(0, -4))
+  return (avatarIdCache = new Set(ids))
 }
 
 let videosByChannel: Map<string, VideoRow[]> | null = null

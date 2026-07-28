@@ -3,7 +3,14 @@
 import { useMemo, useState } from "react"
 import type { RankMode, WindowKey } from "@/lib/types"
 import { RANK_MODES, WINDOWS } from "@/lib/types"
-import { cardModel, panelBuilding, rankedChannels, type SlimChannel } from "@/lib/growth"
+import {
+  cardModel,
+  panelBuilding,
+  rankedChannels,
+  sparkWindow,
+  type SlimChannel,
+  type SparkPoint,
+} from "@/lib/growth"
 import { BuildingCallout } from "./building-callout"
 import { GrowthCard } from "./growth-card"
 
@@ -12,7 +19,7 @@ export function GrowthPanel({
   sparks,
 }: {
   channels: SlimChannel[]
-  sparks: Record<string, number[]>
+  sparks: Record<string, SparkPoint[]>
 }) {
   const [mode, setMode] = useState<RankMode>("growth")
   const [win, setWin] = useState<WindowKey>("90d")
@@ -29,7 +36,6 @@ export function GrowthPanel({
   const top5 = ranked.slice(0, 5)
   const self = ranked.find((c) => c.is_self)
   const selfRank = self?.rank[mode][win] ?? null
-  const windowDays = parseInt(win, 10)
 
   return (
     <>
@@ -82,7 +88,12 @@ export function GrowthPanel({
             {top5.map((c) => (
               <GrowthCard
                 key={c.channel_id}
-                card={cardModel(c, win, mode, (sparks[c.channel_id] ?? []).slice(-windowDays))}
+                card={cardModel(
+                  c,
+                  win,
+                  mode,
+                  sparkWindow(sparks[c.channel_id] ?? [], c.subscriber_delta[win])
+                )}
                 window={win}
               />
             ))}

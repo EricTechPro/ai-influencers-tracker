@@ -1,5 +1,7 @@
-import { bucketText, deltaText, fmtInt, initials, pctText } from "@/lib/trust"
+import Link from "next/link"
+import { bucketText, capDeltaText, capPctText, deltaText, fmtInt, heroScale } from "@/lib/trust"
 import type { CardModel } from "@/lib/growth"
+import { AvatarPeek } from "./avatar"
 import { Chip, Derived } from "./trust"
 import { Sparkline } from "./sparkline"
 
@@ -8,48 +10,85 @@ const MEDALS: Record<number, string> = { 1: "🥇", 2: "🥈", 3: "🥉" }
 export function GrowthCard({ card, window }: { card: CardModel; window: string }) {
   const g = card.growth
   const classes = ["gcard"]
-  if (card.rank === 1) classes.push("top1")
   if (card.is_self) classes.push("youcard")
   const measurable = g.state === "ok" || g.state === "bounded"
+
+  // Capping is a layout rule, not a claim: whenever it rounds, the exact
+  // figure rides along in the Derived formula so the precise number is still
+  // one hover away. See lib/trust.ts.
+  const rate = capPctText(g)
+  const gained = capDeltaText(card.delta)
+  const rateFormula = `subscriber delta ÷ subscribers at window start, ${window}${
+    rate.exact ? ` · exactly ${rate.exact}` : ""
+  }`
+  const gainedFormula = `subscriber_count newest minus oldest in window${
+    gained.exact ? ` · exactly ${gained.exact}` : ""
+  }`
+
   return (
-    <div className={classes.join(" ")}>
-      <span className="rank-numeral">{card.rank ?? "--"}</span>
+    <Link href={`/channels/${card.channel_id}`} className={classes.join(" ")}>
       <div className="id">
-        <span className="rank">{MEDALS[card.rank ?? 0] ?? (card.rank !== null ? `#${card.rank}` : "--")}</span>
-        <span className={card.is_self ? "avatar av20 av-you" : "avatar av20"}>
-          {initials(card.name)}
+        <span className="facewrap">
+          <AvatarPeek
+            src={card.avatarUrl}
+            name={card.name}
+            handle={card.handle}
+            size={48}
+            isSelf={card.is_self}
+          />
+          {MEDALS[card.rank ?? 0] && (
+            <span className="medal" aria-hidden="true">
+              {MEDALS[card.rank ?? 0]}
+            </span>
+          )}
         </span>
         <div className="who">
-          <b>
+          <b title={card.name}>
             {card.is_self ? "★ " : ""}
             {card.name}
           </b>
           <span>@{card.handle}</span>
         </div>
-        {card.is_self && <Chip variant="you">YOU</Chip>}
-      </div>
-      <div className="hero">
-        {measurable ? (
-          <span className="n">
-            <Derived formula={`subscriber delta ÷ subscribers at window start, ${window}`}>
-              {pctText(g)}
-            </Derived>
-          </span>
+        {card.is_self ? (
+          <Chip variant="you">YOU</Chip>
         ) : (
-          <span className="n muted">{pctText(g)}</span>
+          card.rank !== null && !MEDALS[card.rank] && <span className="rankpill">#{card.rank}</span>
         )}
-        <span className="u">subscriber growth {window}</span>
       </div>
+
+      {/* Two headline figures, not one.
+          A single "+8.0% subscriber growth" left the obvious question — 8% of
+          what? — unanswered on the card, and the count that answers it was
+          buried in the stat lines below. Rate and count now sit side by side:
+          the rate is what the ranking sorts on, the count is what actually
+          happened. */}
+      <div className="heroes">
+        <div className="hero">
+          <span
+            className={measurable ? "n" : "n muted"}
+            style={{ fontSize: `calc(1.6rem * ${heroScale(rate.text)})` }}
+            title={rate.exact ?? undefined}
+          >
+            {measurable ? <Derived formula={rateFormula}>{rate.text}</Derived> : rate.text}
+          </span>
+          <span className="u">growth rate · {window}</span>
+        </div>
+        {measurable && (
+          <div className="hero">
+            <span
+              className="n"
+              style={{ fontSize: `calc(1.6rem * ${heroScale(gained.text)})` }}
+              title={gained.exact ?? undefined}
+            >
+              <Derived formula={gainedFormula}>{gained.text}</Derived>
+            </span>
+            <span className="u">subscribers gained</span>
+          </div>
+        )}
+      </div>
+
       {measurable && (
         <>
-          <div className="statline">
-            <span className="v">
-              <Derived formula="subscriber_count newest minus oldest in window">
-                {deltaText(card.delta)}
-              </Derived>
-            </span>{" "}
-            subs <Chip>{bucketText(card.bucket)}</Chip>
-          </div>
           <div className="statline">
             <span className="v">
               <Derived formula="subscriber delta ÷ (view delta ÷ 1000)">
@@ -67,17 +106,22 @@ export function GrowthCard({ card, window }: { card: CardModel; window: string }
           {g.state === "bounded" ? (
             <p className="note">
               below this channel&apos;s floor: bucket {bucketText(card.bucket)}, so anything under{" "}
-              {deltaText(card.delta).replace("< ", "")} cannot be measured
+              {gained.text.replace("< ", "")} cannot be measured
             </p>
+          ) : card.spark.length >= 2 ? (
+            <Sparkline points={card.spark} label={window} />
           ) : (
-            <Sparkline points={card.spark} />
+            // The delta is computed from the window's two endpoints, which can
+            // exist when the days between them were never snapshotted. Saying
+            // so beats drawing a line out of points we do not have.
+            <p className="note">no daily snapshots inside this window yet</p>
           )}
         </>
       )}
       <div className="gfoot">
-        <span>{window}</span>
+        <span>subscribers · {window}</span>
         <span>{bucketText(card.bucket)}</span>
       </div>
-    </div>
+    </Link>
   )
 }

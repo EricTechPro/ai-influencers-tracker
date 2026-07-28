@@ -44,7 +44,8 @@ describe("oppRowModels against the real bundles", () => {
     loadOpportunities().rows,
     loadTopicPages().topics,
     loadChannels().channels,
-    videosById
+    videosById,
+    () => null
   )
 
   it("models every row with a label", () => {

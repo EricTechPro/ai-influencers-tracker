@@ -2,7 +2,8 @@ import type { LeafTopicPage, OpportunityRow, TopicCommentsFile, VideoRow } from 
 import type { TrailRow } from "@/lib/topic"
 import { insufficientText, multText } from "@/lib/topic"
 import { visibleEdges } from "@/lib/chain"
-import { agoText, fmtDate, fmtInt, initials, SCORE_FORMULA, scoreText } from "@/lib/trust"
+import { agoText, fmtDate, fmtInt, SCORE_FORMULA, scoreText } from "@/lib/trust"
+import { AvatarPeek } from "./avatar"
 import { ChainMap } from "./chain-map"
 import { CommentTable } from "./comment-table"
 import { Chip, Derived, VerdictBadge } from "./trust"
@@ -126,9 +127,7 @@ export function TopicLeaf({
             {trail.map((t) => (
               <tr key={t.channel_id}>
                 <td>
-                  <span className={t.is_self ? "avatar av18 av-you" : "avatar av18"}>
-                    {initials(t.name)}
-                  </span>{" "}
+                  <AvatarPeek src={t.avatarUrl} name={t.name} size={26} isSelf={t.is_self} />{" "}
                   {t.name}
                   {t.is_self && (
                     <>

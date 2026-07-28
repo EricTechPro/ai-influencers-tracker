@@ -28,10 +28,14 @@ export type SlimChannel = Pick<
   | "view_delta"
   | "videos_published"
   | "median_views_per_video"
->
+> & {
+  /** Decided server-side by channelAvatarUrl; null means render initials. */
+  avatarUrl: string | null
+}
 
-export function slimChannel(row: ChannelRow): SlimChannel {
+export function slimChannel(row: ChannelRow, avatarUrl: string | null): SlimChannel {
   return {
+    avatarUrl,
     channel_id: row.channel_id,
     name: row.name,
     handle: row.handle,
@@ -59,6 +63,7 @@ export interface CardModel {
   name: string
   handle: string
   is_self: boolean
+  avatarUrl: string | null
   growth: StateCell
   delta: StateCell
   subsPer1k: StateCell
@@ -80,6 +85,7 @@ export function cardModel(
     name: row.name,
     handle: row.handle,
     is_self: row.is_self,
+    avatarUrl: row.avatarUrl,
     growth: row.subscriber_growth_rate[window],
     delta: row.subscriber_delta[window],
     subsPer1k: row.subs_per_1k_views[window],
@@ -133,10 +139,37 @@ export function panelBuilding(
   return { kind: "no_data" }
 }
 
+/** One measured subscriber count on one day. Dated, because the sparkline has
+ *  to be sliced against the window's calendar dates, not its point count. */
+export interface SparkPoint {
+  date: string
+  value: number
+}
+
 /** Full subscriber-count series for one channel; the client slices per window. */
-export function sparkAll(snapshots: SnapshotsBundle, channelId: string): number[] {
+export function sparkAll(snapshots: SnapshotsBundle, channelId: string): SparkPoint[] {
   const series = snapshots.channels[channelId]?.series ?? []
   return series
     .filter((d) => d.status === "ok" && d.subscriber_count !== null)
-    .map((d) => d.subscriber_count as number)
+    .map((d) => ({ date: d.date, value: d.subscriber_count as number }))
+}
+
+/**
+ * The part of a channel's series that the given window actually covers.
+ *
+ * Slicing the last N points instead — which is what the card used to do —
+ * assumes the series is dense and runs to today. Neither holds: Pat Simmons'
+ * snapshots stop on 2025-10-13 while his 90d delta window is 2026-04-30 to
+ * 2026-07-28, so "the last 90 points" drew a 2025 line directly beneath a 2026
+ * number, and the chart silently described a different year than the figure
+ * next to it.
+ *
+ * Slicing on the window's own from/to dates makes the two agree by
+ * construction. A window with no points inside it returns none, and the card
+ * says so rather than drawing the nearest thing it can find.
+ */
+export function sparkWindow(points: SparkPoint[], cell: StateCell): number[] {
+  const { from, to } = cell
+  if (!from || !to) return []
+  return points.filter((p) => p.date >= from && p.date <= to).map((p) => p.value)
 }

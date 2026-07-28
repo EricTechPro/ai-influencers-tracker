@@ -12,13 +12,18 @@ export interface TrailRow {
   channel_id: string
   name: string
   is_self: boolean
+  avatarUrl: string | null
   count: number
   newest: string | null
 }
 
 /** Every creator's trail on the topic: video count and newest upload, most
  *  prolific first. Pure counting over Oracle rows. */
-export function creatorTrail(videos: VideoRow[], channels: ChannelRow[]): TrailRow[] {
+export function creatorTrail(
+  videos: VideoRow[],
+  channels: ChannelRow[],
+  avatarFor: (channelId: string) => string | null
+): TrailRow[] {
   const channelById = new Map(channels.map((c) => [c.channel_id, c]))
   const grouped = new Map<string, { count: number; newest: string | null }>()
   for (const v of videos) {
@@ -34,6 +39,7 @@ export function creatorTrail(videos: VideoRow[], channels: ChannelRow[]): TrailR
         channel_id,
         name: c?.name ?? channel_id,
         is_self: c?.is_self ?? false,
+        avatarUrl: avatarFor(channel_id),
         count: g.count,
         newest: g.newest,
       }

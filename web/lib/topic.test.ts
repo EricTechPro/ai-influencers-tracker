@@ -21,7 +21,7 @@ describe("creatorTrail", () => {
     )
     if (!leaf) throw new Error("no leaf with videos in _db/")
     const videos = videosById(leaf.video_ids)
-    const trail = creatorTrail(videos, loadChannels().channels)
+    const trail = creatorTrail(videos, loadChannels().channels, () => null)
     expect(trail.length).toBeGreaterThan(0)
     const total = trail.reduce((s, t) => s + t.count, 0)
     expect(total).toBe(videos.length)

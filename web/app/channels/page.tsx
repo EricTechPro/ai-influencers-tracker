@@ -1,6 +1,7 @@
 import Link from "next/link"
-import { hasChannelAvatar, loadChannels, loadMeta } from "@/lib/bundles"
-import { bucketText, fmtInt, initials } from "@/lib/trust"
+import { channelAvatarUrl, loadChannels, loadMeta } from "@/lib/bundles"
+import { bucketText, fmtInt } from "@/lib/trust"
+import { Avatar } from "@/components/avatar"
 import { Chip } from "@/components/trust"
 
 export default function ChannelsPage() {
@@ -38,20 +39,14 @@ export default function ChannelsPage() {
           <tbody>
             {channels.map((c) => {
               const rank = c.rank.growth["90d"]
-              const avatarClass = `avatar av20${c.is_self ? " av-you" : ""}`
               return (
                 <tr key={c.channel_id} className={c.is_self ? "youcard" : undefined}>
                   <td className="num muted">{rank ?? "--"}</td>
                   <td>
                     <Link href={`/channels/${c.channel_id}`}>
-                      {hasChannelAvatar(c.channel_id) ? (
-                        <img className={avatarClass} src={`/assets/channels/${c.channel_id}.jpg`}
-                          alt="" width={20} height={20} style={{ marginRight: 6, verticalAlign: "middle" }} />
-                      ) : (
-                        <span className={avatarClass} style={{ marginRight: 6, verticalAlign: "middle" }}>
-                          {initials(c.name)}
-                        </span>
-                      )}
+                      <Avatar src={channelAvatarUrl(c.channel_id)} name={c.name} size={30}
+                        isSelf={c.is_self}
+                        style={{ marginRight: 8, verticalAlign: "middle" }} />
                       {c.name}
                     </Link>
                     {c.is_self && (

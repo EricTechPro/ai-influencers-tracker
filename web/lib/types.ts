@@ -16,6 +16,11 @@ export type CellState =
 export interface StateCell {
   state: CellState
   value: number | null
+  /** The two dates the window actually resolved to. Present on the windowed
+   *  subscriber cells; the sparkline slices on these so the line and the
+   *  number beside it always describe the same span. */
+  from?: string
+  to?: string
   /** bounded only: the measurement floor the delta sits under */
   upper?: number
   /** subscriber cells: the channel's bucket width, always disclosed in the UI */

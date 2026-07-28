@@ -1,7 +1,8 @@
-import { hasChannelAvatar, loadChannels, loadOpportunities, channelVideos } from "@/lib/bundles"
+import { channelAvatarUrl, loadChannels, loadOpportunities, channelVideos } from "@/lib/bundles"
 import { comparePartition, coverageByTopic } from "@/lib/compare"
 import { CADENCE_FORMULA, cadenceDays } from "@/lib/channel"
-import { bucketText, deltaText, fmtInt, initials, pctText } from "@/lib/trust"
+import { bucketText, deltaText, fmtInt, pctText } from "@/lib/trust"
+import { Avatar } from "@/components/avatar"
 import { Chip, Derived, VerdictBadge } from "@/components/trust"
 import { ComparePicker } from "@/components/compare-picker"
 import Link from "next/link"
@@ -38,19 +39,11 @@ export default async function ComparePage({
   return (
     <section>
       <div style={{ display: "flex", gap: 10, alignItems: "center", marginTop: "1.2rem", fontSize: 13 }}>
-        {hasChannelAvatar(him.channel_id) ? (
-          <img className="avatar av18" src={`/assets/channels/${him.channel_id}.jpg`} alt="" width={18} height={18} />
-        ) : (
-          <span className="avatar av18">{initials(him.name)}</span>
-        )}
+        <Avatar src={channelAvatarUrl(him.channel_id)} name={him.name} size={36} />
         <ComparePicker side="a" value={him.channel_id} options={options}
           selfId={bundle.self_channel_id} />
         <span className="mono10">vs</span>
-        {hasChannelAvatar(you.channel_id) ? (
-          <img className="avatar av18 av-you" src={`/assets/channels/${you.channel_id}.jpg`} alt="" width={18} height={18} />
-        ) : (
-          <span className="avatar av18 av-you">{initials(you.name)}</span>
-        )}
+        <Avatar src={channelAvatarUrl(you.channel_id)} name={you.name} size={36} isSelf />
         <ComparePicker side="b" value={you.channel_id} options={options}
           selfId={bundle.self_channel_id} />
       </div>

@@ -8,6 +8,7 @@ export interface CreatorRef {
   channel_id: string
   name: string
   is_self: boolean
+  avatarUrl: string | null
 }
 
 export interface OppRowModel {
@@ -31,7 +32,10 @@ export function oppRowModels(
   rows: OpportunityRow[],
   topics: TopicPage[],
   channels: ChannelRow[],
-  videosFor: (ids: string[]) => VideoRow[]
+  videosFor: (ids: string[]) => VideoRow[],
+  /** Injected like videosFor: this module ships to the client, so it must not
+   *  reach the filesystem itself. */
+  avatarFor: (channelId: string) => string | null
 ): OppRowModel[] {
   const topicById = new Map(topics.map((t) => [t.topic_id, t]))
   const channelById = new Map(channels.map((c) => [c.channel_id, c]))
@@ -48,7 +52,9 @@ export function oppRowModels(
       .sort((a, b) => b[1] - a[1])
       .flatMap(([id]) => {
         const c = channelById.get(id)
-        return c ? [{ channel_id: id, name: c.name, is_self: c.is_self }] : []
+        return c
+          ? [{ channel_id: id, name: c.name, is_self: c.is_self, avatarUrl: avatarFor(id) }]
+          : []
       })
     return {
       row,

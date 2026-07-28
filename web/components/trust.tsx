@@ -1,6 +1,6 @@
 import type { ReactNode } from "react"
 import type { Verdict } from "@/lib/types"
-import { VERDICT_CLASS, VERDICT_LABEL } from "@/lib/trust"
+import { VERDICT_CLASS, VERDICT_LABEL, VERDICT_WHY } from "@/lib/trust"
 
 /** Derived tier: dotted underline, formula on hover. Never render one without
  *  a formula; the prop is mandatory for exactly that reason. */
@@ -22,7 +22,11 @@ export function Inference({ source, children }: { source: string; children: Reac
 }
 
 export function VerdictBadge({ verdict }: { verdict: Verdict }) {
-  return <span className={`badge b-filled ${VERDICT_CLASS[verdict]}`}>{VERDICT_LABEL[verdict]}</span>
+  return (
+    <span className={`badge b-filled ${VERDICT_CLASS[verdict]}`} title={VERDICT_WHY[verdict]}>
+      {VERDICT_LABEL[verdict]}
+    </span>
+  )
 }
 
 export function Chip({

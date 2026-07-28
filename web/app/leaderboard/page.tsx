@@ -1,10 +1,12 @@
-import { loadChannels, loadMeta } from "@/lib/bundles"
+import { channelAvatarUrl, loadChannels, loadMeta } from "@/lib/bundles"
 import { slimChannel } from "@/lib/growth"
 import { LeaderboardTable } from "@/components/leaderboard-table"
 
 export default function LeaderboardPage() {
   const meta = loadMeta()
-  const channels = loadChannels().channels.map(slimChannel)
+  const channels = loadChannels().channels.map((c) =>
+    slimChannel(c, channelAvatarUrl(c.channel_id))
+  )
   return (
     <section>
       <div className="section-kicker">

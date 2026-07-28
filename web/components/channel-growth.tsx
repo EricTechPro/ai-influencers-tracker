@@ -96,15 +96,27 @@ function GrowthLine({ points }: { points: { date: string; value: number }[] }) {
     })
     .join(" ")
   return (
-    <svg viewBox="0 0 100 44" preserveAspectRatio="none"
-      style={{ width: "100%", height: 110 }} aria-hidden>
-      <polygon points={`4,40 ${coords} 96,40`}
-        fill="color-mix(in srgb, var(--primary) 8%, transparent)" />
-      <polyline points={coords} fill="none" stroke="var(--primary)" strokeWidth="1" />
-      <text x="4" y="43.5" fontSize="3.4" fill="var(--muted-2, #6b6a6b)">{points[0].date}</text>
-      <text x="78" y="43.5" fontSize="3.4" fill="var(--muted-2, #6b6a6b)">
-        {points[points.length - 1].date}
-      </text>
-    </svg>
+    <>
+      <svg viewBox="0 0 100 40" preserveAspectRatio="none"
+        style={{ width: "100%", height: 110, display: "block" }} aria-hidden>
+        <polygon points={`4,40 ${coords} 96,40`}
+          fill="color-mix(in srgb, var(--primary) 8%, transparent)" />
+        <polyline points={coords} fill="none" stroke="var(--primary)" strokeWidth="1"
+          vectorEffect="non-scaling-stroke" />
+      </svg>
+      {/* The axis labels sit in HTML, not in the SVG. preserveAspectRatio="none"
+          is what lets the plot fill the card, and it scales x roughly 4x more
+          than y, which stretches any glyph inside it into a smear.
+          Each end carries its value as well as its date: the line auto-scales to
+          its own min and max, so without them it shows the direction of the
+          change while refusing to say how big it was. */}
+      <div className="mono10" style={{ display: "flex", justifyContent: "space-between" }}>
+        <span>{points[0].date} · <span className="num">{fmtInt(points[0].value)}</span></span>
+        <span>
+          {points[points.length - 1].date} ·{" "}
+          <span className="num">{fmtInt(points[points.length - 1].value)}</span>
+        </span>
+      </div>
+    </>
   )
 }

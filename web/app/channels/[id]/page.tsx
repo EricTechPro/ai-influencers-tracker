@@ -1,11 +1,12 @@
 import Link from "next/link"
 import { notFound } from "next/navigation"
 import {
-  channelVideos, hasChannelAvatar, loadChannelComments, loadChannels, loadMeta, loadSnapshots,
+  channelAvatarUrl, channelVideos, loadChannelComments, loadChannels, loadMeta, loadSnapshots,
   videosById,
 } from "@/lib/bundles"
 import { CADENCE_FORMULA, cadenceDays } from "@/lib/channel"
-import { bucketText, fmtInt, initials } from "@/lib/trust"
+import { bucketText, fmtInt } from "@/lib/trust"
+import { Avatar } from "@/components/avatar"
 import { Chip, Derived } from "@/components/trust"
 import { ChannelGrowth } from "@/components/channel-growth"
 import { CommentTable } from "@/components/comment-table"
@@ -21,7 +22,6 @@ export default async function ChannelPage({ params }: { params: Promise<{ id: st
   const growthRank = channel.rank.growth["90d"]
   const uploads = channelVideos(channel.channel_id)
   const cadence = cadenceDays(uploads.map((v) => v.published_at))
-  const avatarClass = `avatar av56${channel.is_self ? " av-you" : ""}`
 
   const comments = loadChannelComments(channel.channel_id)
   const growing = videosById(channel.still_growing_video_ids)
@@ -42,12 +42,8 @@ export default async function ChannelPage({ params }: { params: Promise<{ id: st
     <section>
       <div className="card pad" style={{ marginTop: "1.2rem" }}>
         <div style={{ display: "flex", gap: 14, alignItems: "flex-start" }}>
-          {hasChannelAvatar(channel.channel_id) ? (
-            <img className={avatarClass} src={`/assets/channels/${channel.channel_id}.jpg`}
-              alt="" width={56} height={56} />
-          ) : (
-            <span className={avatarClass}>{initials(channel.name)}</span>
-          )}
+          <Avatar src={channelAvatarUrl(channel.channel_id)} name={channel.name} size={96}
+            isSelf={channel.is_self} />
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ display: "flex", alignItems: "baseline", gap: 10, flexWrap: "wrap" }}>
               <b style={{ fontSize: "1.2rem" }}>{channel.name}</b>

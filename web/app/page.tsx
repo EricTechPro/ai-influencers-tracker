@@ -1,4 +1,5 @@
 import {
+  channelAvatarUrl,
   loadChannels,
   loadMeta,
   loadOpportunities,
@@ -16,7 +17,7 @@ export default function HomePage() {
   const meta = loadMeta()
   const channels = loadChannels().channels
   const snapshots = loadSnapshots()
-  const slim = channels.map(slimChannel)
+  const slim = channels.map((c) => slimChannel(c, channelAvatarUrl(c.channel_id)))
   const sparks = Object.fromEntries(
     slim.map((c) => [c.channel_id, sparkAll(snapshots, c.channel_id)])
   )
@@ -24,7 +25,8 @@ export default function HomePage() {
     loadOpportunities().rows,
     loadTopicPages().topics,
     channels,
-    videosById
+    videosById,
+    channelAvatarUrl
   )
 
   return (

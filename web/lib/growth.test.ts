@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest"
 import { loadChannels, loadSnapshots } from "./bundles"
-import { cardModel, panelBuilding, rankedChannels, slimChannel, sparkAll } from "./growth"
+import {
+  cardModel,
+  panelBuilding,
+  rankedChannels,
+  slimChannel,
+  sparkAll,
+  sparkWindow,
+} from "./growth"
 import type { SlimChannel } from "./growth"
 import type { StateCell, WindowKey } from "./types"
 
@@ -20,6 +27,7 @@ function chan(over: Partial<SlimChannel>): SlimChannel {
     name: "Test Channel",
     handle: "test",
     is_self: false,
+    avatarUrl: null,
     status: "ok",
     category: "ai-creator",
     niche: null,
@@ -135,12 +143,46 @@ describe("cardModel", () => {
   })
 })
 
+describe("sparkWindow: the line and the number beside it describe the same span", () => {
+  const dated = [
+    { date: "2025-07-28", value: 2530 },
+    { date: "2025-10-13", value: 2590 },
+    { date: "2026-04-30", value: 2680 },
+    { date: "2026-06-15", value: 12000 },
+    { date: "2026-07-28", value: 21700 },
+  ]
+
+  it("keeps only the points inside the window's own from/to dates", () => {
+    const cell: StateCell = { state: "ok", value: 19020, from: "2026-04-30", to: "2026-07-28" }
+    expect(sparkWindow(dated, cell)).toEqual([2680, 12000, 21700])
+  })
+
+  it("both endpoints are inclusive", () => {
+    const cell: StateCell = { state: "ok", value: 0, from: "2026-06-15", to: "2026-06-15" }
+    expect(sparkWindow(dated, cell)).toEqual([12000])
+  })
+
+  // The bug this function exists for: Pat Simmons' snapshots stop in October
+  // 2025 while his 90d window runs Apr-Jul 2026. Slicing by point count drew
+  // the 2025 series next to a 2026 delta; slicing by date draws nothing, which
+  // is the honest answer.
+  it("a series that ends before the window returns no points, not the tail of an older year", () => {
+    const stale = dated.slice(0, 2)
+    const cell: StateCell = { state: "ok", value: 19020, from: "2026-04-30", to: "2026-07-28" }
+    expect(sparkWindow(stale, cell)).toEqual([])
+  })
+
+  it("a cell carrying no window dates plots nothing rather than guessing a span", () => {
+    expect(sparkWindow(dated, { state: "building", value: null })).toEqual([])
+  })
+})
+
 describe("against the real bundles", () => {
   it("slims and models all channels without throwing", () => {
-    const channels = loadChannels().channels.map(slimChannel)
+    const channels = loadChannels().channels.map((c) => slimChannel(c, null))
     const snapshots = loadSnapshots()
     for (const c of rankedChannels(channels, "growth", W).slice(0, 5)) {
-      const spark = sparkAll(snapshots, c.channel_id)
+      const spark = sparkWindow(sparkAll(snapshots, c.channel_id), c.subscriber_delta[W])
       const m = cardModel(c, W, "growth", spark)
       expect(typeof m.name).toBe("string")
     }

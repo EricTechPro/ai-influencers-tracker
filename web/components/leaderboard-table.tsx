@@ -6,7 +6,8 @@ import type { SlimChannel } from "@/lib/growth"
 import { tiered, type SortValue } from "@/lib/sort"
 import type { RankMode, WindowKey } from "@/lib/types"
 import { RANK_MODES, WINDOWS } from "@/lib/types"
-import { bucketText, compactM, deltaText, fmtInt, initials, pctText } from "@/lib/trust"
+import { bucketText, compactM, deltaText, fmtInt, pctText } from "@/lib/trust"
+import { AvatarPeek } from "./avatar"
 import { SortableHeader, useTableSort, type SortColumn } from "./sortable-table"
 import { Chip, Derived } from "./trust"
 
@@ -163,7 +164,7 @@ function LeaderRow({ c, mode, win }: { c: SlimChannel; mode: RankMode; win: Wind
         <td className="muted num">--</td>
         <td>
           <Link href={`/channels/${c.channel_id}`}>
-            <span className="avatar av20">{initials(c.name)}</span> {c.name}
+            <AvatarPeek src={c.avatarUrl} name={c.name} handle={c.handle} size={28} /> {c.name}
           </Link>{" "}
           <Chip variant="warn">absent</Chip>
         </td>
@@ -184,7 +185,8 @@ function LeaderRow({ c, mode, win }: { c: SlimChannel; mode: RankMode; win: Wind
       <td className="num">{c.rank[mode][win] ?? "--"}</td>
       <td>
         <Link href={`/channels/${c.channel_id}`}>
-          <span className={c.is_self ? "avatar av20 av-you" : "avatar av20"}>{initials(c.name)}</span>{" "}
+          <AvatarPeek src={c.avatarUrl} name={c.name} handle={c.handle} size={28}
+            isSelf={c.is_self} />{" "}
           {c.name}
         </Link>
         {c.is_self && (
