@@ -1,7 +1,7 @@
 Tracks 72 AI/automation YouTube channels and answers what to make next.
 
 **Build steps 0 to 8 are done.** `pipeline/`, its tests, and `_db/` all run for real today; `web/`
-does not exist yet — that is the next step.
+does not exist yet; that is the next step.
 
 ```bash
 pytest -q                                          # every pipeline test
@@ -17,7 +17,7 @@ but not yet installed into `~/Library/LaunchAgents/`; `scripts/install_ait_snaps
 that by hand.
 
 **Next is step 9** (`docs/spec.md` §10): the Next.js app on port 3002, the trust tokens, and the
-sortable table. **Step 13 is a hard gate** — no extraction work begins until a 20-video manual spike
+sortable table. **Step 13 is a hard gate**: no extraction work begins until a 20-video manual spike
 measures artifact capture against a 50% floor.
 
 ## The rule everything else serves
