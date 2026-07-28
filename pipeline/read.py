@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import functools
 
-from . import config, growth, snapshot, util, vidiq
+from . import comments, config, growth, snapshot, util, vidiq
 
 
 def _snapshot_files():
@@ -73,6 +73,37 @@ def keyword_volumes() -> dict[str, dict]:
     return (util.read_json(files[-1]) or {}).get("volumes", {}) if files else {}
 
 
+@functools.cache
+def _all_comment_rows() -> dict[str, list[dict]]:
+    directory = config.raw_dir() / "comments"
+    out: dict[str, list[dict]] = {}
+    for path in sorted(directory.glob("*.jsonl")) if directory.exists() else []:
+        for row in util.read_jsonl(path):
+            out.setdefault(row["video_id"], []).append(row)
+    return out
+
+
+def comment_stats() -> dict[str, dict | None]:
+    """video_id -> its comment_stats, or None when the ledger has not reached it yet.
+
+    A video the ledger marks done with zero stored roots is a real zero (we asked, there were
+    none). A video the ledger has never reached is missing, never a zero: this is the
+    distinction the whole layer exists to preserve.
+    """
+    ledger = comments.Ledger()
+    rows_by_video = _all_comment_rows()
+    out: dict[str, dict | None] = {}
+    for video_id in ledger.rows:
+        rows = rows_by_video.get(video_id, [])
+        out[video_id] = {
+            "root_count": len(rows),
+            "top_comment_likes": max((r["like_count"] for r in rows), default=None),
+            "classified": sum(1 for r in rows if r.get("category") is not None),
+        }
+    return out
+
+
 def reset_caches() -> None:
     _all_channel_rows.cache_clear()
     _all_video_rows.cache_clear()
+    _all_comment_rows.cache_clear()

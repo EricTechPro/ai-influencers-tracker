@@ -54,7 +54,7 @@ def make_context(today: dt.date) -> Context:
         generated_at=f"{util.date_str(today)}T00:00:00Z",
         thresholds=thresholds, roster=roster, self_channel_id=self_row["channel_id"],
         topic_index=topics.load(), videos=videos, baselines=baselines,
-        traction=traction_by_video, comment_stats={}, repos=read.repos(today),
+        traction=traction_by_video, comment_stats=read.comment_stats(), repos=read.repos(today),
         keyword_volumes=read.keyword_volumes())
 
 

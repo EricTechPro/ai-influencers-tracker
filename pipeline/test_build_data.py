@@ -1,8 +1,26 @@
 import datetime as dt
 
-from pipeline import build_data, config, snapshot, util
+from pipeline import build_data, comments, config, snapshot, util
 
 TODAY = dt.date(2026, 7, 27)
+
+
+def seed_video(channel_id, video_id, published_at="2026-05-01T00:00:00Z"):
+    """A registered video with no per-day count series: enough to appear in videos.json."""
+    util.append_jsonl(snapshot.registry_path(channel_id), {
+        "video_id": video_id, "channel_id": channel_id, "title": "t", "description": "",
+        "tags": [], "published_at": published_at, "duration_s": 600, "type": "long",
+        "seen_at": "2026-07-27T00:00:00Z"})
+
+
+def seed_comment(channel_id, video_id, comment_id, like_count):
+    util.append_jsonl(comments.store_path(channel_id), {
+        "comment_id": comment_id, "video_id": video_id, "channel_id": channel_id,
+        "video_title": "t", "video_url": f"https://youtu.be/{video_id}",
+        "video_published_at": "2026-05-01T00:00:00Z", "author": "someone",
+        "author_channel_id": "UCviewer", "text": "hi", "like_count": like_count,
+        "reply_count": 0, "published_at": "2026-05-02T00:00:00Z", "answered": False,
+        "lag_days": 1, "topic_ids": [], "category": None})
 
 
 def seed_snapshots(days=8):
@@ -92,5 +110,38 @@ def test_deleting_the_db_layer_is_boring(ait_root):
     build_data.build(today=TODAY)
     before = util.tree_hashes(config.db_dir())
     shutil.rmtree(config.db_dir())
+    build_data.build(today=TODAY)
+    assert util.tree_hashes(config.db_dir()) == before
+
+
+def test_a_video_the_ledger_marks_done_carries_real_comment_stats(ait_root):
+    seed_snapshots(days=1)
+    seed_video("UCcole", "vid_done")
+    seed_comment("UCcole", "vid_done", "c1", like_count=5)
+    seed_comment("UCcole", "vid_done", "c2", like_count=1)
+    util.write_json(comments.ledger_path(), {"vid_done": {"comments": 2}})
+    build_data.build(today=TODAY)
+    videos = util.read_json(config.db_dir() / "videos.json")
+    row = next(v for v in videos["videos"] if v["video_id"] == "vid_done")
+    assert row["comment_stats"] == {"root_count": 2, "top_comment_likes": 5, "classified": 0}
+
+
+def test_a_video_the_ledger_has_not_reached_yet_is_missing_not_zero(ait_root):
+    seed_snapshots(days=1)
+    seed_video("UCcole", "vid_pending")
+    build_data.build(today=TODAY)
+    videos = util.read_json(config.db_dir() / "videos.json")
+    row = next(v for v in videos["videos"] if v["video_id"] == "vid_pending")
+    assert row["comment_stats"] is None
+
+
+def test_comment_stats_do_not_break_the_rebuild_byte_identity(ait_root):
+    seed_snapshots(days=1)
+    seed_video("UCcole", "vid_done")
+    seed_comment("UCcole", "vid_done", "c1", like_count=5)
+    util.write_json(comments.ledger_path(), {"vid_done": {"comments": 1}})
+    seed_video("UCcole", "vid_pending")
+    build_data.build(today=TODAY)
+    before = util.tree_hashes(config.db_dir())
     build_data.build(today=TODAY)
     assert util.tree_hashes(config.db_dir()) == before

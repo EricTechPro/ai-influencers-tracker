@@ -21,9 +21,8 @@ def build(ctx) -> dict:
             "multiplier": multiplier.for_video(video, baselines),
             "traction": traction.for_video(video["series"], video["view_count"], ctx.today,
                                            ctx.thresholds["traction"]),
-            "comment_stats": ctx.comment_stats.get(video["video_id"],
-                                                   {"root_count": 0, "top_comment_likes": None,
-                                                    "classified": 0}),
+            # A video the comment ledger has not reached yet is missing, never a zero.
+            "comment_stats": ctx.comment_stats.get(video["video_id"]),
             "topic_assignments": topics.match_video(video, ctx.topic_index),
         })
     rows.sort(key=lambda r: r["video_id"])
