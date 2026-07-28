@@ -30,10 +30,21 @@ def _channel_row(ctx, series, monkeypatch, channel_id=None):
     return row
 
 
-def test_a_corrupt_today_row_still_supplies_todays_real_headline_numbers(ait_root, monkeypatch):
+def test_a_corrupt_today_row_still_supplies_todays_real_subscriber_count(
+        ait_root, monkeypatch):
     """Mirrors the real per_simmons/anthropic-ai series: today is tagged corrupt by an
-    unrelated view_count anomaly, but its subscriber_count/view_count/video_count are the
-    freshest real readings the pipeline has. The headline must use them, not a stale ok row."""
+    unrelated view_count anomaly, but its subscriber_count is the freshest real reading the
+    pipeline has. subscriber_count is never itself monotonicity-checked (it is not in
+    growth.MONOTONIC_KEYS), so it must use today's value; view_count and video_count, the
+    fields the corrupt verdict is actually about, must fall back to the newest row where
+    status was "ok" instead of publishing the condemned reading.
+
+    Pins growth.MONOTONIC_KEYS for the test rather than trusting its live value: growth.py is
+    owned by a concurrent session mid-rework, so this asserts the contract this fix promises
+    (condemned fields respect status, everything else respects presence) independent of
+    whatever growth.py currently contains.
+    """
+    monkeypatch.setattr(growth, "MONOTONIC_KEYS", ("view_count", "video_count"))
     series = [
         {"date": "2026-04-30", "status": "ok", "subscriber_count": 2680,
          "view_count": 64181, "video_count": 46},
@@ -47,10 +58,15 @@ def test_a_corrupt_today_row_still_supplies_todays_real_headline_numbers(ait_roo
 
     assert row["subscriber_count"] == 21700
     assert row["subscriber_bucket"] == growth.bucket_width(21700)
-    assert row["view_count"] == 1_653_317
-    assert row["video_count"] == 70
-    # status itself still tells the truth about the freshest row's own verdict; only the
-    # per-field headline numbers stop being masked by it.
+    # Both condemned fields fall back to the last row where status was "ok" (2026-07-27), not
+    # today's corrupt-flagged reading. Taking view_count from the corrupt row would have
+    # published a collapsed 1,653,317-scale reading as the channel's headline, the exact
+    # failure mode the corruption check exists to catch (observed for real on
+    # UCy71Sv5TVBbn5BYETRQV22Q: 2,854,571 collapsed to 49,857 on its own corrupt tail).
+    assert row["view_count"] == 1_600_000
+    assert row["video_count"] == 69
+    # status itself still tells the truth about the freshest row's own verdict; it just no
+    # longer gates which row supplies subscriber_count.
     assert row["status"] == "corrupt"
 
 

@@ -32,16 +32,26 @@ def _windows(ctx) -> list[int]:
 
 
 def _newest_with(series: list[dict], field: str) -> dict | None:
-    """The newest row where `field` itself is present, independent of `status`.
+    """The newest row carrying `field`, skipping rows whose status condemns that very field.
 
-    `status` only ever reflects a growth.MONOTONIC_KEYS violation on a specific metric (see
-    growth.filter_monotonic), and a single old violation on one metric can freeze `status` at
-    "corrupt" for every row after it, forever. Gating every headline field on that one shared
-    verdict meant a channel's `subscriber_count` (never itself monotonicity-checked) went stale
-    the moment its `view_count` tripped the check months earlier. Each field now picks its own
-    newest row on its own presence, so one metric's history can never mask another's.
+    `status` reflects a growth.MONOTONIC_KEYS violation and nothing else, so it is a verdict on
+    the fields actually being monitored (currently `view_count`, `video_count`). For every other
+    field it is unrelated news: `subscriber_count` is never monotonicity-checked and must not go
+    stale just because an unrelated metric tripped the check. That's why this does not simply
+    filter every field on status.
+
+    But a condemned field must not ignore status either. `UCy71Sv5TVBbn5BYETRQV22Q`'s newest row
+    is corrupt because its view count collapsed 2,854,571 to 49,857; taking `view_count` from
+    that row would publish 49,857 as the channel's headline, the exact reading the corruption
+    check exists to catch. A condemned field falls back to its last row where status was "ok";
+    every other field still takes the freshest row it appears in, regardless of status.
     """
-    return next((r for r in reversed(series) if r.get(field) is not None), None)
+    condemned = field in growth.MONOTONIC_KEYS
+    return next(
+        (r for r in reversed(series)
+         if r.get(field) is not None and not (condemned and r.get("status") != "ok")),
+        None,
+    )
 
 
 def build(ctx) -> dict:
