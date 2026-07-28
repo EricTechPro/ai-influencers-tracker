@@ -103,7 +103,7 @@ def subscriber_delta(series: list[dict], window_days: int, today: dt.date,
     newest = by_date[cell["to"]]["subscriber_count"]
     bucket = bucket_width(newest)
     floor = measurement_floor(newest, growth_thresholds)
-    if cell["value"] >= floor:
+    if abs(cell["value"]) >= floor:
         return {"state": "ok", "value": cell["value"], "bucket": bucket,
                 "from": cell["from"], "to": cell["to"]}
     return {"state": "bounded", "upper": floor, "value": None, "bucket": bucket,
@@ -209,9 +209,15 @@ def rank(channels: list[dict], mode: str, growth_thresholds: dict) -> dict[str, 
         return {"state": state, "value": value, "out_of": composite["out_of"],
                 "excluded": composite["excluded"]}
 
+    def subscribers_cell(channel: dict) -> dict:
+        count = channel.get("subscriber_count")
+        if count is None:
+            return {"state": "insufficient_data", "value": None}
+        return {"state": "ok", "value": count}
+
     keys = {
         "growth": lambda c: c.get("subscriber_growth_rate", {}),
-        "subscribers": lambda c: {"state": "ok", "value": c.get("subscriber_count")},
+        "subscribers": subscribers_cell,
         "views": lambda c: c.get("views_gained", {}),
         "general": composite_cell,
     }

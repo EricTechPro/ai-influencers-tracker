@@ -61,6 +61,22 @@ def test_an_incomplete_window_is_building_before_the_floor_is_even_considered():
     assert growth.subscriber_delta(s, 7, TODAY, GROWTH)["state"] == "building"
 
 
+def test_a_decline_clearing_its_floor_magnitude_renders_ok_with_a_negative_value():
+    """A -21,000 week against a 5,000 floor is a measured decline, not bounded noise."""
+    s = subs_series([("2026-07-25", 219000), ("2026-07-26", 205000), ("2026-07-27", 198000)])
+    cell = growth.subscriber_delta(s, 3, TODAY, GROWTH)
+    assert cell == {"state": "ok", "value": -21000, "bucket": 1000,
+                    "from": "2026-07-25", "to": "2026-07-27"}
+
+
+def test_a_decline_below_its_floor_magnitude_is_bounded_not_a_signed_number():
+    """A 2,000 decline is still only 2 buckets: bounded, with a positive (magnitude) upper."""
+    s = subs_series([("2026-07-25", 219000), ("2026-07-26", 218000), ("2026-07-27", 217000)])
+    assert growth.subscriber_delta(s, 3, TODAY, GROWTH) == {
+        "state": "bounded", "upper": 5000, "value": None, "bucket": 1000,
+        "from": "2026-07-25", "to": "2026-07-27"}
+
+
 def test_the_growth_rate_bounds_as_a_rate():
     s = subs_series([("2026-07-26", 2930000), ("2026-07-27", 2930000)])
     cell = growth.subscriber_growth_rate(s, 2, TODAY, GROWTH)
@@ -138,3 +154,35 @@ def test_the_general_composite_drops_a_bounded_weight_instead_of_guessing():
                                                               "views_gained": 12100000})
     assert composite["out_of"] == 50            # 100 minus the 50-point growth weight
     assert composite["excluded"] == ["subscriber_growth"]
+
+
+def test_rank_subscribers_mode_does_not_collapse_a_missing_count_onto_a_genuine_zero():
+    """A None count and a genuine 0-subscriber channel (a brand-new one) must not land in the
+    same tier: 0 is a real reading (tier ok, ranks above nothing), None is unmeasured (tier
+    below every ok row). `float(None or 0)` would make both magnitude 0 and let a stable sort's
+    tie-break (input order) decide, so UCc is placed BEFORE UCb here on purpose: only the fix
+    guarantees UCc still ranks last."""
+    channels = [
+        {"channel_id": "UCa", "subscriber_count": 219000},
+        {"channel_id": "UCc", "subscriber_count": None},
+        {"channel_id": "UCb", "subscriber_count": 0},
+    ]
+    assert growth.rank(channels, "subscribers", GROWTH) == {"UCa": 1, "UCb": 2, "UCc": 3}
+
+
+def test_a_missing_subscriber_count_sorts_last_in_both_directions_not_as_a_zero():
+    """The same distinction, exercised directly through sort_rows in both directions: a missing
+    count must land in the unmeasured tier, which sort_rows always places last, regardless of
+    a genuine 0 sharing the same numeric magnitude."""
+    def subs_cell(count):
+        return ({"state": "ok", "value": count} if count is not None
+                else {"state": "insufficient_data", "value": None})
+    rows = [
+        {"h": "big", "cell": subs_cell(2930000)},
+        {"h": "zero", "cell": subs_cell(0)},
+        {"h": "missing", "cell": subs_cell(None)},
+    ]
+    down = [r["h"] for r in growth.sort_rows(rows, key=lambda r: r["cell"], descending=True)]
+    up = [r["h"] for r in growth.sort_rows(rows, key=lambda r: r["cell"], descending=False)]
+    assert down == ["big", "zero", "missing"]
+    assert up == ["zero", "big", "missing"]
