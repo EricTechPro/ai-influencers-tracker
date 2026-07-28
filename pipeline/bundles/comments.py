@@ -1,11 +1,14 @@
-"""comments.json: one corpus, three indexes.
+"""_db/comments/: one corpus, indexed and split three ways (T13).
 
-by_channel  what does THIS creator's audience ask
-by_topic    what does EVERYONE ask about this subject, across every creator covering it
-by_video    what did THIS upload provoke
+by_channel  what does THIS creator's audience ask       -> comments/channel/<channel_id>.json
+by_topic    what does EVERYONE ask about this subject,
+            across every creator covering it            -> comments/topic/<topic_id>.json
+by_video    what did THIS upload provoke                 -> nested under its channel's file
 
-The bundle pairs `category` with `text` structurally, so it is not possible to render a category
-without the evidence for it.
+Split by route rather than shipped as one monolith: a 59 MB comments.json would load on every
+page, when any one page only ever needs one channel or one topic's slice. The bundle pairs
+`category` with `text` structurally, so it is not possible to render a category without the
+evidence for it.
 """
 from __future__ import annotations
 
