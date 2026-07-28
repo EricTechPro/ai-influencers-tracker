@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react"
 import Link from "next/link"
 import type { OppRowModel } from "@/lib/opportunity"
-import { scoreSortValue } from "@/lib/opportunity"
+import { scoreSortValue, topicSortValue } from "@/lib/opportunity"
 import type { SortValue } from "@/lib/sort"
 import type { OpportunityRow, Verdict } from "@/lib/types"
 import { agoText, fmtDate, fmtInt, scoreText, VERDICT_RANK } from "@/lib/trust"
@@ -54,7 +54,7 @@ export function OpportunityTable({ models }: { models: OppRowModel[] }) {
     (m, key): SortValue => {
       switch (key) {
         case "topic":
-          return m.label.toLowerCase()
+          return topicSortValue(m)
         case "verdict":
           return VERDICT_RANK[m.row.verdict]
         case "who":

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest"
 import { loadChannels, loadOpportunities, loadTopicPages, videosById } from "./bundles"
-import { oppRowModels, scoreSortValue } from "./opportunity"
+import { oppRowModels, scoreSortValue, topicSortValue } from "./opportunity"
+import type { OppRowModel } from "./opportunity"
 import type { OpportunityRow } from "./types"
 
 function oppRow(over: Partial<OpportunityRow>): OpportunityRow {
@@ -26,6 +27,15 @@ describe("scoreSortValue", () => {
   it("INSUFFICIENT_DATA is tier 0: sorts last in both directions, never zero", () => {
     const r = oppRow({ verdict: "INSUFFICIENT_DATA", score: { components: [], out_of: null, value: null } })
     expect(scoreSortValue(r)).toEqual({ tier: 0, v: 0 })
+  })
+})
+
+describe("topicSortValue", () => {
+  it("matches the displayed topic_id, not the label, when they differ", () => {
+    const row = oppRow({ topic_id: "Zzz-Topic" })
+    const model: OppRowModel = { row, label: "Aaa Display Label", newest_video_at: null, creators: [] }
+    expect(topicSortValue(model)).toBe(row.topic_id.toLowerCase())
+    expect(topicSortValue(model)).not.toBe(model.label.toLowerCase())
   })
 })
 

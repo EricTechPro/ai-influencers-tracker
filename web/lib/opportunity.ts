@@ -22,6 +22,11 @@ export function scoreSortValue(row: OpportunityRow): Tiered {
   return row.score.value === null ? { tier: 0, v: 0 } : { tier: 2, v: row.score.value }
 }
 
+/** Sort value for the topic column: must match the cell's display value (topic_id), not the label. */
+export function topicSortValue(model: OppRowModel): string {
+  return model.row.topic_id.toLowerCase()
+}
+
 export function oppRowModels(
   rows: OpportunityRow[],
   topics: TopicPage[],
