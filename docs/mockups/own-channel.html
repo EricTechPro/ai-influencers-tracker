@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AIT mockups · reply queue</title>
+<link rel="stylesheet" href="board.css">
+</head>
+<body>
+<div class="wrap">
+<h1>/channels/you — reply queue</h1>
+<p class="lede">Your channel page carries everything a competitor page has, plus this one section. Locked: draft = his take first then where to go; nothing posts from here; answered is detected (your channel id in the replies), never declared. Versions differ in card anatomy.</p>
+
+<!-- ═════════ A ═════════ -->
+<div class="pageframe va" data-group="own-channel" data-v="A">
+  <div class="framebar"><span class="dots"><i></i><i></i><i></i></span><span class="url">localhost:3002/channels/erictech</span>
+    <span class="vlabel">VERSION A</span><span class="vdesc">stacked card · comment above, tinted draft below</span>
+    <button class="pickbtn">pick this</button></div>
+  <div class="framebody">
+    <div class="page">
+      <div class="section-kicker" style="margin-top:1.4rem"><span class="kicker">▸ reply queue · 14 unanswered</span><span class="rule"></span><span class="cap">your channel only</span></div>
+      <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;font-size:11px">
+        <div class="tabs"><button class="on">needs reply · 14</button><button>answered · 41</button></div>
+        <span class="mono10" style="margin-left:auto">sort likes ▾ · 30d ▾</span></div>
+      <div class="card pad">
+        <div style="display:flex;gap:8px;align-items:baseline;flex-wrap:wrap;font-size:12px">
+          <b>marco</b><span class="mono10">188 likes · 6 replies · 12d after</span><span class="mono10">"Claude Code Skills…"</span>
+          <span class="cat" style="margin-left:auto">question</span></div>
+        <p style="margin:8px 0;font-size:13px">"great vid but how do you stop the agent from blowing the context window on a big repo? mine dies every time"</p>
+        <div class="inference" style="padding:0.8rem 1rem">
+          <div class="mono10" style="margin-bottom:6px;color:color-mix(in srgb, var(--inf) 80%, var(--foreground))">DRAFT · not sent · <span class="src-chip">sources: transcript 08:12 · KB · Skool Ch3</span></div>
+          <p style="margin:0;font-size:13px;line-height:1.6">Yeah that's the number one thing people hit. Short answer: don't let it read the whole repo, give it a map instead.<br><br>I go through the exact setup in Chapter 3 of the community, the knowledge base lesson. Covers the folder structure that keeps context flat: skool.com/erictech/classroom → Chapter 3</p></div>
+        <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+          <button class="btn primary">copy draft</button><button class="btn">open comment on YouTube ↗</button><button class="btn">open in Studio ↗</button><button class="btn muted">skip</button></div>
+        <p class="mono10" style="margin:8px 0 0">ⓘ Nothing posts from here. Copy it, click through, send it yourself.</p></div>
+      <div class="mono10" style="margin-top:10px">✓ answered · 41 — detected automatically: the daily sweep marks a comment answered when your channel id appears in its replies. <a href="#">show</a></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═════════ B ═════════ -->
+<div class="pageframe vb" data-group="own-channel" data-v="B">
+  <div class="framebar"><span class="dots"><i></i><i></i><i></i></span><span class="url">localhost:3002/channels/erictech</span>
+    <span class="vlabel">VERSION B</span><span class="vdesc">split panel · comment left, draft right, queue rail</span>
+    <button class="pickbtn">pick this</button></div>
+  <div class="framebody">
+    <div class="page">
+      <div style="display:flex;align-items:baseline;gap:10px;margin:1.4rem 0 0.6rem"><span class="bigsec">Reply queue</span><span class="mono10">14 unanswered · your channel only</span>
+        <span style="margin-left:auto"><span class="tabs"><button class="on">needs reply</button><button>answered · 41</button></span></span></div>
+      <div style="display:grid;grid-template-columns:11rem 1fr;gap:0.75rem;align-items:start">
+        <div class="card" style="font-size:11px">
+          <div style="padding:8px 10px;border-bottom:1px solid var(--border);background:color-mix(in srgb, var(--primary) 5%, transparent)"><b>marco</b><div class="mono10">188 ♥ · question</div></div>
+          <div style="padding:8px 10px;border-bottom:1px solid var(--border)"><b>jenn_b</b><div class="mono10">140 ♥ · request</div></div>
+          <div style="padding:8px 10px;border-bottom:1px solid var(--border)"><b>pip_h</b><div class="mono10">96 ♥ · question</div></div>
+          <div style="padding:8px 10px" class="mono10">+11 more…</div></div>
+        <div class="card pad">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+            <div><div class="kicker">the comment</div>
+              <p style="margin:8px 0;font-size:13px">"great vid but how do you stop the agent from blowing the context window on a big repo? mine dies every time"</p>
+              <div class="mono10">marco · 188 likes · 6 replies · 12d after · on "Claude Code Skills…" · <span class="cat">question</span></div></div>
+            <div><div class="kicker" style="color:var(--inf)">draft · not sent</div>
+              <div class="inference" style="margin-top:8px;padding:0.7rem 0.9rem">
+                <p style="margin:0;font-size:12.5px;line-height:1.6">Yeah that's the number one thing people hit. Short answer: don't let it read the whole repo, give it a map instead.<br><br>Chapter 3 of the community covers the exact setup: skool.com/erictech/classroom → Chapter 3</p></div>
+              <div class="mono10" style="margin-top:6px"><span class="src-chip">transcript 08:12</span> <span class="src-chip">KB</span> <span class="src-chip">Skool Ch3</span></div></div></div>
+          <div style="display:flex;gap:8px;margin-top:14px;border-top:1px solid var(--border);padding-top:12px">
+            <button class="btn primary">copy draft</button><button class="btn">open on YouTube ↗</button><button class="btn">Studio ↗</button>
+            <button class="btn" style="margin-left:auto;color:var(--muted-foreground)">skip →</button></div>
+          <p class="mono10" style="margin:8px 0 0">ⓘ read-only product — copy, click through, send it yourself</p></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═════════ C ═════════ -->
+<div class="pageframe vc" data-group="own-channel" data-v="C">
+  <div class="framebar"><span class="dots"><i></i><i></i><i></i></span><span class="url">localhost:3002/channels/erictech</span>
+    <span class="vlabel">VERSION C</span><span class="vdesc">ledger list · compact rows, draft expands inline</span>
+    <button class="pickbtn">pick this</button></div>
+  <div class="framebody">
+    <div class="page" style="max-width:52rem">
+      <div style="margin-top:1.5rem"><span class="kicker">reply queue · 14 unanswered · your channel only</span></div>
+      <p class="note" style="margin:4px 0 10px">Sorted by likes. A row expands into its draft; answered rows leave the list on the next sweep when your reply is detected.</p>
+      <div class="card">
+        <table class="tbl">
+          <tr class="rowlink" style="background:color-mix(in srgb, var(--accent) 50%, transparent)"><td style="width:18px">▾</td><td class="mono10">marco</td><td>how do you stop the agent from blowing the context window…</td><td><span class="cat">que</span></td><td class="r num">188</td><td class="r num">12d</td></tr>
+          <tr><td colspan="6" class="sub" style="padding:0.9rem 1rem">
+            <div class="inference" style="padding:0.7rem 0.9rem;max-width:36rem">
+              <div class="mono10" style="margin-bottom:4px">DRAFT · not sent · <span class="src-chip">transcript 08:12 · KB · Skool Ch3</span></div>
+              <p style="margin:0;font-size:12.5px;line-height:1.6">Yeah that's the number one thing people hit. Short answer: don't let it read the whole repo, give it a map instead. Chapter 3 of the community covers the exact setup.</p></div>
+            <div style="display:flex;gap:8px;margin-top:8px"><button class="btn primary">copy draft</button><button class="btn">YouTube ↗</button><button class="btn">Studio ↗</button><button class="btn muted">skip</button></div></td></tr>
+          <tr class="rowlink"><td>▸</td><td class="mono10">jenn_b</td><td>would be great to see this with a local model</td><td><span class="cat">req</span></td><td class="r num">140</td><td class="r num">4d</td></tr>
+          <tr class="rowlink"><td>▸</td><td class="mono10">pip_h</td><td>does this work with a monorepo? mine has 40 pkgs</td><td><span class="cat">que</span></td><td class="r num">96</td><td class="r num">8d</td></tr>
+        </table>
+      </div>
+      <p class="mono10" style="margin-top:8px">✓ answered · 41 <a href="#">show</a> — detected, not declared</p>
+    </div>
+  </div>
+</div>
+
+<div class="pagenav"><a href="channel.html">← /channels</a><a href="compare.html">next: /compare →</a></div>
+</div>
+<div id="picks"></div>
+<script src="board.js"></script>
+</body>
+</html>

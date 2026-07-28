@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AIT mockups · /compare</title>
+<link rel="stylesheet" href="board.css">
+</head>
+<body>
+<div class="wrap">
+<h1>/compare — two channels</h1>
+<p class="lede">Locked: gaps lead, numbers follow — the topic gaps hand you a filmable list, the stat table just tells you that you are behind. Versions differ in how the two halves are weighted.</p>
+
+<!-- ═════════ A ═════════ -->
+<div class="pageframe va" data-group="compare" data-v="A">
+  <div class="framebar"><span class="dots"><i></i><i></i><i></i></span><span class="url">localhost:3002/compare</span>
+    <span class="vlabel">VERSION A</span><span class="vdesc">dense terminal · two stacked tables</span>
+    <button class="pickbtn">pick this</button></div>
+  <div class="framebody">
+    <div class="appnav"><span class="logo">ai influencers</span>
+      <nav><a href="#">home</a><a href="#">leaderboard</a><a href="#">topics</a><a href="#">channels</a><a class="active" href="#">compare</a></nav>
+      <div class="right"><span>snapshot 2026-07-27</span><span class="livedot"></span></div></div>
+    <div class="page">
+      <div style="display:flex;gap:10px;align-items:center;margin-top:1.2rem;font-size:13px">
+        <span class="chip" style="font-size:12px;padding:3px 10px"><span class="avatar av18" style="margin-right:6px">CM</span>Cole Medin ▾</span>
+        <span class="mono10">vs</span>
+        <span class="chip you" style="font-size:12px;padding:3px 10px"><span class="avatar av18 av-you" style="margin-right:6px">ET</span>Eric Tech ▾ ★ you</span></div>
+      <div class="section-kicker"><span class="kicker">▸ what he covers that you do not</span><span class="rule"></span><span class="cap">the actionable part</span></div>
+      <div class="card" style="overflow-x:auto"><table class="tbl" style="font-size:12px">
+        <tr><th>topic</th><th class="r">him</th><th class="r">you</th><th class="r">his views</th><th>verdict</th></tr>
+        <tr class="rowlink"><td>rag-pipelines</td><td class="r num">6 videos</td><td class="r num muted">0</td><td class="r num">890,400</td><td><span class="badge b-filled v-make">MAKE_THIS_NOW</span></td></tr>
+        <tr class="rowlink"><td>claude-code-memory</td><td class="r num">3 videos</td><td class="r num muted">0</td><td class="r num">210,880</td><td><span class="badge b-filled v-make">MAKE_THIS_NOW</span></td></tr>
+        <tr class="rowlink"><td>local-llm-stacks</td><td class="r num">2 videos</td><td class="r num muted">0</td><td class="r num">44,100</td><td><span class="badge b-filled v-early">TOO_EARLY</span></td></tr>
+        <tr><td colspan="5" class="sub mono10">— you cover, he does not —</td></tr>
+        <tr class="rowlink"><td>claude-code-skills-authoring</td><td class="r num muted">0</td><td class="r num">4</td><td class="r num muted">—</td><td class="mono10">—</td></tr>
+        <tr><td colspan="5" class="sub mono10">— both —</td></tr>
+        <tr class="rowlink"><td>claude-code-subagents</td><td class="r num">4 videos</td><td class="r num">1</td><td class="r num">640,200</td><td><span class="badge b-filled v-unserved">ONLY_IF_UNSERVED</span></td></tr>
+        <tr class="rowlink"><td>n8n-agent-workflows</td><td class="r num">9 videos</td><td class="r num">2</td><td class="r num">1,204,000</td><td><span class="badge b-filled v-crowded">CROWDED</span></td></tr>
+      </table></div>
+      <div class="section-kicker"><span class="kicker">▸ the numbers</span><span class="rule"></span></div>
+      <div class="callout warn" style="margin-bottom:8px;font-size:12px">⚠ Different bucket widths. Cole rounds to 1,000, you round to 100. A subscriber comparison across this size gap is not like-for-like. Views carry no such caveat.</div>
+      <div class="card" style="overflow-x:auto"><table class="tbl" style="font-size:12px">
+        <tr><th></th><th class="r">Cole Medin</th><th class="r">Eric Tech ★</th></tr>
+        <tr><td>subscribers</td><td class="r num">219,000 <span class="chip">±1,000</span></td><td class="r num">68,700 <span class="chip">±100</span></td></tr>
+        <tr><td><span class="derived" title="window delta">Δ subs 90d</span></td><td class="r num">+15,000</td><td class="r num">+2,100</td></tr>
+        <tr><td><span class="derived" title="Δsubs ÷ subs at start">growth rate</span></td><td class="r num">+7.4%</td><td class="r num">+3.1%</td></tr>
+        <tr><td>views</td><td class="r num">11,991,545</td><td class="r num">4,102,880</td></tr>
+        <tr><td><span class="derived" title="window delta">Δ views 90d</span></td><td class="r num">+3,100,000</td><td class="r num">+404,000</td></tr>
+        <tr><td><span class="derived" title="Δsubs ÷ Δviews × 1000">subs / 1k views</span></td><td class="r num"><b>12.4</b></td><td class="r num"><b>5.2</b> <span class="mono10">← the real gap</span></td></tr>
+        <tr><td>videos 90d</td><td class="r num">12</td><td class="r num">6</td></tr>
+        <tr><td><span class="derived" title="median of exact viewCounts">median views</span></td><td class="r num">25,246</td><td class="r num">18,900</td></tr>
+        <tr><td><span class="derived" title="median days between uploads">cadence</span></td><td class="r num">3.4d</td><td class="r num">15.0d</td></tr>
+      </table></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═════════ B ═════════ -->
+<div class="pageframe vb" data-group="compare" data-v="B">
+  <div class="framebar"><span class="dots"><i></i><i></i><i></i></span><span class="url">localhost:3002/compare</span>
+    <span class="vlabel">VERSION B</span><span class="vdesc">card-forward · profile heads, gap list with verdict CTAs</span>
+    <button class="pickbtn">pick this</button></div>
+  <div class="framebody">
+    <div class="appnav navrule"><span class="logo">ai influencers</span>
+      <nav><a href="#">home</a><a href="#">leaderboard</a><a href="#">topics</a><a href="#">channels</a><a class="active" href="#">compare</a></nav>
+      <div class="right"><span>snapshot 2026-07-27</span><span class="livedot"></span></div></div>
+    <div class="page">
+      <div style="display:grid;grid-template-columns:1fr auto 1fr;gap:1rem;align-items:center;margin-top:1.4rem">
+        <div class="card pad" style="display:flex;gap:12px;align-items:center"><span class="avatar" style="width:48px;height:48px">CM</span>
+          <div><b style="font-size:1.1rem">Cole Medin</b><div class="mono10">219,000 subs ±1,000 · #1 growth</div>
+          <div class="num gain" style="font-size:1.3rem;font-weight:700">+7.4%</div></div></div>
+        <div class="mono10" style="text-align:center">vs</div>
+        <div class="card pad" style="display:flex;gap:12px;align-items:center;border-color:color-mix(in srgb, var(--primary) 55%, var(--border))"><span class="avatar av-you" style="width:48px;height:48px">ET</span>
+          <div><b style="font-size:1.1rem">Eric Tech</b> <span class="chip you">★ you</span><div class="mono10">68,700 subs ±100 · #7 growth</div>
+          <div class="num" style="font-size:1.3rem;font-weight:700;color:var(--primary)">+3.1%</div></div></div></div>
+
+      <div style="display:flex;align-items:baseline;gap:10px;margin:2rem 0 0.6rem"><span class="bigsec">What he covers that you do not</span><span class="mono10">the actionable part</span></div>
+      <div style="display:grid;gap:0.6rem">
+        <div class="card pad" style="display:flex;gap:14px;align-items:center;border-left:3px solid var(--v-make)">
+          <div style="min-width:0;flex:1"><b>rag-pipelines</b><div class="mono10">him 6 videos · 890,400 views · you 0</div></div>
+          <span class="badge b-filled v-make">MAKE_THIS_NOW</span><button class="btn primary">open topic →</button></div>
+        <div class="card pad" style="display:flex;gap:14px;align-items:center;border-left:3px solid var(--v-make)">
+          <div style="min-width:0;flex:1"><b>claude-code-memory</b><div class="mono10">him 3 videos · 210,880 views · you 0</div></div>
+          <span class="badge b-filled v-make">MAKE_THIS_NOW</span><button class="btn primary">open topic →</button></div>
+        <div class="card pad" style="display:flex;gap:14px;align-items:center;border-left:3px solid var(--v-early)">
+          <div style="min-width:0;flex:1"><b>local-llm-stacks</b><div class="mono10">him 2 videos · 44,100 views · you 0</div></div>
+          <span class="badge b-filled v-early">TOO_EARLY</span><button class="btn">open topic →</button></div>
+      </div>
+      <p class="mono10" style="margin-top:8px">you cover, he does not: claude-code-skills-authoring (4 videos) · both: claude-code-subagents, n8n-agent-workflows</p>
+
+      <div style="display:flex;align-items:baseline;gap:10px;margin:2rem 0 0.6rem"><span class="bigsec">The numbers</span></div>
+      <div class="callout warn" style="margin-bottom:8px;font-size:12px">⚠ Different bucket widths (1,000 vs 100) — subscriber rows are not like-for-like.</div>
+      <div class="card" style="overflow-x:auto"><table class="tbl">
+        <tr><th></th><th class="r">Cole</th><th style="width:12rem"></th><th class="r">you</th></tr>
+        <tr><td><span class="derived" title="Δsubs ÷ Δviews × 1000">subs / 1k views</span> <span class="mono10">the real gap</span></td><td class="r num"><b>12.4</b></td>
+          <td><div style="display:flex;gap:2px;height:8px"><div style="flex:12.4;background:var(--muted)"></div><div style="flex:5.2;background:var(--primary)"></div></div></td><td class="r num"><b>5.2</b></td></tr>
+        <tr><td>growth rate</td><td class="r num">+7.4%</td>
+          <td><div style="display:flex;gap:2px;height:8px"><div style="flex:7.4;background:var(--muted)"></div><div style="flex:3.1;background:var(--primary)"></div></div></td><td class="r num">+3.1%</td></tr>
+        <tr><td>cadence</td><td class="r num">3.4d</td>
+          <td><div style="display:flex;gap:2px;height:8px"><div style="flex:3.4;background:var(--muted)"></div><div style="flex:15;background:var(--primary)"></div></div></td><td class="r num">15.0d</td></tr>
+        <tr><td>median views</td><td class="r num">25,246</td>
+          <td><div style="display:flex;gap:2px;height:8px"><div style="flex:25.2;background:var(--muted)"></div><div style="flex:18.9;background:var(--primary)"></div></div></td><td class="r num">18,900</td></tr>
+      </table></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═════════ C ═════════ -->
+<div class="pageframe vc" data-group="compare" data-v="C">
+  <div class="framebar"><span class="dots"><i></i><i></i><i></i></span><span class="url">localhost:3002/compare</span>
+    <span class="vlabel">VERSION C</span><span class="vdesc">editorial ledger · one merged table, prose verdicts</span>
+    <button class="pickbtn">pick this</button></div>
+  <div class="framebody">
+    <div class="appnav"><span class="logo" style="font-weight:400">ai<b>influencers</b></span>
+      <nav><a href="#">home</a><a href="#">leaderboard</a><a href="#">topics</a><a href="#">channels</a><a class="active" href="#">compare</a></nav>
+      <div class="right"><span>snapshot Jul 27</span></div></div>
+    <div class="page" style="max-width:52rem">
+      <div style="margin-top:1.5rem;font-size:1.1rem"><b>Cole Medin</b> <span class="mono10">vs</span> <b style="color:var(--primary)">Eric Tech ★</b></div>
+      <p class="note" style="margin:6px 0 14px">He converts <b style="color:var(--foreground)">12.4 subs per 1k views</b> to your 5.2 — that is the real gap, not the subscriber count. Three of his topics are open for you right now.</p>
+      <div style="margin-top:1rem"><span class="kicker">what he covers that you do not</span></div>
+      <div class="card" style="margin-top:8px"><table class="tbl">
+        <tr class="rowlink"><td>rag-pipelines</td><td class="mono10">him 6 · you 0 · 890,400 views</td><td class="r"><span class="badge b-outline v-make">MAKE_THIS_NOW</span></td></tr>
+        <tr class="rowlink"><td>claude-code-memory</td><td class="mono10">him 3 · you 0 · 210,880 views</td><td class="r"><span class="badge b-outline v-make">MAKE_THIS_NOW</span></td></tr>
+        <tr class="rowlink"><td>local-llm-stacks</td><td class="mono10">him 2 · you 0 · 44,100 views</td><td class="r"><span class="badge b-outline v-early">TOO_EARLY</span></td></tr>
+        <tr class="rowlink"><td class="muted">claude-code-skills-authoring</td><td class="mono10">you 4 · him 0</td><td class="r mono10">yours alone</td></tr>
+        <tr class="rowlink"><td class="muted">claude-code-subagents</td><td class="mono10">him 4 · you 1</td><td class="r"><span class="badge b-outline v-unserved">ONLY_IF_UNSERVED</span></td></tr>
+      </table></div>
+      <div style="margin-top:2rem"><span class="kicker">the numbers</span></div>
+      <p class="note" style="margin:4px 0 8px;color:var(--warning)">⚠ bucket widths differ (1,000 vs 100); subscriber rows are not like-for-like</p>
+      <div class="card"><table class="tbl">
+        <tr><th></th><th class="r">Cole</th><th class="r">you</th></tr>
+        <tr><td>subscribers</td><td class="r num">219,000</td><td class="r num">68,700</td></tr>
+        <tr><td>growth 90d</td><td class="r num">+7.4%</td><td class="r num">+3.1%</td></tr>
+        <tr><td>subs / 1k views</td><td class="r num"><b>12.4</b></td><td class="r num"><b>5.2</b></td></tr>
+        <tr><td>videos 90d · cadence</td><td class="r num">12 · 3.4d</td><td class="r num">6 · 15.0d</td></tr>
+      </table></div>
+    </div>
+  </div>
+</div>
+
+<div class="pagenav"><a href="own-channel.html">← reply queue</a><a href="index.html">back to index →</a></div>
+</div>
+<div id="picks"></div>
+<script src="board.js"></script>
+</body>
+</html>

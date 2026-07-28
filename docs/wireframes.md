@@ -521,3 +521,36 @@ and topic pages stay thin until extraction lands.
 **Decided**: the topic route renders from day one. Three of its five sections (comments, videos,
 creator trail) are real off the spine alone; the mind map carries an empty state naming the build
 step that fills it. Nothing is hidden because it is incomplete.
+
+---
+
+## Visual language — locked 2026-07-28
+
+Chosen from the HTML mockup board in [`mockups/`](mockups/index.html) (three full versions per
+page, social-invest tokens throughout, per E8). Versions keep one personality per letter:
+**A dense terminal** (faithful social-invest port), **B card-forward** (gamified), **C editorial
+ledger** (quiet). The locked set:
+
+| page | version | why |
+|---|---|---|
+| `/` home | **B** | F1 says *gamified* top-5 — podium top-3, ghost rank numerals, and the score derivation as a side panel next to the table beats an expanding row for the ten-second read |
+| `/leaderboard` | **A** | all columns visible; bounded `< N` and absent `—` semantics read cleanest in the dense table |
+| `/topics` leaf | **A** | the fork renders as the chain-map port — §12 names `chain-map.tsx` the model; terminal rows with colored verbs, click-through to verbatim quotes |
+| `/topics` parent | **A** | leaf table first, small rollup trend under it; parents stay quiet because they carry no verdict |
+| `/channels` | **A** | section-for-section port of the ticker page: kicker sections, flat profile card, inline comment expansion |
+| reply queue | **B** | working a queue wants the split panel: queue rail left, comment + draft side by side, actions on one line |
+| `/compare` | **A** | the bucket-width caveat wants sober stacked tables, not bars that invite cross-bucket comparison |
+
+Component-level, from [`mockups/component-board.html`](mockups/component-board.html):
+
+- **Verdict badge: tinted pill** (action-badge STYLES pattern), one hue per band: MAKE green
+  `#16a34a` · UNSERVED teal `#0e7490` · EARLY amber `#f5a623` · CROWDED red `#e5484d` ·
+  INSUFFICIENT gray.
+- **Trust tiers:** Oracle plain · Derived dotted underline, formula on hover · **Inference violet
+  tint** `#7c3aed` (the retired `--limit` hue) + source chip. Green is reserved for "measured and
+  positive", warning amber for stale/caveat, primary blue for interaction and YOU.
+- **Growth card:** home-B treatment — ghost rank numeral, area sparkline behind the hero number on
+  #1, bucket chip always beside Δsubs.
+
+Overridable by pointing at any row and naming a different letter; everything else in this file is
+unchanged by the visual pass.

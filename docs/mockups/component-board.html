@@ -1,0 +1,947 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AIT component board — social-invest chrome</title>
+<style>
+/* ————— fonts: same files social-invest self-hosts ————— */
+@font-face {
+  font-family: "Google Sans Code";
+  font-style: normal; font-weight: 400 700; font-display: swap;
+  src: url("fonts/google-sans-code-latin.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Google Sans Code";
+  font-style: normal; font-weight: 400 700; font-display: swap;
+  src: url("fonts/google-sans-code-latin-ext.woff2") format("woff2");
+}
+
+/* ————— tokens: social-invest globals.css verbatim, P&L → trust + verdict ————— */
+:root {
+  --background: #fdfdfd;
+  --foreground: #282728;
+  --card: #ffffff;
+  --primary: #006cac;
+  --secondary: #f4f3f3;
+  --muted: #e6e6e6;
+  --muted-foreground: #6b6a6b;
+  --accent: #f1efef;
+  --border: #ece9e9;
+  --warning: #f5a623;
+  --radius-code: 0.375rem;
+
+  /* NEW — verdict bands (replaces BUY/SELL/HOLD/WATCH/LIMIT/AVOID) */
+  --v-make: #16a34a;        /* MAKE_THIS_NOW   — the green "buy" */
+  --v-unserved: #0e7490;    /* ONLY_IF_UNSERVED — conditional teal */
+  --v-early: #f5a623;       /* TOO_EARLY       — amber, wait */
+  --v-crowded: #e5484d;     /* CROWDED         — red, stay out */
+  --v-none: #6b6a6b;        /* INSUFFICIENT    — gray, no claim */
+
+  /* NEW — trust tiers (replaces gain/loss). Oracle is plain foreground. */
+  --inf-violet: #7c3aed;    /* inference tint candidate A */
+  --inf-amber:  #b45309;    /* inference tint candidate B */
+  --inf-cyan:   #0e7490;    /* inference tint candidate C */
+}
+* { box-sizing: border-box; border-color: var(--border); }
+body {
+  margin: 0; background: var(--background); color: var(--foreground);
+  font: 400 14px/1.5 "Google Sans Code", ui-monospace, SFMono-Regular, Menlo, monospace;
+  -webkit-font-smoothing: antialiased;
+}
+.wrap { max-width: 64rem; margin: 0 auto; padding: 0 1.5rem 8rem; }
+a { color: var(--primary); text-decoration: none; }
+a:hover { text-decoration: underline; }
+h1 { font-size: 1.875rem; line-height: 2.25rem; font-weight: 700; color: var(--primary); margin: 2.5rem 0 0.5rem; }
+hr { border: 0; border-top: 1px solid var(--border); margin: 3rem 0; }
+
+.kicker {
+  font-size: 12px; font-weight: 500; text-transform: uppercase;
+  letter-spacing: 0.05em; color: var(--muted-foreground);
+}
+.section { margin-top: 3.5rem; scroll-margin-top: 5rem; }
+.section-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 1rem; margin-bottom: 1rem; }
+.section-head h2 { font-size: 1rem; font-weight: 600; margin: 0.25rem 0 0; }
+.reuses { font-size: 11px; color: var(--muted-foreground); text-align: right; white-space: nowrap; }
+.reuses code { color: var(--foreground); background: var(--secondary); padding: 1px 5px; border-radius: var(--radius-code); font-size: 11px; }
+
+/* cards & chrome — square corners everywhere, .code-surface is the one exception */
+.card { background: var(--card); border: 1px solid var(--border); }
+.code-surface { border-radius: var(--radius-code); }
+.pad { padding: 1rem; }
+.note { font-size: 12px; color: var(--muted-foreground); max-width: 42rem; }
+.mono10 { font-size: 10px; color: var(--muted-foreground); }
+
+/* ————— trust tiers ————— */
+.derived { border-bottom: 1px dotted var(--muted-foreground); cursor: help; }
+.inference {
+  background: color-mix(in srgb, var(--inf-tint, var(--inf-violet)) 7%, transparent);
+  border-left: 2px solid color-mix(in srgb, var(--inf-tint, var(--inf-violet)) 45%, transparent);
+  padding: 0.15rem 0.4rem;
+}
+.src-chip {
+  display: inline-flex; align-items: center; gap: 3px;
+  font-size: 10px; color: color-mix(in srgb, var(--inf-tint, var(--inf-violet)) 80%, var(--foreground));
+  border: 1px solid color-mix(in srgb, var(--inf-tint, var(--inf-violet)) 35%, transparent);
+  border-radius: 999px; padding: 0 6px; line-height: 16px; white-space: nowrap;
+}
+.tint-violet { --inf-tint: var(--inf-violet); }
+.tint-amber  { --inf-tint: var(--inf-amber); }
+.tint-cyan   { --inf-tint: var(--inf-cyan); }
+
+/* ————— badges ————— */
+.badge {
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 500; line-height: 16px; padding: 1px 8px;
+  border: 1px solid; border-radius: 999px; white-space: nowrap;
+}
+.b-filled.v-make     { color: var(--v-make);     border-color: color-mix(in srgb, var(--v-make) 40%, transparent);     background: color-mix(in srgb, var(--v-make) 5%, transparent); }
+.b-filled.v-unserved { color: var(--v-unserved); border-color: color-mix(in srgb, var(--v-unserved) 40%, transparent); background: color-mix(in srgb, var(--v-unserved) 5%, transparent); }
+.b-filled.v-early    { color: var(--v-early);    border-color: color-mix(in srgb, var(--v-early) 45%, transparent);    background: color-mix(in srgb, var(--v-early) 6%, transparent); }
+.b-filled.v-crowded  { color: var(--v-crowded);  border-color: color-mix(in srgb, var(--v-crowded) 40%, transparent);  background: color-mix(in srgb, var(--v-crowded) 5%, transparent); }
+.b-filled.v-none     { color: var(--v-none);     border-color: var(--border); background: color-mix(in srgb, var(--muted) 40%, transparent); }
+.b-outline { background: transparent !important; }
+.b-outline.v-make { color: var(--v-make); border-color: var(--v-make); }
+.b-outline.v-unserved { color: var(--v-unserved); border-color: var(--v-unserved); }
+.b-outline.v-early { color: var(--v-early); border-color: var(--v-early); }
+.b-outline.v-crowded { color: var(--v-crowded); border-color: var(--v-crowded); }
+.b-outline.v-none { color: var(--v-none); border-color: var(--v-none); }
+.b-bar { border: 0; border-radius: 0; border-left: 3px solid; padding: 1px 6px; background: var(--secondary); font-family: inherit; }
+.b-bar.v-make { border-color: var(--v-make); color: var(--v-make); }
+.b-bar.v-unserved { border-color: var(--v-unserved); color: var(--v-unserved); }
+.b-bar.v-early { border-color: var(--v-early); color: var(--v-early); }
+.b-bar.v-crowded { border-color: var(--v-crowded); color: var(--v-crowded); }
+.b-bar.v-none { border-color: var(--v-none); color: var(--v-none); }
+
+.chip {
+  display: inline-flex; align-items: center; font-size: 10px; line-height: 16px;
+  border: 1px solid var(--border); border-radius: 999px; padding: 0 6px;
+  color: var(--muted-foreground); white-space: nowrap;
+}
+.chip.warn { border-color: color-mix(in srgb, var(--warning) 50%, transparent); color: var(--warning); }
+.chip.you { border-color: color-mix(in srgb, var(--primary) 50%, transparent); color: var(--primary); font-weight: 600; }
+
+/* ————— tables ————— */
+table.tbl { width: 100%; border-collapse: collapse; font-size: 13px; }
+.tbl th {
+  text-align: left; font-size: 11px; font-weight: 500; color: var(--muted-foreground);
+  padding: 8px 10px; border-bottom: 1px solid var(--border); white-space: nowrap;
+}
+.tbl th.r, .tbl td.r { text-align: right; }
+.tbl td { padding: 8px 10px; border-bottom: 1px solid var(--border); vertical-align: top; }
+.tbl tr:last-child td { border-bottom: 0; }
+.tbl tr.rowlink:hover { background: var(--accent); cursor: pointer; }
+.num { font-variant-numeric: tabular-nums; }
+
+/* ————— variant picker ————— */
+.variants { display: grid; gap: 1rem; }
+.variants.cols2 { grid-template-columns: 1fr 1fr; }
+.variants.cols3 { grid-template-columns: repeat(3, 1fr); }
+@media (max-width: 900px) { .variants.cols2, .variants.cols3 { grid-template-columns: 1fr; } }
+.variant { border: 1px solid var(--border); background: var(--card); cursor: pointer; position: relative; }
+.variant:hover { background: #fcfbfb; }
+.variant.selected { outline: 2px solid var(--primary); outline-offset: -1px; }
+.variant.selected .vtag { background: var(--primary); color: #fff; border-color: var(--primary); }
+.vhead { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-bottom: 1px solid var(--border); background: var(--secondary); }
+.vtag {
+  font-size: 11px; font-weight: 700; border: 1px solid var(--border);
+  background: var(--card); padding: 0 7px; line-height: 18px;
+}
+.vname { font-size: 12px; font-weight: 500; }
+.vdesc { font-size: 11px; color: var(--muted-foreground); margin-left: auto; text-align: right; }
+.vbody { padding: 1rem; }
+
+/* ————— data manifest ————— */
+.manifest { margin-top: 0.75rem; border: 1px dashed var(--border); background: #fbfaf9; padding: 0.75rem 1rem; }
+.manifest h4 { margin: 0 0 6px; font-size: 11px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: var(--muted-foreground); }
+.manifest table { width: 100%; border-collapse: collapse; font-size: 11px; }
+.manifest td { padding: 3px 8px 3px 0; vertical-align: top; border: 0; }
+.manifest td:first-child { font-weight: 500; white-space: nowrap; }
+.tier { font-size: 9px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; padding: 0 5px; line-height: 14px; border: 1px solid; border-radius: 2px; white-space: nowrap; }
+.tier.oracle { color: var(--foreground); border-color: var(--muted-foreground); }
+.tier.derived { color: var(--primary); border-color: var(--primary); }
+.tier.inference { color: var(--inf-violet); border-color: var(--inf-violet); }
+.manifest td:last-child { color: var(--muted-foreground); }
+
+/* ————— app chrome mock ————— */
+.appnav { display: flex; align-items: center; gap: 1.5rem; height: 5rem; padding: 0 1.5rem; background: var(--background); border: 1px solid var(--border); }
+.appnav .logo { font-size: 1.125rem; font-weight: 700; letter-spacing: -0.02em; white-space: nowrap; }
+.appnav nav { display: flex; gap: 1.25rem; font-size: 13px; }
+.appnav nav a { color: var(--foreground); }
+.appnav nav a.active { text-decoration: underline 2px wavy var(--primary); text-underline-offset: 8px; }
+.appnav .right { margin-left: auto; display: flex; align-items: center; gap: 10px; font-size: 11px; color: var(--muted-foreground); }
+.livedot { width: 7px; height: 7px; border-radius: 999px; background: var(--v-make); display: inline-block; }
+
+/* ————— growth cards ————— */
+.cardgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr)); gap: 0.75rem; }
+.gcard { position: relative; display: flex; flex-direction: column; min-height: 200px; background: var(--card); border: 1px solid var(--border); padding: 1rem; transition: background 0.15s; }
+.gcard:hover { background: color-mix(in srgb, var(--accent) 40%, var(--card)); }
+.gcard .id { display: flex; align-items: center; gap: 8px; }
+.gcard .rank { width: 20px; font-size: 10px; color: var(--muted-foreground); flex-shrink: 0; }
+.avatar { width: 32px; height: 32px; border-radius: 999px; background: linear-gradient(135deg, #d8d4d0, #b9b4af); flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: #fff; }
+.gcard .who { min-width: 0; line-height: 1.25; }
+.gcard .who b { display: block; font-size: 14px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.gcard .who span { font-size: 10px; color: var(--muted-foreground); }
+.hero { margin-top: 0.5rem; display: flex; align-items: baseline; gap: 6px; }
+.hero .n { font-size: 1.5rem; font-weight: 600; line-height: 1; font-variant-numeric: tabular-nums; }
+.hero .u { font-size: 10px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted-foreground); }
+.gfoot { margin-top: auto; padding-top: 8px; border-top: 1px solid var(--border); display: flex; justify-content: space-between; font-size: 10px; color: var(--muted-foreground); }
+.statline { font-size: 11px; color: var(--muted-foreground); margin-top: 3px; }
+.statline .v { color: var(--foreground); font-variant-numeric: tabular-nums; }
+.spark { display: block; margin-top: 8px; }
+.medal { font-size: 15px; line-height: 1; }
+.gcard.top1 { border-color: color-mix(in srgb, var(--v-make) 45%, var(--border)); }
+.gcard.youcard { border-color: color-mix(in srgb, var(--primary) 55%, var(--border)); background: color-mix(in srgb, var(--primary) 3%, var(--card)); }
+.rank-numeral { position: absolute; right: 10px; top: 2px; font-size: 44px; font-weight: 700; color: var(--secondary); -webkit-text-stroke: 1px var(--muted); z-index: 0; }
+
+/* ————— chain map / fork ————— */
+.chain { font-size: 12px; line-height: 1.9; white-space: pre; overflow-x: auto; }
+.chain .lbl { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted-foreground); }
+.chain .row { display: block; width: 100%; text-align: left; border: 0; background: none; font: inherit; color: inherit; padding: 0 4px; cursor: pointer; }
+.chain .row:hover { background: var(--accent); }
+.chain .dim { color: var(--muted-foreground); }
+.chain .verb-alt { color: var(--primary); }
+.chain .verb-con { color: var(--v-crowded); }
+.chain .verb-seq { color: var(--muted-foreground); }
+.campbox { border: 1px solid var(--border); padding: 0.6rem 0.8rem; }
+.campbox .n { font-size: 1.1rem; font-weight: 600; }
+.quote { border-left: 2px solid var(--border); padding-left: 12px; margin: 10px 0; }
+.quote p { margin: 0; font-style: italic; font-size: 13px; line-height: 1.55; }
+.quote .cite { font-style: normal; font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted-foreground); margin-top: 4px; }
+
+/* ————— tabs ————— */
+.tabs { display: inline-flex; background: var(--secondary); padding: 3px; gap: 2px; font-size: 12px; }
+.tabs button { border: 0; background: none; font: inherit; font-size: 12px; padding: 3px 10px; color: var(--muted-foreground); cursor: pointer; }
+.tabs button.on { background: var(--card); color: var(--foreground); box-shadow: 0 0 0 1px var(--border); }
+.cattabs { display: flex; flex-wrap: wrap; gap: 6px; font-size: 11px; }
+.cattabs .t { border: 1px solid var(--border); padding: 2px 9px; color: var(--muted-foreground); cursor: pointer; background: var(--card); font: inherit; font-size: 11px; }
+.cattabs .t.on { border-color: var(--foreground); color: var(--foreground); font-weight: 500; }
+.cattabs .t b { font-weight: 600; color: var(--foreground); }
+
+/* ————— misc ————— */
+.callout { border: 1px solid; padding: 0.9rem 1.1rem; font-size: 13px; }
+.callout.warn { border-color: color-mix(in srgb, var(--warning) 55%, transparent); background: color-mix(in srgb, var(--warning) 5%, transparent); }
+.btn { display: inline-flex; align-items: center; gap: 5px; border: 1px solid var(--border); background: var(--card); font: inherit; font-size: 12px; padding: 4px 12px; cursor: pointer; }
+.btn:hover { background: var(--accent); }
+.btn.primary { background: var(--primary); border-color: var(--primary); color: #fff; }
+.codechip { font-size: 12px; background: var(--secondary); border-radius: var(--radius-code); padding: 2px 8px; }
+.empty { border: 1px solid var(--border); background: var(--card); padding: 2.5rem 1.5rem; text-align: center; font-size: 13px; color: var(--muted-foreground); }
+.secline { display: flex; align-items: center; gap: 10px; margin: 1.5rem 0 0.75rem; }
+.secline .rule { flex: 1; border-top: 1px solid var(--border); }
+.secline .cap { font-size: 11px; color: var(--muted-foreground); white-space: nowrap; }
+
+svg text { font-family: inherit; }
+
+/* ————— picks bar ————— */
+#picks {
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 50;
+  background: var(--card); border-top: 1px solid var(--border);
+  padding: 10px 1.5rem; font-size: 12px; display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;
+}
+#picks .lbl { font-weight: 700; text-transform: uppercase; font-size: 10px; letter-spacing: 0.06em; color: var(--muted-foreground); }
+#picks .pick { border: 1px solid var(--primary); color: var(--primary); padding: 1px 8px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>component board</h1>
+<p class="note" style="max-width:48rem">
+Every wireframe section, rendered in the social-invest chrome (same tokens, same typeface, square
+corners, hairlines). Each mockup names the social-invest component it reuses and carries a
+<b>data manifest</b>: every field on the card, its trust tier, and where the number comes from.
+Where a section has real design freedom you get <b>A/B/C variants — click one to pick it</b>;
+picks collect in the bar at the bottom. Sections the wireframe already marked DECIDED render once, faithfully.
+</p>
+
+<!-- ══════════════ 0. TOKENS ══════════════ -->
+<div class="section" id="s0">
+  <div class="section-head">
+    <div><div class="kicker">00 · foundations</div><h2>Tokens: what carries over, what is new</h2></div>
+    <div class="reuses">reuses <code>globals.css</code> verbatim minus P&amp;L</div>
+  </div>
+  <div class="card pad">
+    <table class="tbl" style="font-size:12px">
+      <tr><th>token</th><th>value</th><th>status</th></tr>
+      <tr><td><span style="display:inline-block;width:12px;height:12px;background:#fdfdfd;border:1px solid var(--border);vertical-align:-1px"></span> background / card / border / muted</td><td class="num">#fdfdfd · #fff · #ece9e9 · #6b6a6b</td><td class="mono10">carried over untouched</td></tr>
+      <tr><td><span style="display:inline-block;width:12px;height:12px;background:#006cac;vertical-align:-1px"></span> primary (interaction blue)</td><td class="num">#006cac</td><td class="mono10">carried over — links, active nav, YOU</td></tr>
+      <tr><td><span style="display:inline-block;width:12px;height:12px;background:#f5a623;vertical-align:-1px"></span> warning</td><td class="num">#f5a623</td><td class="mono10">carried over — stale majority, bucket caveats</td></tr>
+      <tr><td>gain / loss / limit</td><td class="num">#16a34a · #e5484d · #7c3aed</td><td class="mono10">retired as P&amp;L — hues reused by verdict bands below</td></tr>
+      <tr><td><b>verdict bands (new)</b>
+        <span style="display:inline-flex;gap:4px;margin-left:8px;vertical-align:-2px">
+        <span style="width:12px;height:12px;background:var(--v-make)"></span><span style="width:12px;height:12px;background:var(--v-unserved)"></span><span style="width:12px;height:12px;background:var(--v-early)"></span><span style="width:12px;height:12px;background:var(--v-crowded)"></span><span style="width:12px;height:12px;background:var(--v-none)"></span></span></td>
+        <td class="num">MAKE green · UNSERVED teal · EARLY amber · CROWDED red · INSUFFICIENT gray</td><td class="mono10">one hue per band, like action-badge's "every action its own hue"</td></tr>
+      <tr><td><b>trust tiers (new)</b></td>
+        <td>oracle plain · <span class="derived" title="the formula renders here on hover">derived dotted</span> · <span class="inference tint-violet">inference tinted <span class="src-chip">AI · 20 Jul</span></span></td>
+        <td class="mono10">tier is styling, never a label — pick the inference tint in §04</td></tr>
+    </table>
+  </div>
+</div>
+
+<!-- ══════════════ 1. CHROME ══════════════ -->
+<div class="section" id="s1">
+  <div class="section-head">
+    <div><div class="kicker">01 · app chrome</div><h2>Nav + snapshot status</h2></div>
+    <div class="reuses">reuses <code>header.tsx</code> + <code>nav-links.tsx</code> + <code>live-dot.tsx</code></div>
+  </div>
+  <div class="appnav">
+    <span class="logo">ai influencers</span>
+    <nav>
+      <a class="active" href="#">home</a><a href="#">leaderboard</a><a href="#">topics</a><a href="#">channels</a><a href="#">compare</a>
+    </nav>
+    <div class="right">
+      <span>snapshot 2026-07-27 09:00</span>
+      <span class="livedot"></span><span>fresh</span>
+    </div>
+  </div>
+  <div class="manifest"><h4>data on this bar</h4><table>
+    <tr><td>snapshot timestamp</td><td><span class="tier oracle">oracle</span></td><td>last successful launchd sweep; goes amber + "stale Nd" when a gap is detected</td></tr>
+    <tr><td>fresh / stale dot</td><td><span class="tier derived">derived</span></td><td>green if snapshot &lt; 24h old, warning otherwise — replaces social-invest's market-hours live dot</td></tr>
+  </table></div>
+</div>
+
+<!-- ══════════════ 2. GROWTH CARD ══════════════ -->
+<div class="section" id="s2">
+  <div class="section-head">
+    <div><div class="kicker">02 · home panel 1 — who is growing</div><h2>The ranking card · pick a treatment</h2></div>
+    <div class="reuses">reuses <code>leaderboard.tsx</code> card + <code>cells.tsx</code> InfluencerChip</div>
+  </div>
+
+  <div class="variants cols3" data-group="growth-card">
+    <!-- A -->
+    <div class="variant" data-v="A">
+      <div class="vhead"><span class="vtag">A</span><span class="vname">Faithful port</span><span class="vdesc">leaderboard card as-is, hero number swapped</span></div>
+      <div class="vbody">
+        <div class="gcard top1" style="min-height:0">
+          <div class="id">
+            <span class="rank">#1</span>
+            <span class="avatar">CM</span>
+            <span class="who"><b>Cole Medin</b><span>@ColeMedin</span></span>
+            <span class="medal" style="margin-left:auto">🥇</span>
+          </div>
+          <div class="hero"><span class="n" style="color:var(--v-make)">+7.4%</span><span class="u">subscriber growth 90d</span></div>
+          <div class="statline"><span class="v">+15,000</span> subs <span class="chip">±1,000</span></div>
+          <div class="statline"><span class="v derived" title="Δsubs ÷ Δviews × 1000 over the window">12.4</span> subs / 1k views</div>
+          <div class="statline"><span class="v">12</span> videos · <span class="v derived" title="median of exact per-video viewCounts in window">25,246</span> median views</div>
+          <svg class="spark" width="120" height="22" viewBox="0 0 120 22"><polyline points="0,20 20,19 40,16 60,12 80,8 100,4 120,2" fill="none" stroke="#006cac" stroke-width="1.5"/></svg>
+          <div class="gfoot"><span>Apr 28 → Jul 27</span><span>90d · bucket 1,000</span></div>
+        </div>
+      </div>
+    </div>
+    <!-- B -->
+    <div class="variant" data-v="B">
+      <div class="vhead"><span class="vtag">B</span><span class="vname">Rank-numeral</span><span class="vdesc">big ghost rank, no medal emoji</span></div>
+      <div class="vbody">
+        <div class="gcard top1" style="min-height:0">
+          <span class="rank-numeral">1</span>
+          <div class="id" style="position:relative;z-index:1">
+            <span class="avatar">CM</span>
+            <span class="who"><b>Cole Medin</b><span>@ColeMedin</span></span>
+          </div>
+          <div class="hero" style="position:relative;z-index:1"><span class="n" style="color:var(--v-make)">+7.4%</span><span class="u">subs growth 90d</span></div>
+          <div class="statline"><span class="v">+15,000</span> subs <span class="chip">±1,000</span> · <span class="v derived" title="Δsubs ÷ Δviews × 1000">12.4</span>/1k</div>
+          <div class="statline"><span class="v">12</span> videos · <span class="v derived" title="median exact views">25,246</span> med</div>
+          <svg class="spark" width="120" height="22" viewBox="0 0 120 22"><polyline points="0,20 20,19 40,16 60,12 80,8 100,4 120,2" fill="none" stroke="#006cac" stroke-width="1.5"/></svg>
+          <div class="gfoot"><span>Apr 28 → Jul 27</span><span>bucket 1,000</span></div>
+        </div>
+      </div>
+    </div>
+    <!-- C -->
+    <div class="variant" data-v="C">
+      <div class="vhead"><span class="vtag">C</span><span class="vname">Sparkline hero</span><span class="vdesc">area chart behind the number</span></div>
+      <div class="vbody">
+        <div class="gcard top1" style="min-height:0;overflow:hidden">
+          <svg style="position:absolute;left:0;right:0;bottom:0;width:100%" height="52" viewBox="0 0 240 52" preserveAspectRatio="none"><polygon points="0,50 40,48 80,42 120,32 160,22 200,12 240,6 240,52 0,52" fill="#006cac" opacity="0.07"/><polyline points="0,50 40,48 80,42 120,32 160,22 200,12 240,6" fill="none" stroke="#006cac" stroke-width="1.5" opacity="0.5"/></svg>
+          <div class="id">
+            <span class="rank">🥇 #1</span>
+            <span class="avatar">CM</span>
+            <span class="who"><b>Cole Medin</b><span>@ColeMedin</span></span>
+          </div>
+          <div class="hero"><span class="n" style="font-size:1.9rem;color:var(--v-make)">+7.4%</span><span class="u">growth 90d</span></div>
+          <div class="statline"><span class="v">+15,000</span> subs <span class="chip">±1,000</span> · <span class="v derived" title="Δsubs ÷ Δviews × 1000">12.4</span>/1k · 12 vids</div>
+          <div class="gfoot" style="border:0;position:relative;z-index:1"><span>Apr 28 → Jul 27</span><span>bucket 1,000</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <p class="note" style="margin-top:1rem">The three state cards below render once — they follow whichever treatment wins above.</p>
+  <div class="cardgrid" style="margin-top:0.5rem">
+    <div class="gcard youcard" style="min-height:0">
+      <div class="id"><span class="rank">#5</span><span class="avatar" style="background:linear-gradient(135deg,#0e86c9,#006cac)">ET</span>
+      <span class="who"><b>Eric Tech</b><span>@erictech</span></span><span class="chip you" style="margin-left:auto">★ YOU</span></div>
+      <div class="hero"><span class="n">+3.1%</span><span class="u">subs growth 90d</span></div>
+      <div class="statline"><span class="v">+2,100</span> subs <span class="chip">±100</span></div>
+      <div class="statline">target #4 · <span class="v">8,400</span> behind · gap closing <span class="v derived" title="(their Δsubs − your Δsubs) ÷ weeks in window">~600/wk</span></div>
+      <div class="gfoot"><span>your true rank, inline</span><span>bucket 100</span></div>
+    </div>
+    <div class="gcard" style="min-height:0">
+      <div class="id"><span class="rank">#5</span><span class="avatar">DM</span><span class="who"><b>Dan Martell</b><span>@danmartell</span></span></div>
+      <div class="hero"><span class="n" style="color:var(--muted-foreground)">&lt; 2.0%</span><span class="u">bounded</span></div>
+      <div class="statline">below floor: bucket is <span class="v">10,000</span>, so anything under <span class="v">50,000</span> subs cannot be measured</div>
+      <div class="gfoot"><span>sorts below every measured card</span><span>bucket 10,000</span></div>
+    </div>
+    <div class="gcard" style="min-height:0;justify-content:center;text-align:center">
+      <div class="mono10" style="font-size:12px">building, 1 of 90 days</div>
+      <div class="statline" style="margin-top:6px">Growth needs a window of snapshots. Run the vidIQ backfill (360 credits) to buy 365 days of history. <a href="#">how →</a></div>
+    </div>
+  </div>
+
+  <div class="manifest"><h4>data on this card</h4><table>
+    <tr><td>rank + medal</td><td><span class="tier derived">derived</span></td><td>position after the four-mode comparator; ok &gt; bounded &gt; insufficient</td></tr>
+    <tr><td>name · @handle · avatar</td><td><span class="tier oracle">oracle</span></td><td>channels.list snippet</td></tr>
+    <tr><td>growth % (hero)</td><td><span class="tier derived">derived</span></td><td>Δsubs ÷ subs at window start; hover shows the formula. Renders "&lt; N%" when bounded</td></tr>
+    <tr><td>Δ subs ± bucket</td><td><span class="tier oracle">oracle</span></td><td>subscriberCount delta; the ± chip is the vendor's rounding bucket, always shown</td></tr>
+    <tr><td>subs / 1k views</td><td><span class="tier derived">derived</span></td><td>Δsubs ÷ Δviews × 1000 — the conversion metric, the "real gap" on /compare</td></tr>
+    <tr><td>videos · median views</td><td><span class="tier oracle">oracle</span> <span class="tier derived">derived</span></td><td>count is exact; median computed over exact viewCounts</td></tr>
+    <tr><td>sparkline</td><td><span class="tier oracle">oracle</span></td><td>daily subscriberCount snapshots over the window</td></tr>
+    <tr><td>YOU card extras</td><td><span class="tier derived">derived</span></td><td>target rank from config/targets.json; gap + closing rate from both channels' deltas</td></tr>
+  </table></div>
+</div>
+
+<!-- ══════════════ 3. VERDICT BADGE ══════════════ -->
+<div class="section" id="s3">
+  <div class="section-head">
+    <div><div class="kicker">03 · everywhere a verdict renders</div><h2>Verdict badge · pick a style</h2></div>
+    <div class="reuses">reuses <code>action-badge.tsx</code> STYLES pattern</div>
+  </div>
+  <div class="variants cols3" data-group="verdict-badge">
+    <div class="variant" data-v="A">
+      <div class="vhead"><span class="vtag">A</span><span class="vname">Tinted pill</span><span class="vdesc">action-badge as-is: tint bg, fixed width</span></div>
+      <div class="vbody" style="display:flex;flex-direction:column;gap:8px;align-items:flex-start">
+        <span class="badge b-filled v-make">MAKE_THIS_NOW</span>
+        <span class="badge b-filled v-unserved">ONLY_IF_UNSERVED</span>
+        <span class="badge b-filled v-early">TOO_EARLY</span>
+        <span class="badge b-filled v-crowded">CROWDED</span>
+        <span class="badge b-filled v-none">INSUFFICIENT</span>
+      </div>
+    </div>
+    <div class="variant" data-v="B">
+      <div class="vhead"><span class="vtag">B</span><span class="vname">Outline pill</span><span class="vdesc">quieter in dense tables</span></div>
+      <div class="vbody" style="display:flex;flex-direction:column;gap:8px;align-items:flex-start">
+        <span class="badge b-outline v-make">MAKE_THIS_NOW</span>
+        <span class="badge b-outline v-unserved">ONLY_IF_UNSERVED</span>
+        <span class="badge b-outline v-early">TOO_EARLY</span>
+        <span class="badge b-outline v-crowded">CROWDED</span>
+        <span class="badge b-outline v-none">INSUFFICIENT</span>
+      </div>
+    </div>
+    <div class="variant" data-v="C">
+      <div class="vhead"><span class="vtag">C</span><span class="vname">Left-bar tag</span><span class="vdesc">square, terminal-flavored</span></div>
+      <div class="vbody" style="display:flex;flex-direction:column;gap:8px;align-items:flex-start">
+        <span class="badge b-bar v-make">MAKE_THIS_NOW</span>
+        <span class="badge b-bar v-unserved">ONLY_IF_UNSERVED</span>
+        <span class="badge b-bar v-early">TOO_EARLY</span>
+        <span class="badge b-bar v-crowded">CROWDED</span>
+        <span class="badge b-bar v-none">INSUFFICIENT</span>
+      </div>
+    </div>
+  </div>
+  <div class="manifest"><h4>data behind the badge</h4><table>
+    <tr><td>band</td><td><span class="tier derived">derived</span></td><td>verdict grid over the four score components; hover always shows which threshold fired (E2)</td></tr>
+  </table></div>
+</div>
+
+<!-- ══════════════ 4. INFERENCE TINT ══════════════ -->
+<div class="section" id="s4">
+  <div class="section-head">
+    <div><div class="kicker">04 · trust tier styling</div><h2>Inference tint · pick a hue</h2></div>
+    <div class="reuses">new — E8's trust tokens; chip pattern from <code>action-badge.tsx</code> ProvisionalBadge</div>
+  </div>
+  <p class="note" style="margin-bottom:0.75rem">Everything an LLM wrote gets this treatment: comment categories, channel blurbs, "you have not covered this", indie score. Tint + source chip, never presented as a measurement.</p>
+  <div class="variants cols3" data-group="inference-tint">
+    <div class="variant tint-violet" data-v="A">
+      <div class="vhead"><span class="vtag">A</span><span class="vname">Violet</span><span class="vdesc">reuses retired --limit hue</span></div>
+      <div class="vbody">
+        <p class="inference" style="font-size:12px;margin:0 0 8px">Builds AI agent tutorials focused on n8n, MCP and local-first stacks. <span class="src-chip">AI · 20 Jul</span></p>
+        <span class="inference" style="font-size:11px">▓question▓</span>
+      </div>
+    </div>
+    <div class="variant tint-amber" data-v="B">
+      <div class="vhead"><span class="vtag">B</span><span class="vname">Warm amber</span><span class="vdesc">reads as "hand-annotated"</span></div>
+      <div class="vbody">
+        <p class="inference" style="font-size:12px;margin:0 0 8px">Builds AI agent tutorials focused on n8n, MCP and local-first stacks. <span class="src-chip">AI · 20 Jul</span></p>
+        <span class="inference" style="font-size:11px">▓question▓</span>
+      </div>
+    </div>
+    <div class="variant tint-cyan" data-v="C">
+      <div class="vhead"><span class="vtag">C</span><span class="vname">Cool cyan</span><span class="vdesc">calmer, near the teal band</span></div>
+      <div class="vbody">
+        <p class="inference" style="font-size:12px;margin:0 0 8px">Builds AI agent tutorials focused on n8n, MCP and local-first stacks. <span class="src-chip">AI · 20 Jul</span></p>
+        <span class="inference" style="font-size:11px">▓question▓</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ 5. OPPORTUNITY TABLE ══════════════ -->
+<div class="section" id="s5">
+  <div class="section-head">
+    <div><div class="kicker">05 · home panel 2 — what to make next</div><h2>Opportunity table with expandable derivation</h2></div>
+    <div class="reuses">reuses <code>consensus-board.tsx</code> + <code>sortable-table.tsx</code> + <code>avatar-cluster.tsx</code></div>
+  </div>
+  <div style="margin-bottom:0.75rem;max-width:42rem;font-size:12px">
+    <p style="margin:0;font-weight:500">score = 40·velocity + 25·keyword + 25·supply gap + 10·staleness</p>
+    <p style="margin:4px 0 0;color:var(--muted-foreground)">A missing component excludes its weight — the column then renders <span class="num">x / 75</span>, never a bare number. <a href="#">how this works →</a></p>
+  </div>
+  <div style="display:flex;gap:8px;margin-bottom:0.75rem;align-items:center">
+    <div class="tabs"><button class="on">MAKE_THIS_NOW</button><button>all verdicts</button></div>
+    <label style="font-size:11px;color:var(--muted-foreground)"><input type="checkbox" checked style="accent-color:#006cac"> hide covered</label>
+  </div>
+  <div class="card" style="overflow-x:auto">
+    <table class="tbl">
+      <tr><th></th><th>topic</th><th>verdict</th><th>who's on it</th><th class="r">score</th><th class="r">newest</th></tr>
+      <tr class="rowlink" style="background:color-mix(in srgb, var(--accent) 50%, transparent)">
+        <td style="width:20px">▾</td>
+        <td><b>mcp-registry-integration</b><div class="mono10">wiring the new registry into agents</div></td>
+        <td><span class="badge b-filled v-make">MAKE_THIS_NOW</span></td>
+        <td><span class="avatar" style="width:20px;height:20px;font-size:8px">CM</span><span class="avatar" style="width:20px;height:20px;font-size:8px;margin-left:-6px">NH</span> <span class="mono10">2 creators</span></td>
+        <td class="r"><span class="num derived" title="40·0.89 + 25·0.54 + 25·0.83 + 10·0.20">71.9</span></td>
+        <td class="r num">6d</td>
+      </tr>
+      <tr><td colspan="6" style="background:#fbfaf9;padding:0.9rem 1.1rem">
+        <table class="tbl" style="font-size:12px;max-width:38rem">
+          <tr><th>component</th><th>raw</th><th class="r">norm</th><th class="r">wt</th><th class="r">points</th><th>source</th></tr>
+          <tr><td>repo velocity</td><td class="num">266 stars/day</td><td class="r num">0.89</td><td class="r num">40</td><td class="r num">35.6</td><td class="mono10">github</td></tr>
+          <tr><td>keyword volume</td><td class="num">8,100 searches/mo</td><td class="r num">0.54</td><td class="r num">25</td><td class="r num">13.5</td><td class="mono10">vidiq</td></tr>
+          <tr><td>supply gap</td><td class="num">2 videos / 90d</td><td class="r num">0.83</td><td class="r num">25</td><td class="r num">20.8</td><td class="mono10">youtube</td></tr>
+          <tr><td>staleness</td><td class="num">newest 6d ago</td><td class="r num">0.20</td><td class="r num">10</td><td class="r num">2.0</td><td class="mono10">youtube</td></tr>
+          <tr><td></td><td></td><td></td><td class="r num" style="border-top:1px solid var(--foreground)">100</td><td class="r num" style="border-top:1px solid var(--foreground)"><b>71.9</b></td><td></td></tr>
+        </table>
+        <div style="margin-top:8px;font-size:11px">fired: <span class="codechip">repo_velocity >= 100.0</span> <span class="codechip">videos <= 2</span></div>
+        <div style="margin-top:6px;font-size:11px">repo: <a href="#">x/mcp-registry</a> <span class="num">12,496★ · 47d</span> · <span class="inference tint-violet" style="font-size:10px">indie ●●○ org, 9 contributors <span class="src-chip">AI</span></span></div>
+      </td></tr>
+      <tr class="rowlink"><td>▸</td><td>claude-code-hooks-config</td><td><span class="badge b-filled v-early">TOO_EARLY</span></td><td><span class="mono10">—</span></td><td class="r num derived" title="keyword missing → weight excluded">34.0</td><td class="r num">never</td></tr>
+      <tr class="rowlink"><td>▸</td><td>claude-code-subagents</td><td><span class="badge b-filled v-unserved">ONLY_IF_UNSERVED</span></td><td><span class="mono10">●●●●●●● 7</span></td><td class="r num derived">58.2</td><td class="r num">3d</td></tr>
+      <tr class="rowlink"><td>▸</td><td>frontier-model-launches</td><td><span class="badge b-filled v-crowded">CROWDED</span></td><td><span class="mono10">●●●●●●●●● 9</span></td><td class="r num derived">22.1</td><td class="r num">1d</td></tr>
+      <tr class="rowlink"><td>▸</td><td>agent-evaluation-testing</td><td><span class="badge b-filled v-none">INSUFFICIENT</span></td><td><span class="mono10">● 1</span></td><td class="r num" style="color:var(--muted-foreground)">— <span class="mono10">/ 75</span></td><td class="r num">41d</td></tr>
+    </table>
+  </div>
+  <div class="manifest"><h4>data on this table</h4><table>
+    <tr><td>topic + description</td><td><span class="tier oracle">oracle</span></td><td>hand-edited config/topics.json — leaves only, parents never appear here</td></tr>
+    <tr><td>verdict</td><td><span class="tier derived">derived</span></td><td>threshold grid; expanded row prints exactly which thresholds fired</td></tr>
+    <tr><td>who's on it</td><td><span class="tier oracle">oracle</span></td><td>avatar cluster of tracked channels with a video matched to this topic in window</td></tr>
+    <tr><td>score</td><td><span class="tier derived">derived</span></td><td>four components; "— / 75" when a component is missing, sorts last both directions</td></tr>
+    <tr><td>newest</td><td><span class="tier oracle">oracle</span></td><td>age of the newest matched video; "never" is a state, not zero</td></tr>
+    <tr><td>indie chip</td><td><span class="tier inference">inference</span></td><td>scored from owner.type + contributors; shown, never used to filter (G4)</td></tr>
+  </table></div>
+</div>
+
+<!-- ══════════════ 6. LEADERBOARD TABLE ══════════════ -->
+<div class="section" id="s6">
+  <div class="section-head">
+    <div><div class="kicker">06 · /leaderboard — the full 72</div><h2>All channels table</h2></div>
+    <div class="reuses">reuses <code>sortable-table.tsx</code> (null-sorts-last, verbatim) + <code>cells.tsx</code></div>
+  </div>
+  <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:0.75rem;align-items:center;font-size:11px">
+    <div class="tabs"><button class="on">growth</button><button>general</button><button>subscribers</button><button>views</button></div>
+    <div class="tabs"><button class="on">90d</button><button>30d</button><button>7d</button></div>
+    <span class="chip">all niches ▾</span><span class="chip">competitors ✓</span><span class="chip">company ✓</span><span class="chip">adjacent ☐</span>
+    <span style="margin-left:auto;color:var(--muted-foreground)">72 tracked</span>
+  </div>
+  <div class="card" style="overflow-x:auto">
+    <table class="tbl">
+      <tr><th>#</th><th>channel</th><th class="r">subs</th><th class="r"><span class="derived" title="subscriberCount delta over window">Δsubs 90d</span></th><th class="r"><span class="derived" title="Δsubs ÷ subs at start">growth</span></th><th class="r">views Δ</th><th class="r"><span class="derived" title="Δsubs ÷ Δviews × 1000">subs/1k</span></th><th class="r">vids</th></tr>
+      <tr class="rowlink"><td class="num">1</td><td><span class="avatar" style="width:22px;height:22px;font-size:9px">CM</span> Cole Medin</td><td class="r num">219,000</td><td class="r num" style="color:var(--v-make)">+15,000</td><td class="r num" style="color:var(--v-make)">+7.4%</td><td class="r num">+3.1M</td><td class="r num">12.4</td><td class="r num">12</td></tr>
+      <tr class="rowlink"><td class="num">2</td><td><span class="avatar" style="width:22px;height:22px;font-size:9px">NH</span> Nate Herk</td><td class="r num">873,000</td><td class="r num" style="color:var(--v-make)">+53,000</td><td class="r num" style="color:var(--v-make)">+6.1%</td><td class="r num">+8.0M</td><td class="r num">9.8</td><td class="r num">8</td></tr>
+      <tr class="rowlink" style="background:color-mix(in srgb, var(--primary) 4%, transparent)"><td class="num">7</td><td><span class="avatar" style="width:22px;height:22px;font-size:9px;background:linear-gradient(135deg,#0e86c9,#006cac)">ET</span> Eric Tech <span class="chip you">★ YOU</span></td><td class="r num">68,700</td><td class="r num">+2,100</td><td class="r num">+3.1%</td><td class="r num">+0.4M</td><td class="r num">5.2</td><td class="r num">6</td></tr>
+      <tr class="rowlink"><td class="num">31</td><td><span class="avatar" style="width:22px;height:22px;font-size:9px">DM</span> Dan Martell</td><td class="r num">2,930,000</td><td class="r num" style="color:var(--muted-foreground)">&lt; 50,000</td><td class="r num" style="color:var(--muted-foreground)">&lt; 2.0%</td><td class="r num">+12.1M</td><td class="r num" style="color:var(--muted-foreground)">—</td><td class="r num">14</td></tr>
+      <tr class="rowlink"><td class="num">68</td><td><span class="avatar" style="width:22px;height:22px;font-size:9px">JI</span> AI Systems by Jimi</td><td class="r num">2,380</td><td class="r num" style="color:var(--v-make)">+180</td><td class="r num" style="color:var(--v-make)">+8.2%</td><td class="r num">+0.02M</td><td class="r num">14.1</td><td class="r num">9</td></tr>
+      <tr class="rowlink"><td class="num">71</td><td><span class="avatar" style="width:22px;height:22px;font-size:9px">?</span> someprivatechannel</td><td class="r num" style="color:var(--muted-foreground)">—</td><td class="r num" style="color:var(--muted-foreground)">—</td><td class="r num" style="color:var(--muted-foreground)">—</td><td class="r num" style="color:var(--muted-foreground)">—</td><td class="r num" style="color:var(--muted-foreground)">—</td><td class="r num" style="color:var(--muted-foreground)">—</td></tr>
+    </table>
+  </div>
+  <p class="note" style="margin-top:0.5rem">Green is reserved for "measured and positive". Bounded rows render <span class="num">&lt; N</span> muted and sort below every measured row; an absent channel renders — everywhere, never zero. Your row is tinted primary at its true rank (F2).</p>
+  <div class="manifest"><h4>data on this table</h4><table>
+    <tr><td>rank</td><td><span class="tier derived">derived</span></td><td>four rank modes; comparator orders ok &gt; bounded &gt; insufficient_data</td></tr>
+    <tr><td>subs</td><td><span class="tier oracle">oracle</span></td><td>subscriberCount, vendor-rounded 3 sig figs — never presented finer</td></tr>
+    <tr><td>Δsubs / growth</td><td><span class="tier derived">derived</span></td><td>window delta; "&lt; N" below the per-channel 5×-bucket floor (D9)</td></tr>
+    <tr><td>views Δ · vids</td><td><span class="tier oracle">oracle</span></td><td>viewCount is exact; count of uploads in window</td></tr>
+  </table></div>
+</div>
+
+<!-- ══════════════ 7. TOPIC HEADER ══════════════ -->
+<div class="section" id="s7">
+  <div class="section-head">
+    <div><div class="kicker">07 · /topics/[id] — header</div><h2>Leaf topic header</h2></div>
+    <div class="reuses">reuses ticker page header: symbol → topic, price → score, heat → verdict</div>
+  </div>
+  <div class="card pad">
+    <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap">
+      <span style="font-size:1.5rem;font-weight:700;color:var(--primary)">claude-code-mcp-setup</span>
+      <span class="badge b-filled v-make">MAKE_THIS_NOW</span>
+      <span class="num derived" style="font-size:1.1rem;font-weight:600" title="40·velocity + 25·keyword + 25·gap + 10·staleness">71.9</span>
+      <span style="margin-left:auto;display:flex;gap:8px"><button class="btn">+ hunch</button><button class="btn">open all videos</button></span>
+    </div>
+    <div style="margin-top:4px;font-size:13px">Wiring MCP servers into Claude Code <span class="mono10" style="margin-left:8px">tutorial · 9 videos · 7 creators · 90d</span></div>
+    <div style="margin-top:8px"><span class="inference tint-violet" style="font-size:12px">you have not covered this <span class="src-chip">matcher</span></span></div>
+  </div>
+  <div class="manifest"><h4>data on this header</h4><table>
+    <tr><td>topic id + description + shape</td><td><span class="tier oracle">oracle</span></td><td>config/topics.json</td></tr>
+    <tr><td>verdict + score</td><td><span class="tier derived">derived</span></td><td>same objects as the home table — one source, two surfaces</td></tr>
+    <tr><td>videos · creators counts</td><td><span class="tier oracle">oracle</span></td><td>matched videos in window</td></tr>
+    <tr><td>"you have not covered this"</td><td><span class="tier inference">inference</span></td><td>topic matcher over your uploads — tinted because the matcher can be wrong</td></tr>
+    <tr><td>hunch flag</td><td><span class="tier oracle">oracle</span></td><td>config/targets.json; sorts, never scores (G10)</td></tr>
+  </table></div>
+</div>
+
+<!-- ══════════════ 8. MIND MAP ══════════════ -->
+<div class="section" id="s8">
+  <div class="section-head">
+    <div><div class="kicker">08 · /topics/[id] — where they disagree</div><h2>The fork · pick a rendering</h2></div>
+    <div class="reuses">reuses <code>ticker/chain-map.tsx</code> — rows are asserted claims, click for the exact words</div>
+  </div>
+  <div class="variants" data-group="mind-map">
+    <!-- A -->
+    <div class="variant" data-v="A">
+      <div class="vhead"><span class="vtag">A</span><span class="vname">Chain-map port</span><span class="vdesc">terminal rows, padded verbs, ×count — closest to the existing component</span></div>
+      <div class="vbody">
+        <div class="card pad chain">
+<span class="lbl">trunk · everyone agrees</span>
+<button class="row"><span class="dim">   install-cli</span> ──<span class="verb-seq">then          </span>──▶ authenticate <span class="dim">×7</span></button>
+<button class="row"><span class="dim">  authenticate</span> ──<span class="verb-seq">then          </span>──▶ claude-md <span class="dim">×6</span></button>
+<span class="dim">               ────────────────────</span>
+<span class="lbl">the fork · server config</span>
+<button class="row"><span class="dim">claude-mcp-add</span> ──<span class="verb-alt">alternative_to</span>──▶ mcp-json <span class="dim">×6</span></button>
+<button class="row"><span class="dim">claude-mcp-add</span> ──<span class="verb-con">contradicts   </span>──▶ mcp-json <span class="dim">×2 · newest</span></button>
+<span class="dim">     4 creators, Feb–Apr          2 creators, 6–11d ago</span>
+        </div>
+        <p class="mono10" style="margin:6px 0 0">click any row for the exact words they said</p>
+      </div>
+    </div>
+    <!-- B -->
+    <div class="variant" data-v="B">
+      <div class="vhead"><span class="vtag">B</span><span class="vname">Camp boxes</span><span class="vdesc">the wireframe drawing, as two weighted boxes</span></div>
+      <div class="vbody">
+        <div style="display:grid;grid-template-columns:1fr auto 1fr;gap:10px;align-items:stretch">
+          <div class="campbox">
+            <div class="mono10">most common · stale</div>
+            <div class="n">claude mcp add</div>
+            <div class="statline">4 creators · Feb–Apr · global install</div>
+            <div style="margin-top:6px;display:flex;gap:3px"><span class="avatar" style="width:18px;height:18px;font-size:7px">A</span><span class="avatar" style="width:18px;height:18px;font-size:7px">D</span><span class="avatar" style="width:18px;height:18px;font-size:7px">S</span><span class="avatar" style="width:18px;height:18px;font-size:7px">R</span></div>
+          </div>
+          <div style="display:flex;flex-direction:column;justify-content:center;align-items:center;font-size:11px;color:var(--v-crowded)">◂ contradicts ▸<span class="mono10">2 cites</span></div>
+          <div class="campbox" style="border-color:color-mix(in srgb, var(--v-make) 45%, var(--border))">
+            <div class="mono10" style="color:var(--v-make)">newest wins · 6–11d ago</div>
+            <div class="n">.mcp.json in repo</div>
+            <div class="statline">2 creators · checked in, team-wide</div>
+            <div style="margin-top:6px;display:flex;gap:3px"><span class="avatar" style="width:18px;height:18px;font-size:7px">B</span><span class="avatar" style="width:18px;height:18px;font-size:7px">C</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- C -->
+    <div class="variant" data-v="C">
+      <div class="vhead"><span class="vtag">C</span><span class="vname">Claim ledger</span><span class="vdesc">flat sortable rows — most table-like, least visual</span></div>
+      <div class="vbody">
+        <table class="tbl" style="font-size:12px">
+          <tr><th>claim</th><th>relation</th><th class="r">said by</th><th class="r">recency</th></tr>
+          <tr class="rowlink"><td>install-cli → authenticate → claude-md</td><td><span class="mono10">sequence</span></td><td class="r num">7/7</td><td class="r num">—</td></tr>
+          <tr class="rowlink"><td>claude-mcp-add vs mcp-json</td><td><span style="color:var(--primary);font-size:11px">alternative</span></td><td class="r num">6</td><td class="r num">Feb–Apr</td></tr>
+          <tr class="rowlink"><td>mcp-json supersedes claude-mcp-add</td><td><span style="color:var(--v-crowded);font-size:11px">contradicts</span></td><td class="r num">2</td><td class="r num" style="color:var(--v-make)">6–11d</td></tr>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="callout warn" style="margin-top:1rem">
+    <b>⚠ STALE MAJORITY</b> — 4 creators use <span class="codechip">claude mcp add</span> (Feb–Apr). The 2 most
+    recent say it is superseded by .mcp.json in the repo. Majority is stale. Newest wins.
+  </div>
+
+  <p class="note" style="margin:1rem 0 0.5rem">Click-through — the evidence card, straight from chain-map's dialog:</p>
+  <div class="card pad" style="max-width:28rem">
+    <div style="font-size:13px;font-weight:600">claude-mcp-add contradicts mcp-json</div>
+    <p class="mono10" style="margin:2px 0 8px">Said 2 times by 2 people. A claim they made, not a verified fact.</p>
+    <div class="quote"><p>"don't use claude mcp add any more, put a .mcp.json in the repo root so it's checked in and your whole team gets it"</p><div class="cite">BRAD · 2026-07-16 · 07:40 · <a href="#">open video →</a></div></div>
+    <div class="quote"><p>"the global install is basically deprecated at this point"</p><div class="cite">CHARLIE · 2026-07-21 · 12:03 · <a href="#">open video →</a></div></div>
+  </div>
+
+  <div class="manifest"><h4>data on this map</h4><table>
+    <tr><td>nodes + edges</td><td><span class="tier inference">inference</span></td><td>extracted per video with verbatim evidence, chain-map rule: never from co-occurrence</td></tr>
+    <tr><td>×count · voices · dates</td><td><span class="tier oracle">oracle</span></td><td>count of cites behind each edge; every edge opens its quotes</td></tr>
+    <tr><td>stale-majority flag</td><td><span class="tier derived">derived</span></td><td>majority camp older than X vs newest camp — the D4 recency rule, always flagged</td></tr>
+  </table></div>
+</div>
+
+<!-- ══════════════ 9. EASIEST PATH + TRUNK ══════════════ -->
+<div class="section" id="s9">
+  <div class="section-head">
+    <div><div class="kicker">09 · /topics/[id] — paths and the trunk</div><h2>Easiest path + what they all do</h2></div>
+    <div class="reuses">reuses <code>ticker</code> deep-dive bullets pattern; code lines get <code>.code-surface</code></div>
+  </div>
+  <div class="secline"><span class="kicker">▸ easiest path</span><span class="rule"></span></div>
+  <div class="card">
+    <table class="tbl" style="font-size:13px">
+      <tr class="rowlink"><td style="width:24px;color:var(--v-make)">★</td><td><b>FEWEST STEPS</b></td><td class="num">3 steps</td><td>.mcp.json in repo root</td><td class="r mono10">Brad 11d · Charlie 6d</td></tr>
+      <tr class="rowlink"><td style="color:var(--muted-foreground)">○</td><td>MOST DURABLE</td><td class="num">7 steps</td><td>per-project scoped perms</td><td class="r mono10">Cole 24d</td></tr>
+      <tr class="rowlink"><td style="color:var(--warning)">!</td><td>MOST COMMON</td><td class="num" style="color:var(--warning)">stale</td><td><span class="codechip">claude mcp add</span> global</td><td class="r mono10">4 creators · Feb–Apr</td></tr>
+    </table>
+  </div>
+
+  <div class="secline"><span class="kicker">◂ what they all do · 3 steps, 7/7 agree</span><span class="rule"></span><span class="cap">commodity</span></div>
+  <div class="card pad">
+    <div style="display:grid;grid-template-columns:24px 1fr auto;gap:4px 10px;font-size:13px">
+      <span class="num" style="color:var(--muted-foreground)">1</span>
+      <div><b>Install the CLI</b><div class="codechip" style="display:inline-block;margin-top:4px">npm i -g @anthropic-ai/claude-code</div>
+        <div class="mono10" style="margin-top:4px">cite: Adrian 04:12 · Duncan 02:55 · Samin 06:30 (+4)</div></div>
+      <span class="num derived" title="7 of the 7 creators on this topic do this step">7/7</span>
+      <span class="num" style="color:var(--muted-foreground)">2</span>
+      <div><b>Authenticate</b><div style="margin-top:2px">Run <span class="codechip">claude</span> in any directory. Opens a browser for OAuth.</div>
+        <div style="margin-top:4px;font-size:12px;color:var(--warning)">⚠ Samin, Ray: fails behind corporate proxy, set ANTHROPIC_BASE_URL first</div>
+        <div class="mono10" style="margin-top:4px">cite: Adrian 04:12 · Duncan 02:55 (+5)</div></div>
+      <span class="num derived" title="7 of 7">7/7</span>
+      <span class="num" style="color:var(--muted-foreground)">3</span>
+      <div><b>Write a CLAUDE.md</b><div style="margin-top:2px">Repo root. Project conventions, commands, invariants.</div>
+        <div class="mono10" style="margin-top:4px">cite: Brad 07:40 (+5)</div></div>
+      <span class="num derived" title="6 of 7">6/7</span>
+    </div>
+  </div>
+  <div class="manifest"><h4>data on these sections</h4><table>
+    <tr><td>path names + step counts</td><td><span class="tier inference">inference</span></td><td>D4 path judge, named by goal, recency-weighted</td></tr>
+    <tr><td>agreement x/7</td><td><span class="tier derived">derived</span></td><td>creators whose extraction contains the step ÷ creators on topic</td></tr>
+    <tr><td>step text + commands</td><td><span class="tier inference">inference</span></td><td>every step carries its cites — timestamped, clickable (the "evidence quote on every call" rule)</td></tr>
+  </table></div>
+</div>
+
+<!-- ══════════════ 10. COMMENTS ══════════════ -->
+<div class="section" id="s10">
+  <div class="section-head">
+    <div><div class="kicker">10 · comments — one corpus, two indexes</div><h2>Unserved branch + comment table</h2></div>
+    <div class="reuses">reuses <code>sortable-table.tsx</code> + <code>pager.tsx</code>; category chip = inference tint</div>
+  </div>
+  <div class="card pad" style="border-color:color-mix(in srgb, var(--inf-violet) 40%, var(--border));background:color-mix(in srgb, var(--inf-violet) 3%, var(--card))">
+    <div class="kicker" style="color:var(--inf-violet)">▓ unserved branch ▓</div>
+    <div style="margin-top:6px;font-size:15px"><b class="num">340</b> comments across <b class="num">6 of these 9</b> videos ask about Windows / WSL.
+      <b class="num">0 of 9</b> videos cover it.</div>
+    <div style="margin-top:6px;font-size:13px">→ crowded topic, wide-open branch. This is the video. <a href="#" style="float:right">see all 340 →</a></div>
+  </div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:1rem;align-items:center">
+    <div class="cattabs">
+      <button class="t on">all <b>1840</b></button><button class="t">requests <b>210</b></button><button class="t">questions <b>640</b></button><button class="t">corrections <b>31</b></button><button class="t">suggestions <b>188</b></button><button class="t">other <b>402</b></button>
+    </div>
+    <span style="margin-left:auto" class="mono10">sort [likes ▾] · window [365d ▾]</span>
+  </div>
+  <div class="card" style="margin-top:8px;overflow-x:auto">
+    <table class="tbl">
+      <tr><th>who</th><th>comment</th><th>cat</th><th class="r">likes</th><th class="r">repl</th><th>creator</th><th>video</th><th class="r"><span class="derived" title="days between video publish and comment">lag</span></th></tr>
+      <tr class="rowlink"><td class="mono10">someguy</td><td style="max-width:20rem">Would love to see this on Windows, WSL keeps breaking</td><td><span class="inference tint-violet" style="font-size:10px">req</span></td><td class="r num">412</td><td class="r num">7</td><td class="mono10">Cole Medin</td><td class="mono10"><a href="#">Google Just Dropped… ↗</a></td><td class="r num">3d</td></tr>
+      <tr class="rowlink"><td class="mono10">devanne</td><td style="max-width:20rem">the mcp add command is deprecated now, use .mcp.json</td><td><span class="inference tint-violet" style="font-size:10px">cor</span></td><td class="r num">288</td><td class="r num">22</td><td class="mono10">Cole Medin</td><td class="mono10"><a href="#">Google Just Dropped… ↗</a></td><td class="r num">41d</td></tr>
+      <tr class="rowlink"><td class="mono10">pip_h</td><td style="max-width:20rem">does this work with a monorepo? mine has 40 pkgs</td><td><span class="inference tint-violet" style="font-size:10px">que</span></td><td class="r num">204</td><td class="r num">4</td><td class="mono10">Brad</td><td class="mono10"><a href="#">MCP for teams ↗</a></td><td class="r num">8d</td></tr>
+    </table>
+  </div>
+  <div style="display:flex;justify-content:space-between;margin-top:6px;font-size:11px;color:var(--muted-foreground)">
+    <span>showing 5 of 1,840 · <a href="#">show 10</a></span><span>[1] 2 3 … 368 →</span>
+  </div>
+  <div class="manifest"><h4>data on this table</h4><table>
+    <tr><td>comment text · likes · replies</td><td><span class="tier oracle">oracle</span></td><td>commentThreads.list, top 100 roots per video per day</td></tr>
+    <tr><td>category chip</td><td><span class="tier inference">inference</span></td><td>4 actionable categories + other, fixed tab order, every tab carries its count (locked)</td></tr>
+    <tr><td>lag</td><td><span class="tier derived">derived</span></td><td>comment date − video publish date; never an absolute date (G8)</td></tr>
+    <tr><td>unserved branch card</td><td><span class="tier inference">inference</span></td><td>step 16 clustering — counts are real, the clustering is the inference, hence the tint</td></tr>
+  </table></div>
+</div>
+
+<!-- ══════════════ 11. PARENT TOPIC ══════════════ -->
+<div class="section" id="s11">
+  <div class="section-head">
+    <div><div class="kicker">11 · /topics/[id] — parent</div><h2>Leaf rollup + branch trend</h2></div>
+    <div class="reuses">reuses <code>sortable-table.tsx</code>; trend = simple SVG, no chart lib</div>
+  </div>
+  <div class="card pad">
+    <div style="display:flex;align-items:baseline;gap:12px"><span style="font-size:1.4rem;font-weight:700;color:var(--primary)">Claude Code</span><span class="chip">parent · not scoreable</span><span class="mono10">7 leaf topics · 61 videos · 22 creators · 90d</span></div>
+    <table class="tbl" style="margin-top:10px;font-size:12px">
+      <tr><th>leaf</th><th>verdict</th><th class="r">videos</th><th class="r">creators</th><th class="r">score</th><th class="r">newest</th></tr>
+      <tr class="rowlink"><td>claude-code-mcp-setup</td><td><span class="badge b-filled v-make">MAKE_THIS_NOW</span></td><td class="r num">9</td><td class="r num">7</td><td class="r num derived">71.9</td><td class="r num">6d</td></tr>
+      <tr class="rowlink"><td>claude-code-subagents</td><td><span class="badge b-filled v-unserved">ONLY_IF_UNSERVED</span></td><td class="r num">26</td><td class="r num">11</td><td class="r num derived">58.2</td><td class="r num">3d</td></tr>
+      <tr class="rowlink"><td>claude-code-skills-authoring</td><td><span class="badge b-filled v-crowded">CROWDED</span></td><td class="r num">24</td><td class="r num">14</td><td class="r num derived">31.0</td><td class="r num">1d</td></tr>
+      <tr class="rowlink"><td>claude-code-hooks-config</td><td><span class="badge b-filled v-early">TOO_EARLY</span></td><td class="r num">0</td><td class="r num">0</td><td class="r num derived">34.0</td><td class="r num" style="color:var(--muted-foreground)">never</td></tr>
+    </table>
+    <div class="secline"><span class="kicker">is this whole area heating or cooling?</span><span class="rule"></span></div>
+    <svg width="100%" height="90" viewBox="0 0 560 90" preserveAspectRatio="none">
+      <line x1="40" y1="70" x2="550" y2="70" stroke="#ece9e9"/>
+      <polyline points="40,66 140,64 240,44 340,30 420,18 480,22 550,20" fill="none" stroke="#006cac" stroke-width="1.5"/>
+      <text x="40" y="84" font-size="10" fill="#6b6a6b">Apr 28</text><text x="240" y="84" font-size="10" fill="#6b6a6b">Jun 09</text><text x="480" y="84" font-size="10" fill="#6b6a6b">Jul 21</text>
+      <text x="40" y="14" font-size="10" fill="#6b6a6b">videos/wk across all 7 children</text>
+    </svg>
+    <div style="font-size:12px"><span class="num derived" title="sum of matched uploads per week across the 7 leaves">14 videos/wk</span> across this branch, up from 4 in April.</div>
+  </div>
+  <div class="manifest"><h4>data on this page</h4><table>
+    <tr><td>leaf table</td><td><span class="tier derived">derived</span></td><td>same leaf objects as home; a parent never carries a score or verdict of its own</td></tr>
+    <tr><td>branch trend</td><td><span class="tier derived">derived</span></td><td>free arithmetic over matched-video dates the spine already has</td></tr>
+  </table></div>
+</div>
+
+<!-- ══════════════ 12. CHANNEL PAGE ══════════════ -->
+<div class="section" id="s12">
+  <div class="section-head">
+    <div><div class="kicker">12 · /channels/[id]</div><h2>Channel header + still pulling views</h2></div>
+    <div class="reuses">reuses influencer page header + <code>trade-cells.tsx</code> expand pattern + tabs</div>
+  </div>
+  <div class="card pad">
+    <div style="display:flex;gap:14px;align-items:flex-start">
+      <span class="avatar" style="width:56px;height:56px;font-size:18px">CM</span>
+      <div style="flex:1;min-width:0">
+        <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap">
+          <b style="font-size:1.2rem">Cole Medin</b><span class="mono10">@ColeMedin · ai-agents · en</span>
+          <span class="chip" style="border-color:color-mix(in srgb, var(--v-make) 50%, transparent);color:var(--v-make)">★ #1 by growth 90d</span>
+          <a href="#" style="margin-left:auto;font-size:12px">compare with you →</a>
+        </div>
+        <div style="margin-top:8px;display:flex;gap:18px;flex-wrap:wrap;font-size:13px" class="num">
+          <span><b>219,000</b> subs <span class="chip">±1,000</span></span>
+          <span><b>11,991,545</b> views</span>
+          <span><b>412</b> videos</span>
+          <span><b class="derived" title="median days between uploads, last 10">3.4d</b> cadence</span>
+        </div>
+        <p class="inference tint-violet" style="margin:10px 0 0;font-size:12px;max-width:36rem">Builds AI agent tutorials focused on n8n, MCP and local-first stacks. Long-form, heavy on live builds. <a href="#">more ↓</a> <span class="src-chip">AI-written · 20 Jul</span></p>
+      </div>
+    </div>
+  </div>
+
+  <div class="secline"><span class="kicker">▸ still pulling views</span><span class="rule"></span></div>
+  <div class="card" style="overflow-x:auto">
+    <table class="tbl">
+      <tr><th>video</th><th class="r">published</th><th class="r">views</th><th class="r"><span class="derived" title="exact viewCount delta, last 7 daily snapshots">+7d</span></th><th class="r"><span class="derived" title="video's 30d views ÷ channel median">mult</span></th></tr>
+      <tr class="rowlink"><td>▸ Google Just Dropped a Masterclass…</td><td class="r num">25 Jun</td><td class="r num">146,102</td><td class="r num" style="color:var(--v-make)">+5,221</td><td class="r num">4.8×</td></tr>
+      <tr class="rowlink" style="background:color-mix(in srgb, var(--accent) 50%, transparent)"><td>▾ This RAG Trick Makes Agents Smarter</td><td class="r num">02 May</td><td class="r num">88,410</td><td class="r num" style="color:var(--v-make)">+2,090</td><td class="r num">2.9×</td></tr>
+      <tr><td colspan="5" style="background:#fbfaf9;padding:0.8rem 1rem">
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:11px">
+          <span><b class="num">213</b> comments · topic: <a href="#">rag-pipelines</a></span>
+          <div class="cattabs" style="margin-left:8px"><button class="t">req <b>12</b></button><button class="t on">que <b>84</b></button><button class="t">cor <b>3</b></button><button class="t">sug <b>21</b></button><button class="t">other <b>93</b></button></div>
+          <a href="#" style="margin-left:auto">open video ↗</a>
+        </div>
+        <table class="tbl" style="margin-top:6px;font-size:12px">
+          <tr><td class="mono10">marco</td><td>how do you handle rate limits when the agent loops</td><td><span class="inference tint-violet" style="font-size:10px">que</span></td><td class="r num">190</td><td class="r num">96d</td></tr>
+          <tr><td class="mono10">jenn_b</td><td>would be great to see this with a local model</td><td><span class="inference tint-violet" style="font-size:10px">req</span></td><td class="r num">140</td><td class="r num">12d</td></tr>
+        </table>
+        <div class="mono10" style="margin-top:4px">showing 2 of 213 · <a href="#">more →</a></div>
+      </td></tr>
+    </table>
+  </div>
+  <div class="manifest"><h4>data on this page</h4><table>
+    <tr><td>subs / views / video count</td><td><span class="tier oracle">oracle</span></td><td>channels.list; subs carry the bucket chip, views are exact</td></tr>
+    <tr><td>cadence · mult · +7d</td><td><span class="tier derived">derived</span></td><td>computed from free daily videos.list snapshots (F3, F6)</td></tr>
+    <tr><td>channel blurb</td><td><span class="tier inference">inference</span></td><td>AI-written, dated chip, "more" expands — never mistakable for bio text the channel wrote</td></tr>
+    <tr><td>inline comment expand</td><td><span class="tier oracle">oracle</span> + <span class="tier inference">inference</span></td><td>by-video index of the same corpus — same four categories everywhere</td></tr>
+  </table></div>
+</div>
+
+<!-- ══════════════ 13. REPLY QUEUE ══════════════ -->
+<div class="section" id="s13">
+  <div class="section-head">
+    <div><div class="kicker">13 · /channels/you — reply queue</div><h2>Draft card · your channel only</h2></div>
+    <div class="reuses">reuses <code>evidence-dialog.tsx</code> quote style + <code>prompt-generator.tsx</code> copy pattern</div>
+  </div>
+  <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;font-size:11px">
+    <div class="tabs"><button class="on">needs reply · 14</button><button>answered · 41</button></div>
+    <span class="mono10" style="margin-left:auto">sort [likes ▾] · window [30d ▾]</span>
+  </div>
+  <div class="card pad">
+    <div style="display:flex;gap:8px;align-items:baseline;flex-wrap:wrap;font-size:12px">
+      <b>marco</b><span class="mono10">188 likes · 6 replies · 12d after</span><span class="mono10">"Claude Code Skills…"</span>
+      <span class="inference tint-violet" style="font-size:10px;margin-left:auto">question</span>
+    </div>
+    <p style="margin:8px 0;font-size:13px">"great vid but how do you stop the agent from blowing the context window on a big repo? mine dies every time"</p>
+    <div class="inference tint-violet" style="padding:0.8rem 1rem">
+      <div class="mono10" style="margin-bottom:6px;color:color-mix(in srgb, var(--inf-violet) 80%, var(--foreground))">DRAFT · not sent · <span class="src-chip">sources: transcript 08:12 · KB · Skool Ch3</span></div>
+      <p style="margin:0;font-size:13px;line-height:1.6">Yeah that's the number one thing people hit. Short answer: don't let it read the whole repo, give it a map instead.<br><br>I go through the exact setup in Chapter 3 of the community, the knowledge base lesson. Covers the folder structure that keeps context flat: skool.com/erictech/classroom → Chapter 3</p>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+      <button class="btn primary">copy draft</button>
+      <button class="btn">open comment on YouTube ↗</button>
+      <button class="btn">open in Studio ↗</button>
+      <button class="btn" style="color:var(--muted-foreground)">skip</button>
+    </div>
+    <p class="mono10" style="margin:8px 0 0">ⓘ Nothing posts from here. Copy it, click through, send it yourself.</p>
+  </div>
+  <div class="manifest"><h4>data on this card</h4><table>
+    <tr><td>comment + engagement + lag</td><td><span class="tier oracle">oracle</span></td><td>your channel's comment threads, same daily sweep</td></tr>
+    <tr><td>draft reply</td><td><span class="tier inference">inference</span></td><td>his-take-first shape, sources chip names transcript timestamp + KB + Skool lesson</td></tr>
+    <tr><td>answered state</td><td><span class="tier derived">derived</span></td><td>detected, not declared: your channel id appears in the thread's replies — survives re-ingest</td></tr>
+  </table></div>
+</div>
+
+<!-- ══════════════ 14. COMPARE ══════════════ -->
+<div class="section" id="s14">
+  <div class="section-head">
+    <div><div class="kicker">14 · /compare</div><h2>Gaps lead, numbers follow</h2></div>
+    <div class="reuses">reuses <code>sortable-table.tsx</code> + verdict badges; stat table is plain rows</div>
+  </div>
+  <div style="display:flex;gap:10px;align-items:center;margin-bottom:10px;font-size:13px">
+    <span class="chip" style="font-size:12px;padding:3px 10px"><span class="avatar" style="width:18px;height:18px;font-size:7px;margin-right:6px">CM</span>Cole Medin ▾</span>
+    <span class="mono10">vs</span>
+    <span class="chip you" style="font-size:12px;padding:3px 10px"><span class="avatar" style="width:18px;height:18px;font-size:7px;margin-right:6px;background:linear-gradient(135deg,#0e86c9,#006cac)">ET</span>Eric Tech ▾ ★ you</span>
+  </div>
+  <div class="secline"><span class="kicker">▸ what he covers that you do not</span><span class="rule"></span><span class="cap">the actionable part</span></div>
+  <div class="card" style="overflow-x:auto">
+    <table class="tbl">
+      <tr><th>topic</th><th class="r">him</th><th class="r">you</th><th class="r">his views</th><th>verdict</th></tr>
+      <tr class="rowlink"><td>rag-pipelines</td><td class="r num">6 videos</td><td class="r num" style="color:var(--muted-foreground)">0</td><td class="r num">890,400</td><td><span class="badge b-filled v-make">MAKE_THIS_NOW</span></td></tr>
+      <tr class="rowlink"><td>claude-code-memory</td><td class="r num">3 videos</td><td class="r num" style="color:var(--muted-foreground)">0</td><td class="r num">210,880</td><td><span class="badge b-filled v-make">MAKE_THIS_NOW</span></td></tr>
+      <tr class="rowlink"><td>local-llm-stacks</td><td class="r num">2 videos</td><td class="r num" style="color:var(--muted-foreground)">0</td><td class="r num">44,100</td><td><span class="badge b-filled v-early">TOO_EARLY</span></td></tr>
+      <tr><td colspan="5" class="mono10" style="background:#fbfaf9">— you cover, he does not —</td></tr>
+      <tr class="rowlink"><td>claude-code-skills-authoring</td><td class="r num" style="color:var(--muted-foreground)">0</td><td class="r num">4</td><td class="r num" style="color:var(--muted-foreground)">—</td><td class="mono10">—</td></tr>
+      <tr><td colspan="5" class="mono10" style="background:#fbfaf9">— both —</td></tr>
+      <tr class="rowlink"><td>claude-code-subagents</td><td class="r num">4 videos</td><td class="r num">1</td><td class="r num">640,200</td><td><span class="badge b-filled v-unserved">ONLY_IF_UNSERVED</span></td></tr>
+    </table>
+  </div>
+  <div class="secline"><span class="kicker">▸ the numbers</span><span class="rule"></span></div>
+  <div class="callout warn" style="margin-bottom:8px;font-size:12px">⚠ Different bucket widths. Cole rounds to 1,000, you round to 100. A subscriber comparison across this size gap is not like-for-like. Views carry no such caveat.</div>
+  <div class="card" style="overflow-x:auto">
+    <table class="tbl">
+      <tr><th></th><th class="r">Cole Medin</th><th class="r">Eric Tech ★</th></tr>
+      <tr><td>subscribers</td><td class="r num">219,000 <span class="chip">±1,000</span></td><td class="r num">68,700 <span class="chip">±100</span></td></tr>
+      <tr><td><span class="derived" title="window delta">Δ subs 90d</span></td><td class="r num">+15,000</td><td class="r num">+2,100</td></tr>
+      <tr><td><span class="derived" title="Δsubs ÷ start">growth rate</span></td><td class="r num">+7.4%</td><td class="r num">+3.1%</td></tr>
+      <tr><td><span class="derived" title="Δsubs ÷ Δviews × 1000">subs / 1k views</span></td><td class="r num"><b>12.4</b></td><td class="r num"><b>5.2</b> <span class="mono10">← the real gap</span></td></tr>
+      <tr><td><span class="derived" title="median days between uploads">cadence</span></td><td class="r num">3.4d</td><td class="r num">15.0d</td></tr>
+    </table>
+  </div>
+  <div class="manifest"><h4>data on this page</h4><table>
+    <tr><td>gap tables</td><td><span class="tier derived">derived</span></td><td>set difference of matched topics; each row carries the verdict it already has on the opportunity table</td></tr>
+    <tr><td>stat table</td><td><span class="tier oracle">oracle</span> + <span class="tier derived">derived</span></td><td>same metric objects as the leaderboard; bucket-width warning fires when widths differ</td></tr>
+  </table></div>
+</div>
+
+<!-- ══════════════ 15. EMPTY STATES ══════════════ -->
+<div class="section" id="s15">
+  <div class="section-head">
+    <div><div class="kicker">15 · missing is a state</div><h2>Empty states name their build step</h2></div>
+    <div class="reuses">reuses <code>section.tsx</code> EmptyState</div>
+  </div>
+  <div class="variants cols2" style="cursor:default">
+    <div class="card pad" style="text-align:center">
+      <div class="kicker">where they disagree</div>
+      <div class="empty" style="border:0;padding:1.5rem">not extracted yet<br><span class="mono10">9 videos matched this topic · 0 analyzed · needs build step 14</span><br><br><button class="btn primary">analyze now →</button></div>
+    </div>
+    <div class="card pad" style="text-align:center">
+      <div class="kicker">who is growing</div>
+      <div class="empty" style="border:0;padding:1.5rem">building, 1 of 90 days<br><span class="mono10">Growth needs a window of snapshots. Run the vidIQ backfill (360 credits) to buy 365 days of history.</span><br><br><a href="#" style="font-size:12px">how →</a></div>
+    </div>
+  </div>
+</div>
+
+</div><!-- /wrap -->
+
+<div id="picks"><span class="lbl">your picks</span><span id="picklist" class="mono10">click a variant card in §02, 03, 04, 08 — selections show here</span></div>
+
+<script>
+const picks = {};
+document.querySelectorAll('.variants[data-group] .variant').forEach(v => {
+  v.addEventListener('click', () => {
+    const group = v.closest('.variants').dataset.group;
+    v.closest('.variants').querySelectorAll('.variant').forEach(o => o.classList.remove('selected'));
+    v.classList.add('selected');
+    picks[group] = v.dataset.v + ' — ' + v.querySelector('.vname').textContent;
+    const list = document.getElementById('picklist');
+    list.innerHTML = '';
+    for (const [g, val] of Object.entries(picks)) {
+      const s = document.createElement('span');
+      s.className = 'pick';
+      s.textContent = g + ': ' + val;
+      list.appendChild(s);
+      list.appendChild(document.createTextNode(' '));
+    }
+  });
+});
+</script>
+</body>
+</html>

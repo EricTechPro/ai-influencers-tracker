@@ -1,0 +1,16 @@
+{
+  "home": "B",
+  "leaderboard": "A",
+  "topic-leaf": "A",
+  "topic-parent": "A",
+  "channel": "A",
+  "own-channel": "B",
+  "compare": "A",
+  "_components": {
+    "verdict-badge": "A tinted pill",
+    "inference-tint": "A violet",
+    "growth-card": "B rank-numeral/sparkline-hero (home B)",
+    "mind-map": "A chain-map port"
+  },
+  "_status": "recommended set, pending Eric's veto"
+}
