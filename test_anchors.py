@@ -7,6 +7,8 @@ import sys
 
 import pytest
 
+from pipeline.conftest import ait_root  # noqa: F401  # makes the fixture visible here too
+
 ROOT = pathlib.Path(__file__).parent
 PIPELINE = ROOT / "pipeline"
 SKILLS = ROOT / ".agents" / "skills"
@@ -73,3 +75,24 @@ def test_thresholds_version_matches_meta_when_meta_exists():
     if meta is None:
         pytest.skip("_db/meta.json not built yet")
     assert meta["thresholds_version"] == config.thresholds()["version"]
+
+
+def test_a_full_build_never_writes_into_config(ait_root):  # noqa: F811
+    """The invariant, checked by hashing the tree rather than by grepping for open()."""
+    import datetime as dt
+
+    from pipeline import build_data, snapshot, util
+
+    today = dt.date(2026, 7, 27)
+    snapshot.write_channel_snapshot(
+        {"UCcole": {"date": "2026-07-27", "status": "ok", "view_count": 1,
+                    "subscriber_count": 219000, "subscriber_bucket": 1000,
+                    "video_count": 1, "source": "youtube_api"}}, today)
+    before = util.tree_hashes(config_dir_for_test())
+    build_data.build(today=today)
+    assert util.tree_hashes(config_dir_for_test()) == before
+
+
+def config_dir_for_test():
+    from pipeline import config
+    return config.config_dir()
