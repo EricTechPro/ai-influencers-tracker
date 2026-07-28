@@ -7,6 +7,8 @@ const LINKS = [
   { href: "/", label: "home" },
   { href: "/leaderboard", label: "leaderboard" },
   { href: "/topics", label: "topics" },
+  { href: "/channels", label: "channels" },
+  { href: "/compare", label: "compare" },
 ]
 
 export function NavLinks() {

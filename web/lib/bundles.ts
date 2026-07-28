@@ -74,6 +74,31 @@ export function videosById(ids: string[]): VideoRow[] {
   return out
 }
 
+/** True when the downloaded avatar exists on disk; the page then renders the
+ *  image route, otherwise initials. Decided server-side so no broken img flashes. */
+export function hasChannelAvatar(channelId: string): boolean {
+  return existsSync(path.join(DB_DIR, "assets", "channels", `${channelId}.jpg`))
+}
+
+let videosByChannel: Map<string, VideoRow[]> | null = null
+
+/** Server-side slice: all registered videos for one channel, newest last. */
+export function channelVideos(channelId: string): VideoRow[] {
+  if (!videosByChannel) {
+    const bundle = load<VideosBundle>("videos.json")
+    videosByChannel = new Map()
+    for (const v of bundle.videos) {
+      const list = videosByChannel.get(v.channel_id) ?? []
+      list.push(v)
+      videosByChannel.set(v.channel_id, list)
+    }
+    for (const list of videosByChannel.values()) {
+      list.sort((a, b) => a.published_at.localeCompare(b.published_at))
+    }
+  }
+  return videosByChannel.get(channelId) ?? []
+}
+
 /** Per-channel comment slice (T13). null is a state: the comment ledger has
  *  not reached this channel yet. Never invent an empty bundle for it. */
 export function loadChannelComments(channelId: string): ChannelCommentsFile | null {

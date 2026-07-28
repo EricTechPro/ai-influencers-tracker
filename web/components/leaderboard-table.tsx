@@ -1,5 +1,6 @@
 "use client"
 
+import Link from "next/link"
 import { useCallback, useMemo, useState } from "react"
 import type { SlimChannel } from "@/lib/growth"
 import { tiered, type SortValue } from "@/lib/sort"
@@ -161,7 +162,9 @@ function LeaderRow({ c, mode, win }: { c: SlimChannel; mode: RankMode; win: Wind
       <tr>
         <td className="muted num">--</td>
         <td>
-          <span className="avatar av20">{initials(c.name)}</span> {c.name}{" "}
+          <Link href={`/channels/${c.channel_id}`}>
+            <span className="avatar av20">{initials(c.name)}</span> {c.name}
+          </Link>{" "}
           <Chip variant="warn">absent</Chip>
         </td>
         {Array.from({ length: 6 }, (_, i) => (
@@ -180,8 +183,10 @@ function LeaderRow({ c, mode, win }: { c: SlimChannel; mode: RankMode; win: Wind
     <tr className={c.is_self ? "youcard" : undefined}>
       <td className="num">{c.rank[mode][win] ?? "--"}</td>
       <td>
-        <span className={c.is_self ? "avatar av20 av-you" : "avatar av20"}>{initials(c.name)}</span>{" "}
-        {c.name}
+        <Link href={`/channels/${c.channel_id}`}>
+          <span className={c.is_self ? "avatar av20 av-you" : "avatar av20"}>{initials(c.name)}</span>{" "}
+          {c.name}
+        </Link>
         {c.is_self && (
           <>
             {" ★ "}

@@ -93,6 +93,7 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: 13px; }
 .section-kicker .cap { font-size: 11px; color: var(--muted-foreground); white-space: nowrap; }
 
 .avatar { width: 32px; height: 32px; border-radius: 999px; background: linear-gradient(135deg, #d8d4d0, #b9b4af); flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: #fff; }
+img.avatar { object-fit: cover; }
 .av20 { width: 20px; height: 20px; font-size: 8px; }
 .av18 { width: 18px; height: 18px; font-size: 7px; }
 .av56 { width: 56px; height: 56px; font-size: 18px; }

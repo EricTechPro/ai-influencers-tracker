@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs"
 import { describe, expect, it } from "vitest"
 import {
+  channelVideos,
   loadChannelComments,
   loadChannels,
   loadMeta,
@@ -193,6 +194,20 @@ describe("videos.json server-side slice", () => {
   it("the bundles module never touches comments.json", () => {
     const src = readFileSync(new URL("./bundles.ts", import.meta.url), "utf8")
     expect(src.includes("comments.json")).toBe(false)
+  })
+
+  it("channelVideos returns only that channel's rows, sorted ascending", () => {
+    const channel = loadChannels().channels.find((c) => c.status === "ok")
+    if (!channel) throw new Error("no ok channel in _db/")
+    const rows = channelVideos(channel.channel_id)
+    for (const v of rows) expect(v.channel_id).toBe(channel.channel_id)
+    for (let i = 1; i < rows.length; i++) {
+      expect(rows[i - 1].published_at.localeCompare(rows[i].published_at)).toBeLessThanOrEqual(0)
+    }
+  })
+
+  it("channelVideos of an unknown channel is empty, not fabricated", () => {
+    expect(channelVideos("nope")).toEqual([])
   })
 })
 
