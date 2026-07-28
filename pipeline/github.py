@@ -43,7 +43,9 @@ def _default_transport(url: str, headers: dict) -> bytes:
             return response.read()
     except urllib.error.HTTPError as exc:
         if exc.code in (403, 429):
-            raise RateLimited(f"HTTP {exc.code}: {exc.read().decode(errors='replace')[:200]}")
+            raise RateLimited(
+                f"HTTP {exc.code}: {exc.read().decode(errors='replace')[:200]}"
+            ) from exc
         raise GitHubError(f"HTTP {exc.code}") from exc
     except urllib.error.URLError as exc:
         raise GitHubError(f"network error: {exc}") from exc

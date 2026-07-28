@@ -341,8 +341,11 @@ One supply vocabulary, one demand vocabulary, one cell.
 
   supply   = video and creator counts over thresholds.supply.window_days
   demand   = vidIQ keyword volume OR max repo velocity over the topic's linked repos
-  either axis unknown, or videos < 3   ->   INSUFFICIENT_DATA
+  either axis unknown   ->   INSUFFICIENT_DATA
 ```
+
+A topic below `min_n.topic_page_min_videos` renders `1 video, need 3` on its topic page. That is
+the page's state, not the verdict. See decisions 0009.
 
 `INSUFFICIENT_DATA` is the fix for the one-video problem. A topic with one video does not render
 `1/1 unanimous`, the most confident-looking and least justified output the system can produce. It

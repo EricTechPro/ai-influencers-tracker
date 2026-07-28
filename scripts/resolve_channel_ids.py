@@ -17,7 +17,7 @@ import sys
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
 
-from pipeline import config, util, youtube      # noqa: E402
+from pipeline import config, util, youtube  # noqa: E402
 
 
 def resolve(rows: list[dict], api: youtube.YouTube) -> tuple[list[dict], list[dict]]:

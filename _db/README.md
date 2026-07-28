@@ -11,7 +11,7 @@ _db/
 ├── video_snapshots.json                   meta.json
 ```
 
-Nine versioned bundles, every one carrying `version` and `generated_at`. The Next.js app reads these
+Eight versioned bundles, every one carrying `version` and `generated_at`. The Next.js app reads these
 server-side; nothing else may write them.
 
 `build_data.py` is **idempotent** and **never writes into `_raw/` or `_synthesize/`**. Running it

@@ -1,8 +1,6 @@
 import datetime as dt
 import json
 
-import pytest
-
 from pipeline import github, topics
 from pipeline.conftest import FIXTURE_THRESHOLDS as T
 

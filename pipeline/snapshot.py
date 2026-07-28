@@ -61,7 +61,7 @@ def write_channel_snapshot(rows: dict[str, dict], today: dt.date) -> pathlib.Pat
 
 
 def classify_duration(iso8601: str) -> tuple[int, str]:
-    """ISO-8601 duration -> (seconds, "short"|"long"). Shorts and long-form get separate baselines."""
+    """ISO-8601 duration -> (seconds, "short"|"long"). Separate baselines per length."""
     match = _DURATION.fullmatch(iso8601 or "")
     if not match:
         raise ValueError(f"unparseable duration {iso8601!r}")
@@ -97,7 +97,7 @@ def _observation(channel_id: str, item: dict, seen_at: str) -> dict:
 
 def record_video_metadata(channel_id: str, items: list[dict],
                           seen_at: str | None = None) -> int:
-    """Append an observation only when the video is new or its metadata changed. Returns the count."""
+    """Append an observation only when the video is new or changed. Returns the count written."""
     seen_at = seen_at or util.iso_z(dt.datetime.now(tz=util.UTC))
     current = registry(channel_id)
     written = 0
@@ -222,7 +222,9 @@ def run(today: dt.date | None = None, dry_run: bool = False) -> dict:
         self_row["channel_id"], quota_cap=max(0, remaining))
     comment_ledger.save()
 
-    from . import firecrawl, github as github_module, topics as topics_module
+    from . import firecrawl
+    from . import github as github_module
+    from . import topics as topics_module
     github_thresholds = config.thresholds()["github"]
     gh = github_module.GitHub(os.environ.get("GITHUB_TOKEN", ""))
     leaf_topics = topics_module.leaves(topics_module.load())

@@ -1,7 +1,7 @@
 import datetime as dt
 import json
 
-from pipeline import firecrawl, github
+from pipeline import firecrawl
 from pipeline.conftest import FIXTURE_THRESHOLDS as T
 
 TODAY = dt.date(2026, 7, 27)

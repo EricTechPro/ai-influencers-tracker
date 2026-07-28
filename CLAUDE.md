@@ -1,23 +1,24 @@
 Tracks 72 AI/automation YouTube channels and answers what to make next.
 
-**Spec stage. No code exists yet.** No `package.json`, no `web/`, no `pipeline/`, no tests.
-Nothing below runs yet. It is here so the first thing written matches what the docs already decided.
+**Build steps 0 to 8 are done.** `pipeline/`, its tests, and `_db/` all run for real today; `web/`
+does not exist yet — that is the next step.
 
 ```bash
-cd web && npm install && npm run dev              # port 3002 — 3001 is social-invest, both run at once
-                                                  # predev rebuilds _db/
-pytest pipeline/test_topics.py -k "leaf or shape" # one file, one test
-npx vitest run web/lib/trust.test.ts              # the rendering-honesty tests
-python3 -m pipeline.snapshot                      # the daily sweep; launchd runs it at 09:00
+pytest -q                                          # every pipeline test
+ruff check pipeline test_anchors.py scripts        # style, line-length 100
+python3 -m pipeline.snapshot --dry-run             # what the daily sweep would cost, writes nothing
+python3 -m pipeline.snapshot                       # the real sweep; launchd runs it at 09:00 once installed
+python3 -m pipeline.build_data                      # rebuild _db/ from _raw/ and _synthesize/
 ```
 
-Keys live in the repo-root `.env`. `GITHUB_TOKEN` is the one still missing — without it the GitHub
-sweep drops to the anonymous rate limit.
+Keys live in the repo-root `.env`. `GITHUB_TOKEN` is present; the GitHub sweep runs authenticated
+rather than at the anonymous rate limit. The launchd agent (`scripts/ait-snapshot.plist`) is staged
+but not yet installed into `~/Library/LaunchAgents/`; `scripts/install_ait_snapshot_launchd.sh` does
+that by hand.
 
-**Next is step 0** (`docs/spec.md` §10), blocked on three things: a human pass over the 25 drafted
-leaves in `config/topics.json`, `channel_id` and `niche` columns in `config/channels.json`, and that
-token. **Step 13 is a hard gate** — no extraction work begins until a 20-video manual spike measures
-artifact capture against a 50% floor.
+**Next is step 9** (`docs/spec.md` §10): the Next.js app on port 3002, the trust tokens, and the
+sortable table. **Step 13 is a hard gate** — no extraction work begins until a 20-video manual spike
+measures artifact capture against a 50% floor.
 
 ## The rule everything else serves
 

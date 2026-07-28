@@ -83,7 +83,7 @@ class YouTube:
             raise YouTubeError(f"{call} returned non-JSON: {body[:300]!r}") from exc
 
     def channels(self, ids: list[str]) -> dict[str, dict]:
-        """id -> item. An id missing from the reply is absent, which is how a private channel reads."""
+        """id -> item. An id missing from the reply is absent, how a private channel reads."""
         out: dict[str, dict] = {}
         for start in range(0, len(ids), BATCH):
             chunk = ids[start:start + BATCH]

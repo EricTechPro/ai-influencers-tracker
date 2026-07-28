@@ -95,15 +95,17 @@ ai-influencers-tracker/
 │   ├── config.py youtube.py github.py vidiq.py     clients + loading
 │   ├── growth.py multiplier.py traction.py         the math
 │   ├── topics.py comments.py score.py              matching + scoring
+│   ├── verdict.py read.py                          the grid + the _db/ reader layer
+│   ├── bundles/                                     one module per bundle, per §4
 │   ├── snapshot.py build_data.py                   the two entry points
 │   └── test_*.py                                   beside the code they cover
 │
 ├── _raw/                    LAYER 1. Exactly what the APIs returned.
-│   snapshots/ video_snapshots/ comments/ repos/ youtube/
+│   snapshots/ video_snapshots/ videos/ comments/ repos/ keywords/ quota/ youtube/
 ├── _synthesize/             LAYER 2. Cost money to compute.
 │   extractions/ classifications.jsonl blurbs.json
 ├── _db/                     LAYER 3. What the web reads. Safe to delete.
-│   the 9 bundles from §4
+│   the 8 bundles from §4, plus assets/ for downloaded channel avatars
 │
 ├── web/                     Next.js, port 3002. Reads _db/ server-side.
 │   app/ components/ lib/
@@ -196,7 +198,8 @@ needs new leaves. New topics enter through the trending sweep plus Eric's judgme
 
 ## 4. Bundle schemas
 
-Nine bundles under `_db/`, all carrying `version` and `generated_at`.
+Eight bundles under `_db/`, all carrying `version` and `generated_at`. (`review_queue.json` was
+deleted per decision 0003; the count here was never updated until now.)
 
 ### `snapshots.json`
 
@@ -311,7 +314,7 @@ stays distinguishable from one we snapshotted ourselves.
       "7d":  { "state": "ok", "value": 288000 },
       "30d": { "state": "ok", "value": 1120000 }
     },
-    "view_growth_pct": { "30d": 0.104 },
+    "view_growth_pct": { "30d": 0.104 },          // deferred: no formula defined yet, not built
 
     "subscriber_delta": {
       "7d":  { "state": "bounded", "upper": 5000, "value": null, "bucket": 1000 },
@@ -324,10 +327,10 @@ stays distinguishable from one we snapshotted ourselves.
 
     "videos_published": { "30d": 9 },
     "median_views_per_video": { "30d": 25246 },
-    "upload_cadence_days": 3.4,
-    "breakout_count": { "30d": 2 },
+    "upload_cadence_days": 3.4,               // deferred: no formula defined yet, not built
+    "breakout_count": { "30d": 2 },           // deferred: no formula defined yet, not built
     "still_growing_video_ids": ["zbmuiaPuiNM"],
-    "top_topics": ["claude-code-subagent-teams"],
+    "top_topics": ["claude-code-subagent-teams"],  // deferred: no formula defined yet, not built
 
     "rank": {
       "growth":      { "90d": 4 },
@@ -348,6 +351,11 @@ change in this revision: it is what lets a subscriber-growth ranking exist at al
 
 `subscriber_daily.state` is `"ok"` with a real series **only for the self channel**, sourced from
 `vidiq_channel_analytics`. Everyone else gets `"unavailable", reason: "owner_only"`.
+
+`view_growth_pct`, `upload_cadence_days`, `breakout_count` and `top_topics` are **deferred**: this
+plan defines no formula for any of the four, so `bundles/channels.py` does not emit them yet. They
+stay in the schema as the contract a later task fills, the same way `nodes` and `edges` are
+reserved `null` on `topic_pages.json` below.
 
 ### `comments.json`
 
@@ -479,7 +487,7 @@ than being hidden.
 
     "evidence": [{ "kind": "repo", "github_id": 123456, "full_name": "x/mcp-registry",
                    "stars": 12496, "age_days": 47, "velocity": 266.0,
-                   "indie": { "score": 0.66, "owner_type": "Organization", "contributors": 9,
+                   "indie": { "score": 0.58, "owner_type": "Organization", "contributors": 9,
                               "trust": "derived" },
                    "discovered_via": "trending" }],   // trending | search
     "trust": { "demand": "derived", "supply": "derived",
@@ -505,6 +513,7 @@ Repos are keyed by `github_id`, never `full_name`. `indie.score` never gates: it
     "shape": "tutorial",
     "video_count": 9, "creator_count": 7, "window_days": 90,
     "state": "ok",                        // ok | insufficient_data
+    "min_videos": 3,                      // thresholds.min_n.topic_page_min_videos, echoed
     "newest_video_at": "2026-07-24T00:00:00Z",
     "video_ids": ["zbmuiaPuiNM"],
 
@@ -512,6 +521,11 @@ Repos are keyed by `github_id`, never `full_name`. `indie.score` never gates: it
     "edges": null                         // reserved for step 15
 }]}
 ```
+
+`min_videos` is the shortfall the page renders against: `state: "insufficient_data"` plus
+`min_videos: 3` is what lets a topic page say *"1 video, need 3"* instead of just hiding the route.
+This is decision 0009's split: the verdict never reads a video count, and this field is where the
+count still matters, on the topic page, not the verdict.
 
 `nodes` and `edges` are the **mind map**, reserved as `null` so step 15 fills this bundle rather than
 replacing it. They carry the three-level `step → implementation → citation` shape for `tutorial`
@@ -546,9 +560,14 @@ direct port of social-invest's chain-map rule, written after string-matched pros
   "comment_health": { "channels_with_comments": 72, "ingested": 412000, "classified": 6100 },
   "channels": { "total": 72, "ok": 71, "absent": 1 },
   "target": { "mode": "growth", "window_days": 90, "rank": 6 },
+  "discovery": { "trending_ok": true, "reason": null },
   "partial_run": false
 }
 ```
+
+`discovery.trending_ok` is the GitHub Trending scrape's health, and `reason` carries why when it is
+`false` (a Firecrawl failure, a layout change). Decision 0003's non-critical rule lives here:
+`trending_ok: false` means discovery degraded, never that the sweep failed.
 
 `coverage_rate` (assigned videos over total) makes registry decay visible rather than silent. A
 falling rate is now the *only* signal that `config/topics.json` needs new leaves, since the proposal queue

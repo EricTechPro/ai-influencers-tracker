@@ -4,8 +4,8 @@ import sys
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
 
-from pipeline import youtube                                    # noqa: E402
-from scripts import resolve_channel_ids as r                    # noqa: E402
+from pipeline import youtube  # noqa: E402
+from scripts import resolve_channel_ids as r  # noqa: E402
 
 
 class FakeTransport:

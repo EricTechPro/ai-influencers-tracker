@@ -17,6 +17,7 @@ old one; entries are not edited after the fact.
 | [0006](#0006-no-viewstats-tubebuddy-or-apify) | No ViewStats, TubeBuddy or Apify | Isn't there a better data source than vidIQ? |
 | [0007](#0007-the-topic-page-opens-on-the-fork-not-the-trunk) | The topic page opens on the fork, not the trunk | Shouldn't a tutorial start at step 1? |
 | [0008](#0008-partial-extraction-is-omitted-never-degraded) | Partial extraction is omitted, never degraded | We got 6 of 9 steps. Why not show the 6? |
+| [0009](#0009-insufficient_data-is-an-unknown-axis-not-a-low-video-count) | `INSUFFICIENT_DATA` is an unknown axis, not a low video count | The spec rule and the canonical 71.9 example contradict each other. Which one is wrong? |
 
 ---
 
@@ -422,3 +423,39 @@ mapping each frame to its second. `SHORT_MAX_SECONDS = 180` and `FRAME_CAP = 20`
 limiting it to Shorts, not a missing capability.** Raising them is most of the work.
 
 Review-shape topics are unaffected: they carry no artifacts to capture, so they proceed regardless.
+
+---
+
+## 0009 — `INSUFFICIENT_DATA` is an unknown axis, not a low video count
+
+### Context
+
+Spec §5 stated the rule as *"either axis unknown, or videos < 3 → INSUFFICIENT_DATA"*. The same
+section's canonical worked example gives `mcp-registry-integration` a supply of 2 videos, a verdict
+of `MAKE_THIS_NOW`, and a score of 71.9, which is declared mandatory in two places. Those cannot
+both hold: `INSUFFICIENT_DATA` forces a null score. The wireframes agree with the example and not
+with the rule: `claude-code-plugins` renders INSUFFICIENT at 3 videos and 3 creators, and
+`claude-code-hooks-config` renders TOO_EARLY at 0 videos.
+
+### Decision
+
+The verdict grid's `INSUFFICIENT_DATA` fires **iff an axis is unknown**, which in practice means
+the demand axis: no keyword volume and no linked repo velocity.
+
+The `videos < 3` rule is the **topic page's** state, driven by `min_n.topic_page_min_videos` and
+`min_n.topic_page_min_creators`. That is the surface where *"1 video, need 3"* renders, and it is
+about whether a consensus claim can be made, not about whether an opportunity exists.
+
+One word was doing two jobs on two surfaces. Splitting it costs one field on `topic_pages.json`.
+
+Rejected alternatives:
+
+- **Keep `videos < 3` on the verdict and drop the 71.9 example.** The example is real data, is
+  named canonical, and is asserted in two test modules. It outranks a sentence.
+- **Score the row anyway while banding it INSUFFICIENT_DATA.** Then verdict and score disagree,
+  and `test_score.py` explicitly forbids that.
+
+### Scope
+
+`verdict.decide` never reads a video count. `topic_pages.state` carries `insufficient_data` plus
+`min_videos` so the page can render the shortfall rather than hiding the route.

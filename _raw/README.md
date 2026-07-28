@@ -7,8 +7,11 @@ overwritten, never deleted.
 _raw/
 ├── snapshots/2026-07-27.json          one row per channel per day
 ├── video_snapshots/2026-07-27.json    one row per video per day
+├── videos/<channel_id>.jsonl          append-only video metadata registry, one line per observation
 ├── comments/<channel_id>.jsonl        one line per comment, forever
 ├── repos/2026-07-27.json              GitHub velocity sweep + trending
+├── keywords/2026-07-27.json           vidIQ keyword volume, weekly cadence
+├── quota/2026-07-27.json              the YouTube Data API quota ledger for that day
 └── youtube/<channel>/<videoId>.md     transcripts, from build step 14
 ```
 

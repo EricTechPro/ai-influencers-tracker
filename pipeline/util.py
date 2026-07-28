@@ -6,9 +6,10 @@ import hashlib
 import json
 import os
 import pathlib
-from typing import Any, Iterator
+from collections.abc import Iterator
+from typing import Any
 
-UTC = dt.timezone.utc
+UTC = dt.UTC
 
 
 def today() -> dt.date:

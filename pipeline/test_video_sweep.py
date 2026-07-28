@@ -1,7 +1,7 @@
 import datetime as dt
 import json
 
-from pipeline import config, snapshot, util
+from pipeline import snapshot, util
 
 TODAY = dt.date(2026, 7, 27)
 

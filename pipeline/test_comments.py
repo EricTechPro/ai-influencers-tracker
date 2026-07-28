@@ -1,9 +1,8 @@
-import datetime as dt
 import json
 
 import pytest
 
-from pipeline import comments, config
+from pipeline import comments
 from pipeline.conftest import FIXTURE_THRESHOLDS as T
 
 C = T["comments"]
