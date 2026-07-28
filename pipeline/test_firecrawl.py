@@ -93,3 +93,26 @@ def test_trending_repos_are_resolved_to_numeric_ids_and_tagged(ait_root):
     assert out["repos"][0]["github_id"] == 777
     assert out["repos"][0]["discovered_via"] == "trending"
     assert out["repos"][0]["indie"]["contributors"] == 9
+
+
+def test_a_malformed_repo_is_skipped_and_the_sweep_continues(ait_root):
+    # TRENDING_MD yields two names, in order: modelcontextprotocol/registry, someone/agent-lab.
+    # The first resolves to a payload with an unparseable created_at, which blows up inside
+    # normalize() -- past the point the old code only guarded repo_by_name itself. One bad
+    # repo must never sink the rest of the sweep.
+    class FlakyGitHub:
+        def repo_by_name(self, ref):
+            if ref == "modelcontextprotocol/registry":
+                return {"id": 1, "full_name": ref, "stargazers_count": 5,
+                        "created_at": "not-a-date", "owner": {"type": "Organization"},
+                        "topics": [], "description": "", "html_url": f"https://github.com/{ref}"}
+            return {"id": 2, "full_name": ref, "stargazers_count": 20,
+                    "created_at": "2026-06-10T00:00:00Z", "owner": {"type": "User"},
+                    "topics": [], "description": "", "html_url": f"https://github.com/{ref}"}
+
+        def contributor_count(self, full_name):
+            return 3
+
+    out = firecrawl.trending_sweep(lambda url: TRENDING_MD, FlakyGitHub(), TODAY, G)
+    assert out["ok"] is True
+    assert [r["full_name"] for r in out["repos"]] == ["someone/agent-lab"]

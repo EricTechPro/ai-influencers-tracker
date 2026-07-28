@@ -79,12 +79,14 @@ def trending_sweep(scraper, github_client, today: dt.date, github_thresholds: di
     for full_name in names:
         try:
             item = github_client.repo_by_name(full_name)
+            item["discovered_via"] = "trending"
+            row = github_module.normalize(item, today, github_thresholds)
+            row["indie"] = github_module.indie_score(
+                row["owner_type"], github_client.contributor_count(full_name),
+                github_thresholds["indie"])
         except Exception:
+            # One malformed or unreachable repo must never sink the rest of the sweep --
+            # fetch, normalize, and score all live inside this guard, not just the fetch.
             continue
-        item["discovered_via"] = "trending"
-        row = github_module.normalize(item, today, github_thresholds)
-        row["indie"] = github_module.indie_score(
-            row["owner_type"], github_client.contributor_count(full_name),
-            github_thresholds["indie"])
         repos.append(row)
     return {"repos": repos, "ok": True, "reason": None}
