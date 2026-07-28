@@ -146,3 +146,32 @@ def test_a_crash_mid_ingest_does_not_lose_already_checkpointed_progress(ait_root
     assert reloaded.done("v0") and reloaded.done("v1")
     assert not reloaded.done("v2")
     assert len(comments.load("UCcole")) == 2      # their comments landed too, not just the mark
+
+
+def test_a_malformed_thread_is_skipped_recorded_as_an_error_and_left_unmarked(ait_root, tmp_path):
+    """One bad payload must not abort the whole day's ingest, and must not be silently marked
+    done as if we knew it had zero comments — that would be a false zero, not a missing state.
+    """
+    api = _api({"v0": [thread("Ug0")], "v1": [{"id": "Ugbad"}], "v2": [thread("Ug2")]})
+    ledger = comments.Ledger(tmp_path / "ledger.json")
+    videos = [{**VIDEO, "video_id": f"v{i}"} for i in range(3)]
+    out = comments.ingest(videos, api, ledger, C, "UCself", quota_cap=100)
+    assert out["errors"] == 1
+    assert out["comments_new"] == 2                 # v0 and v2's single root comment each
+    assert ledger.done("v0") and ledger.done("v2")
+    assert not ledger.done("v1")                    # unmarked so a later run retries it
+
+
+def test_quota_exceeded_mid_queue_stops_cleanly_and_stays_resumable(ait_root, tmp_path):
+    """A real QuotaExceeded is a clean stop like the cap, not a crash: the video that hit the
+    wall is never marked done, and everything already fetched stays checkpointed."""
+    from pipeline import youtube
+    api = _api({"v0": [thread("Ug0")], "v1": [thread("Ug1")], "v2": [thread("Ug2")]})
+    api.ledger.spend(youtube.DAILY_BUDGET - 1, "videos.list")   # room for exactly one more call
+    ledger = comments.Ledger(tmp_path / "ledger.json")
+    videos = [{**VIDEO, "video_id": f"v{i}"} for i in range(3)]
+    out = comments.ingest(videos, api, ledger, C, "UCself", quota_cap=100)
+    assert out["videos_fetched"] == 1
+    assert out["stopped_on_quota"] is True
+    assert ledger.done("v0")
+    assert not ledger.done("v1") and not ledger.done("v2")

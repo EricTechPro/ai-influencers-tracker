@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import pathlib
 
-from . import config, util
+from . import config, util, youtube
 
 
 def store_path(channel_id: str) -> pathlib.Path:
@@ -106,20 +106,37 @@ def ingest(videos: list[dict], api, ledger: Ledger, comment_thresholds: dict,
     it had already covered, which is exactly the failure the resumable ledger exists to rule
     out. The comment rows themselves are already safe either way (append_new dedupes on
     comment_id), so this is purely about not re-asking YouTube for what we already have.
+
+    Two failure modes get isolated rather than left to crash the whole run:
+      QuotaExceeded  the real budget ran out mid-queue. Clean stop, same as hitting our own
+                     quota_cap: nothing spent for this video, so it is never marked done.
+      a bad payload  YouTubeError, or a KeyError/TypeError from a malformed thread. The video
+                     is counted in `errors` and left unmarked so a later run retries it, but
+                     the loop keeps going rather than losing every other video behind it.
     """
-    fetched = new_rows = 0
-    stopped = False
+    fetched = new_rows = errors = 0
+    stopped_on_cap = stopped_on_quota = False
     for video in videos:
         if ledger.done(video["video_id"]):
             continue
         if fetched >= quota_cap:
-            stopped = True
+            stopped_on_cap = True
             break
-        threads = api.comment_threads(video["video_id"], comment_thresholds["roots_per_video"])
-        rows = [normalize(t, video, self_channel_id) for t in threads]
+        try:
+            threads = api.comment_threads(video["video_id"], comment_thresholds["roots_per_video"])
+            rows = [normalize(t, video, self_channel_id) for t in threads]
+        except youtube.QuotaExceeded:
+            stopped_on_quota = True
+            break
+        except (youtube.YouTubeError, KeyError, TypeError):
+            errors += 1
+            fetched += 1
+            api.ledger.save()
+            continue
         new_rows += append_new(video["channel_id"], rows)
         ledger.mark(video["video_id"], len(rows))
         ledger.save()
         api.ledger.save()
         fetched += 1
-    return {"videos_fetched": fetched, "comments_new": new_rows, "stopped_on_cap": stopped}
+    return {"videos_fetched": fetched, "comments_new": new_rows, "errors": errors,
+            "stopped_on_cap": stopped_on_cap, "stopped_on_quota": stopped_on_quota}
