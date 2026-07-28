@@ -246,11 +246,12 @@ def test_the_comment_bundle_indexes_the_same_corpus_three_ways(ait_root):
     seed_snapshots(days=8)
     seed_topic_corpus(ait_root)
     build_data.build(today=TODAY)
-    bundle = util.read_json(config.db_dir() / "comments.json")
-    assert bundle["version"] == 2
-    assert bundle["by_channel"]["UCcole"]["totals"]["ingested"] == 1
-    assert bundle["by_video"]["v1"]["totals"]["comments"] == 1
-    topic = bundle["by_topic"]["mcp-registry-integration"]
+    cole = util.read_json(config.db_dir() / "comments" / "channel" / "UCcole.json")
+    assert cole["version"] == 2
+    assert cole["channel"]["totals"]["ingested"] == 1
+    assert cole["videos"]["v1"]["totals"]["comments"] == 1
+    topic = util.read_json(
+        config.db_dir() / "comments" / "topic" / "mcp-registry-integration.json")["topic"]
     assert topic["totals"] == {"comments": 1, "videos": 2, "creators": 2}
     assert topic["by_category"]["unsorted"] == 1        # not classified yet, never hidden
 
@@ -259,12 +260,22 @@ def test_a_category_can_never_ship_without_its_comment_text(ait_root):
     seed_snapshots(days=8)
     seed_topic_corpus(ait_root)
     build_data.build(today=TODAY)
-    bundle = util.read_json(config.db_dir() / "comments.json")
-    for index in ("by_channel", "by_video", "by_topic"):
-        for entry in bundle[index].values():
-            for row in entry["top"]:
+    channel_files = (config.db_dir() / "comments" / "channel").glob("*.json")
+    for path in channel_files:
+        entry = util.read_json(path)
+        for row in entry["channel"]["top"]:
+            assert row["text"], "a comment row shipped without its text"
+            assert "category" in row and "lag_days" in row
+        for video in entry["videos"].values():
+            for row in video["top"]:
                 assert row["text"], "a comment row shipped without its text"
                 assert "category" in row and "lag_days" in row
+    topic_files = (config.db_dir() / "comments" / "topic").glob("*.json")
+    for path in topic_files:
+        entry = util.read_json(path)
+        for row in entry["topic"]["top"]:
+            assert row["text"], "a comment row shipped without its text"
+            assert "category" in row and "lag_days" in row
 
 
 def test_meta_reports_coverage_health_and_the_target(ait_root):
@@ -286,5 +297,8 @@ def test_all_nine_bundles_are_written(ait_root):
     seed_topic_corpus(ait_root)
     build_data.build(today=TODAY)
     assert sorted(p.name for p in config.db_dir().glob("*.json")) == [
-        "channels.json", "comments.json", "meta.json", "opportunities.json",
+        "channels.json", "meta.json", "opportunities.json",
         "snapshots.json", "topic_pages.json", "video_snapshots.json", "videos.json"]
+    assert not (config.db_dir() / "comments.json").exists()
+    assert (config.db_dir() / "comments" / "channel" / "UCcole.json").exists()
+    assert (config.db_dir() / "comments" / "topic" / "mcp-registry-integration.json").exists()

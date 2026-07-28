@@ -9,6 +9,8 @@ without the evidence for it.
 """
 from __future__ import annotations
 
+import shutil
+
 from .. import comments as comments_module
 from .. import config, util
 
@@ -87,5 +89,30 @@ def build(ctx) -> dict:
             "by_channel": by_channel, "by_video": by_video_out, "by_topic": by_topic_out}
 
 
-def write(ctx) -> None:
-    util.write_json(config.db_dir() / "comments.json", build(ctx))
+def write(ctx) -> dict:
+    """Split by route (T13): one file per channel, one per topic. The monolith
+    would ship 59 MB to every page load path; per-route files keep reads O(page)."""
+    bundle = build(ctx)
+    root = config.db_dir() / "comments"
+    if root.exists():
+        shutil.rmtree(root)
+    (root / "channel").mkdir(parents=True)
+    (root / "topic").mkdir(parents=True)
+    monolith = config.db_dir() / "comments.json"
+    monolith.unlink(missing_ok=True)
+
+    channel_of = {v["video_id"]: v["channel_id"] for v in ctx.videos}
+    videos_by_channel: dict[str, dict] = {}
+    for video_id, entry in bundle["by_video"].items():
+        channel_id = channel_of.get(video_id)
+        if channel_id is not None:
+            videos_by_channel.setdefault(channel_id, {})[video_id] = entry
+
+    head = {"version": bundle["version"], "generated_at": bundle["generated_at"]}
+    for channel_id, entry in bundle["by_channel"].items():
+        util.write_json(root / "channel" / f"{channel_id}.json",
+                        {**head, "channel": entry,
+                         "videos": videos_by_channel.get(channel_id, {})})
+    for topic_id, entry in bundle["by_topic"].items():
+        util.write_json(root / "topic" / f"{topic_id}.json", {**head, "topic": entry})
+    return bundle

@@ -1,8 +1,10 @@
+import datetime as dt
 import json
 
 import pytest
 
-from pipeline import comments
+from pipeline import build_data, comments, config, snapshot, util
+from pipeline.bundles import comments as comments_bundle
 from pipeline.conftest import FIXTURE_THRESHOLDS as T
 
 C = T["comments"]
@@ -174,3 +176,97 @@ def test_quota_exceeded_mid_queue_stops_cleanly_and_stays_resumable(ait_root, tm
     assert out["stopped_on_quota"] is True
     assert ledger.done("v0")
     assert not ledger.done("v1") and not ledger.done("v2")
+
+
+TODAY = dt.date(2026, 7, 27)
+
+
+@pytest.fixture
+def tmp_db_ctx(ait_root):
+    """A ctx wired to a tmp _db dir: 2 channels with comments, 3 videos, 1 topic.
+
+    v1 (UCcole) and v2 (UCdan) match mcp-registry-integration by title; v3 (UCdan) is
+    unrelated and carries no comments, so UCself and v3 stay out of the split bundle.
+    """
+    for i in range(8):
+        day = TODAY - dt.timedelta(days=i)
+        rows = {}
+        for cid, subs, views in (("UCself", 68700, 4102880), ("UCcole", 219000, 11991545),
+                                 ("UCdan", 2930000, 90000000)):
+            rows[cid] = {"date": util.date_str(day), "status": "ok",
+                         "view_count": views - i * 40000, "subscriber_count": subs - i * 900,
+                         "subscriber_bucket": None, "video_count": 400 - i,
+                         "source": "youtube_api"}
+        snapshot.write_channel_snapshot(rows, day)
+
+    videos = [
+        {"id": "v1", "snippet": {"title": "MCP registry walkthrough", "description": "",
+                                 "tags": ["mcp registry"], "channelId": "UCcole",
+                                 "publishedAt": "2026-07-21T00:00:00Z"},
+         "contentDetails": {"duration": "PT21M56S"}, "statistics": {"viewCount": "1000"}},
+        {"id": "v2", "snippet": {"title": "Another mcp registry build", "description": "",
+                                 "tags": [], "channelId": "UCdan",
+                                 "publishedAt": "2026-07-21T00:00:00Z"},
+         "contentDetails": {"duration": "PT9M"}, "statistics": {"viewCount": "500"}},
+        {"id": "v3", "snippet": {"title": "Unrelated vlog", "description": "",
+                                 "tags": [], "channelId": "UCdan",
+                                 "publishedAt": "2026-07-22T00:00:00Z"},
+         "contentDetails": {"duration": "PT5M"}, "statistics": {"viewCount": "200"}},
+    ]
+    snapshot.record_video_metadata("UCcole", videos[:1])
+    snapshot.record_video_metadata("UCdan", videos[1:])
+    for i in range(8):
+        day = TODAY - dt.timedelta(days=i)
+        snapshot.write_video_snapshot(
+            {"v1": {"date": util.date_str(day), "status": "ok", "view_count": 1000 - i * 10,
+                    "source": "youtube_api"},
+             "v2": {"date": util.date_str(day), "status": "ok", "view_count": 500 - i * 5,
+                    "source": "youtube_api"},
+             "v3": {"date": util.date_str(day), "status": "ok", "view_count": 200 - i * 2,
+                    "source": "youtube_api"}}, day)
+
+    comments.append_new("UCcole", [{
+        "comment_id": "Ug1", "video_id": "v1", "channel_id": "UCcole",
+        "video_title": "MCP registry walkthrough", "video_url": "https://youtu.be/v1",
+        "video_published_at": "2026-07-21T00:00:00Z", "author": "someguy",
+        "text": "Would love to see this on Windows", "like_count": 412, "reply_count": 7,
+        "published_at": "2026-07-24T00:00:00Z", "answered": False, "lag_days": 3,
+        "topic_ids": ["mcp-registry-integration"], "category": None}])
+    comments.append_new("UCdan", [{
+        "comment_id": "Ug2", "video_id": "v2", "channel_id": "UCdan",
+        "video_title": "Another mcp registry build", "video_url": "https://youtu.be/v2",
+        "video_published_at": "2026-07-21T00:00:00Z", "author": "otherguy",
+        "text": "great walkthrough", "like_count": 10, "reply_count": 1,
+        "published_at": "2026-07-24T00:00:00Z", "answered": False, "lag_days": 3,
+        "topic_ids": ["mcp-registry-integration"], "category": None}])
+
+    return build_data.make_context(TODAY)
+
+
+def test_split_write_creates_per_channel_and_topic_files(tmp_db_ctx):
+    ctx = tmp_db_ctx  # fixture: ctx wired to a tmp _db dir with 2 channels, 3 videos, 1 topic
+    bundle = comments_bundle.write(ctx)
+    root = config.db_dir() / "comments"
+    channel_files = sorted(p.name for p in (root / "channel").glob("*.json"))
+    assert channel_files == sorted(f"{cid}.json" for cid in bundle["by_channel"])
+    one = json.loads((root / "channel" / channel_files[0]).read_text())
+    cid = channel_files[0].removesuffix(".json")
+    assert one["channel"] == bundle["by_channel"][cid]
+    # only this channel's videos are inside its file
+    own_video_ids = {v["video_id"] for v in ctx.videos if v["channel_id"] == cid}
+    assert set(one["videos"]) <= own_video_ids
+
+
+def test_split_write_removes_stale_files_and_monolith(tmp_db_ctx):
+    root = config.db_dir() / "comments"
+    (root / "channel").mkdir(parents=True, exist_ok=True)
+    (root / "channel" / "UCstale.json").write_text("{}")
+    (config.db_dir() / "comments.json").write_text("{}")
+    comments_bundle.write(tmp_db_ctx)
+    assert not (root / "channel" / "UCstale.json").exists()
+    assert not (config.db_dir() / "comments.json").exists()
+
+
+def test_split_write_returns_bundle_for_meta(tmp_db_ctx):
+    bundle = comments_bundle.write(tmp_db_ctx)
+    assert "by_channel" in bundle and "by_video" in bundle and "by_topic" in bundle

@@ -93,8 +93,7 @@ def build(today: dt.date | None = None) -> dict:
     bundles.videos.write(ctx)
     bundles.channels.write(ctx)
 
-    comments_bundle = bundles.comments.build(ctx)
-    util.write_json(config.db_dir() / "comments.json", comments_bundle)
+    comments_bundle = bundles.comments.write(ctx)
     # meta's comment_health is read off the same corpus the comments bundle just indexed, so a
     # channel the comment ledger has not reached yet stays invisible rather than a false zero.
     ctx.extra["channels_with_comments"] = sum(
