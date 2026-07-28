@@ -75,6 +75,10 @@ class GitHub:
         """By numeric id. A rename changes full_name; the id survives it."""
         return self._get(f"/repositories/{repo_id}")
 
+    def repo_by_name(self, full_name: str) -> dict:
+        """By owner/name, the only shape trending gives us. Resolved once, then keyed on id."""
+        return self._get(f"/repos/{full_name}")
+
     def contributor_count(self, full_name: str) -> int | None:
         try:
             params = {"per_page": PER_PAGE, "anon": "1"}

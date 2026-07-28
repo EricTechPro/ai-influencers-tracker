@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import argparse
 import datetime as dt
+import os
 import pathlib
 import re
 
@@ -158,6 +159,12 @@ def write_video_snapshot(rows: dict[str, dict], today: dt.date) -> pathlib.Path:
     return path
 
 
+def write_repo_snapshot(payload: dict, today: dt.date) -> pathlib.Path:
+    path = config.raw_dir() / "repos" / f"{util.date_str(today)}.json"
+    util.write_json(path, payload)
+    return path
+
+
 def present_dates() -> list[str]:
     directory = config.raw_dir() / "snapshots"
     if not directory.exists():
@@ -215,12 +222,29 @@ def run(today: dt.date | None = None, dry_run: bool = False) -> dict:
         self_row["channel_id"], quota_cap=max(0, remaining))
     comment_ledger.save()
 
+    from . import firecrawl, github as github_module, topics as topics_module
+    github_thresholds = config.thresholds()["github"]
+    gh = github_module.GitHub(os.environ.get("GITHUB_TOKEN", ""))
+    leaf_topics = topics_module.leaves(topics_module.load())
+    search = github_module.sweep(
+        gh, github_module.build_queries(leaf_topics, today, github_thresholds),
+        today, github_thresholds, config.excluded_repo_ids(), with_contributors=True)
+    trending = firecrawl.trending_sweep(
+        lambda url: firecrawl.scrape_markdown(url, os.environ.get("FIRECRAWL_API_KEY", "")),
+        gh, today, github_thresholds)
+    write_repo_snapshot({"date": date_string,
+                         "search": search["repos"], "trending": trending["repos"],
+                         "partial_run": search["partial_run"],
+                         "trending_ok": trending["ok"], "trending_reason": trending["reason"]},
+                        today)
+
     ledger.save()
     return {"date": date_string, "channels": len(rows),
             "absent": [c for c, r in rows.items() if r["status"] == "absent"],
             "new_videos": new_videos, "videos_swept": len(to_sweep),
             "units": ledger.total, "missing_dates": missing_dates(today, 30),
-            "comments": comment_summary}
+            "comments": comment_summary,
+            "partial_run": search["partial_run"], "trending_ok": trending["ok"]}
 
 
 def main() -> int:
