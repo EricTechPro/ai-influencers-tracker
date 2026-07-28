@@ -61,8 +61,13 @@ def make_context(today: dt.date) -> Context:
               f"{len(row['video_ids'])} videos, now has children {row['new_children']}. "
               f"Its videos were re-matched against the new children.")
 
-    own_videos = [{**v, "topic_ids": [a["topic_id"] for a in assignments_by_video[v["video_id"]]]}
-                  for v in videos if v["channel_id"] == self_row["channel_id"]]
+    # Coverage demands the strong signal: a topic only counts as covered when the alias hit
+    # landed in the title. A description or tags mention is too weak to suppress an opportunity.
+    own_videos = [
+        {**v, "topic_ids": [a["topic_id"] for a in assignments_by_video[v["video_id"]]
+                            if "title" in a["matched_on"]]}
+        for v in videos if v["channel_id"] == self_row["channel_id"]
+    ]
     own_coverage = {
         leaf.id: bundles.channels.own_coverage(leaf.id, own_videos, today,
                                                thresholds["own_content"])
