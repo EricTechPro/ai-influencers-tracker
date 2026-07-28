@@ -1,0 +1,117 @@
+import datetime as dt
+import json
+
+from pipeline import comments, config
+from pipeline.conftest import FIXTURE_THRESHOLDS as T
+
+C = T["comments"]
+VIDEO = {"video_id": "zbmuiaPuiNM", "channel_id": "UCcole",
+         "title": "Google Just Dropped a Masterclass",
+         "published_at": "2026-06-25T00:00:05Z"}
+
+
+def thread(cid="Ug1", text="Would love to see this on Windows", likes=412, replies=7,
+           published="2026-06-28T10:00:00Z", reply_authors=()):
+    return {"id": cid,
+            "snippet": {"topLevelComment": {"id": cid, "snippet": {
+                "authorDisplayName": "someguy",
+                "authorChannelId": {"value": "UCcommenter"},
+                "textOriginal": text, "likeCount": likes,
+                "publishedAt": published}},
+                "totalReplyCount": replies},
+            "replies": {"comments": [
+                {"snippet": {"authorChannelId": {"value": a}, "textOriginal": "r"}}
+                for a in reply_authors]}}
+
+
+class FakeTransport:
+    def __init__(self, threads_by_video):
+        self.by_video = threads_by_video
+        self.urls = []
+
+    def __call__(self, url):
+        self.urls.append(url)
+        video_id = url.split("videoId=")[1].split("&")[0]
+        return json.dumps({"items": self.by_video.get(video_id, [])}).encode()
+
+
+def _api(by_video):
+    from pipeline import youtube
+    return youtube.YouTube("KEY", transport=FakeTransport(by_video))
+
+
+def test_lag_is_days_after_the_video_not_the_comment_date():
+    assert comments.lag_days("2026-06-28T10:00:00Z", "2026-06-25T00:00:05Z") == 3
+    assert comments.lag_days("2026-09-29T00:00:00Z", "2026-06-25T00:00:05Z") == 96
+
+
+def test_lag_is_never_negative():
+    """Clock skew, or a comment on a premiere. Zero is honest; a negative lag is not."""
+    assert comments.lag_days("2026-06-24T00:00:00Z", "2026-06-25T00:00:05Z") == 0
+
+
+def test_a_normalized_row_always_carries_its_text_beside_its_null_category(ait_root):
+    row = comments.normalize(thread(), VIDEO, self_channel_id="UCself")
+    assert row["text"] == "Would love to see this on Windows"
+    assert row["category"] is None                 # renders as "unsorted", never hidden
+    assert row["like_count"] == 412 and row["reply_count"] == 7
+    assert row["lag_days"] == 3
+    assert row["video_title"] == "Google Just Dropped a Masterclass"
+    assert row["video_url"] == "https://youtu.be/zbmuiaPuiNM"
+
+
+def test_answered_is_detected_from_the_self_channel_id_in_the_replies():
+    assert comments.is_answered(thread(reply_authors=("UCother",)), "UCself") is False
+    assert comments.is_answered(thread(reply_authors=("UCother", "UCself")), "UCself") is True
+
+
+def test_appending_is_idempotent_on_comment_id(ait_root):
+    rows = [comments.normalize(thread("Ug1"), VIDEO, "UCself"),
+            comments.normalize(thread("Ug2"), VIDEO, "UCself")]
+    assert comments.append_new("UCcole", rows) == 2
+    assert comments.append_new("UCcole", rows) == 0
+    assert len(comments.load("UCcole")) == 2
+
+
+def test_the_ledger_makes_the_backfill_resumable(ait_root, tmp_path):
+    ledger = comments.Ledger(tmp_path / "ledger.json")
+    ledger.mark("v1", 213)
+    ledger.save()
+    reloaded = comments.Ledger(tmp_path / "ledger.json")
+    assert reloaded.done("v1") and not reloaded.done("v2")
+
+
+def test_ingest_skips_videos_the_ledger_already_holds(ait_root, tmp_path):
+    api = _api({"v1": [thread("Ug1")], "v2": [thread("Ug2")]})
+    ledger = comments.Ledger(tmp_path / "ledger.json")
+    ledger.mark("v1", 1)
+    videos = [{**VIDEO, "video_id": "v1"}, {**VIDEO, "video_id": "v2"}]
+    out = comments.ingest(videos, api, ledger, C, "UCself", quota_cap=100)
+    assert out["videos_fetched"] == 1 and out["comments_new"] == 1
+    assert "videoId=v1" not in " ".join(api.transport.urls)
+
+
+def test_ingest_stops_at_the_quota_cap_and_stays_resumable(ait_root, tmp_path):
+    api = _api({f"v{i}": [thread(f"Ug{i}")] for i in range(10)})
+    ledger = comments.Ledger(tmp_path / "ledger.json")
+    videos = [{**VIDEO, "video_id": f"v{i}"} for i in range(10)]
+    out = comments.ingest(videos, api, ledger, C, "UCself", quota_cap=4)
+    assert out["videos_fetched"] == 4 and out["stopped_on_cap"] is True
+    ledger.save()
+    resumed = comments.ingest(videos, api, ledger, C, "UCself", quota_cap=100)
+    assert resumed["videos_fetched"] == 6
+
+
+def test_the_classification_floor_is_likes_or_replies(ait_root):
+    low = comments.normalize(thread(likes=1, replies=0), VIDEO, "UCself")
+    by_likes = comments.normalize(thread(likes=5, replies=0), VIDEO, "UCself")
+    by_replies = comments.normalize(thread(likes=0, replies=2), VIDEO, "UCself")
+    assert not comments.qualifies_for_classification(low, C)
+    assert comments.qualifies_for_classification(by_likes, C)
+    assert comments.qualifies_for_classification(by_replies, C)
+
+
+def test_a_comment_row_never_loses_its_topic_join(ait_root):
+    video = {**VIDEO, "topic_ids": ["claude-code-mcp-setup"]}
+    row = comments.normalize(thread(), video, "UCself")
+    assert row["topic_ids"] == ["claude-code-mcp-setup"]

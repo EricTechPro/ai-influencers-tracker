@@ -201,11 +201,26 @@ def run(today: dt.date | None = None, dry_run: bool = False) -> dict:
         to_sweep.extend(video_ids_to_sweep(row["channel_id"], today, traction_thresholds))
     write_video_snapshot(video_rows(to_sweep, api, today), today)
 
+    from . import comments as comments_module
+    self_row = config.self_channel(roster)
+    comment_ledger = comments_module.Ledger()
+    all_videos = [
+        {**row, "video_id": vid}
+        for r in roster
+        for vid, row in registry(r["channel_id"]).items()
+    ]
+    remaining = youtube.DAILY_BUDGET - ledger.total - 500        # keep 500 units in hand
+    comment_summary = comments_module.ingest(
+        all_videos, api, comment_ledger, config.thresholds()["comments"],
+        self_row["channel_id"], quota_cap=max(0, remaining))
+    comment_ledger.save()
+
     ledger.save()
     return {"date": date_string, "channels": len(rows),
             "absent": [c for c, r in rows.items() if r["status"] == "absent"],
             "new_videos": new_videos, "videos_swept": len(to_sweep),
-            "units": ledger.total, "missing_dates": missing_dates(today, 30)}
+            "units": ledger.total, "missing_dates": missing_dates(today, 30),
+            "comments": comment_summary}
 
 
 def main() -> int:
