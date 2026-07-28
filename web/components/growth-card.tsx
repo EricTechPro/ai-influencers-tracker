@@ -15,7 +15,7 @@ export function GrowthCard({ card, window }: { card: CardModel; window: string }
     <div className={classes.join(" ")}>
       <span className="rank-numeral">{card.rank ?? "--"}</span>
       <div className="id">
-        <span className="rank">{MEDALS[card.rank ?? 0] ?? `#${card.rank ?? "--"}`}</span>
+        <span className="rank">{MEDALS[card.rank ?? 0] ?? (card.rank !== null ? `#${card.rank}` : "--")}</span>
         <span className={card.is_self ? "avatar av20 av-you" : "avatar av20"}>
           {initials(card.name)}
         </span>
