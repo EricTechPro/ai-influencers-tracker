@@ -1,6 +1,8 @@
 import datetime as dt
 import json
 
+import pytest
+
 from pipeline import comments, config
 from pipeline.conftest import FIXTURE_THRESHOLDS as T
 
@@ -115,3 +117,32 @@ def test_a_comment_row_never_loses_its_topic_join(ait_root):
     video = {**VIDEO, "topic_ids": ["claude-code-mcp-setup"]}
     row = comments.normalize(thread(), video, "UCself")
     assert row["topic_ids"] == ["claude-code-mcp-setup"]
+
+
+def test_a_crash_mid_ingest_does_not_lose_already_checkpointed_progress(ait_root, tmp_path):
+    """The checkpoint inside ingest() is what makes a kill -9 safe, not the caller's final save().
+
+    Without a per-video checkpoint, the ledger only hits disk once the whole ingest() call
+    returns, so a crash on video 3 of 3,600 would silently re-spend quota on videos 1 and 2
+    tomorrow. That is exactly the failure mode the resumable ledger exists to prevent.
+    """
+    class ExplodingTransport(FakeTransport):
+        def __call__(self, url):
+            if "videoId=v2" in url:
+                raise RuntimeError("simulated crash on v2")
+            return super().__call__(url)
+
+    api = _api({f"v{i}": [thread(f"Ug{i}")] for i in range(5)})
+    api.transport = ExplodingTransport({f"v{i}": [thread(f"Ug{i}")] for i in range(5)})
+    ledger_path = tmp_path / "ledger.json"
+    ledger = comments.Ledger(ledger_path)
+    videos = [{**VIDEO, "video_id": f"v{i}"} for i in range(5)]
+
+    with pytest.raises(RuntimeError, match="simulated crash"):
+        comments.ingest(videos, api, ledger, C, "UCself", quota_cap=100)
+
+    # v0 and v1 were fully processed and checkpointed to disk before v2 blew up.
+    reloaded = comments.Ledger(ledger_path)
+    assert reloaded.done("v0") and reloaded.done("v1")
+    assert not reloaded.done("v2")
+    assert len(comments.load("UCcole")) == 2      # their comments landed too, not just the mark

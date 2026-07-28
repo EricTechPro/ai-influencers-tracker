@@ -98,7 +98,15 @@ def qualifies_for_classification(row: dict, comment_thresholds: dict) -> bool:
 
 def ingest(videos: list[dict], api, ledger: Ledger, comment_thresholds: dict,
            self_channel_id: str, quota_cap: int) -> dict:
-    """Fetch roots for every video not already in the ledger, stopping cleanly at the cap."""
+    """Fetch roots for every video not already in the ledger, stopping cleanly at the cap.
+
+    Checkpoints the comment ledger and the API's quota ledger after every video: a kill -9
+    or an uncaught exception loses at most the one video in flight, never the whole run. A
+    backfill that only saved once at the end would re-spend quota on retry for every video
+    it had already covered, which is exactly the failure the resumable ledger exists to rule
+    out. The comment rows themselves are already safe either way (append_new dedupes on
+    comment_id), so this is purely about not re-asking YouTube for what we already have.
+    """
     fetched = new_rows = 0
     stopped = False
     for video in videos:
@@ -111,5 +119,7 @@ def ingest(videos: list[dict], api, ledger: Ledger, comment_thresholds: dict,
         rows = [normalize(t, video, self_channel_id) for t in threads]
         new_rows += append_new(video["channel_id"], rows)
         ledger.mark(video["video_id"], len(rows))
+        ledger.save()
+        api.ledger.save()
         fetched += 1
     return {"videos_fetched": fetched, "comments_new": new_rows, "stopped_on_cap": stopped}
