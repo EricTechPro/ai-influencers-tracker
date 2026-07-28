@@ -33,6 +33,22 @@ def test_demand_with_neither_axis_known_is_unknown_not_low():
     assert verdict.demand_band(None, None, D)["band"] == "UNKNOWN"
 
 
+def test_low_fired_only_claims_comparisons_for_known_axes():
+    """A missing axis is never imputed: LOW's fired list must not fabricate a comparison
+    for an axis that was never measured."""
+    row = verdict.demand_band(100, None, D)
+    assert row["band"] == "LOW"
+    assert row["fired"] == ["keyword_volume < 5000"]
+
+    row = verdict.demand_band(None, 12.0, D)
+    assert row["band"] == "LOW"
+    assert row["fired"] == ["repo_velocity < 100.0"]
+
+    row = verdict.demand_band(100, 12.0, D)
+    assert row["band"] == "LOW"
+    assert row["fired"] == ["keyword_volume < 5000", "repo_velocity < 100.0"]
+
+
 def test_all_six_cells_of_the_grid():
     grid = {
         ("HIGH", "OPEN"): "MAKE_THIS_NOW",

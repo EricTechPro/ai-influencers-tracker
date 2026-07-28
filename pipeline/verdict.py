@@ -52,8 +52,11 @@ def demand_band(keyword_volume: int | None, repo_velocity: float | None,
         if repo_velocity is not None and repo_velocity >= min_velocity:
             fired.append(f"repo_velocity >= {min_velocity}")
         band = "HIGH" if fired else "LOW"
-        if not fired:
-            fired.append(f"keyword_volume < {min_volume} and repo_velocity < {min_velocity}")
+        if band == "LOW":
+            if keyword_volume is not None:
+                fired.append(f"keyword_volume < {min_volume}")
+            if repo_velocity is not None:
+                fired.append(f"repo_velocity < {min_velocity}")
     return {"band": band, "keyword_volume": keyword_volume,
             "repo_velocity": repo_velocity, "fired": fired}
 
