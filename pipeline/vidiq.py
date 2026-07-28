@@ -211,7 +211,11 @@ def keyword_sweep(leaf_topics: list, client: VidIQ, guard: CostGuard,
         payload = client.call("vidiq_keyword_research",
                               {"keyword": topic.label, "includeRelated": False})
         guard.record(KEYWORD_COST)
-        volume = payload.get("estimatedMonthlySearches")
+        # Live shape nests it under seedKeyword (singular estimatedMonthlySearch); the flat
+        # estimatedMonthlySearches key is kept as a fallback in case an older shape returns.
+        volume = (payload.get("seedKeyword") or {}).get("estimatedMonthlySearch")
+        if volume is None:
+            volume = payload.get("estimatedMonthlySearches")
         volumes[topic.id] = {"keyword": topic.label,
                              "volume": int(volume) if volume is not None else None,
                              "state": "ok" if volume is not None else "unavailable"}

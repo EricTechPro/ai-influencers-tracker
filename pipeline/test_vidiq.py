@@ -139,3 +139,44 @@ def test_the_keyword_sweep_only_touches_leaves(ait_root):
     written = util.read_json(config.raw_dir() / "keywords" / "2026-07-27.json")
     assert set(written["volumes"]) == {t.id for t in leaves}
     assert written["volumes"]["claude-code-mcp-setup"]["volume"] == 8100
+
+
+def test_the_keyword_sweep_reads_the_live_nested_seed_keyword_volume(ait_root):
+    """The live API nests volume under seedKeyword.estimatedMonthlySearch (singular), not the
+    flat estimatedMonthlySearches the earlier fixture assumed. Real shape, verified 2026-07-28:
+    {"mode": "research", "seedKeyword": {"keyword": ..., "estimatedMonthlySearch": 3763, ...}}."""
+    from pipeline import topics
+    leaves = topics.leaves(topics.load())
+    replies = [sse({"mode": "research",
+                    "seedKeyword": {"keyword": t.label, "volume": 53.37, "competition": 34.1,
+                                    "overall": 58.4, "estimatedMonthlySearch": 3763},
+                    "relatedKeywords": []}) for t in leaves]
+    client = vidiq.VidIQ("KEY", "http://mcp", transport=FakeTransport(replies))
+    vidiq.keyword_sweep(leaves, client, vidiq.CostGuard(1141, 200), TODAY, dry_run=False)
+    written = util.read_json(config.raw_dir() / "keywords" / "2026-07-27.json")
+    assert written["volumes"]["claude-code-mcp-setup"]["volume"] == 3763
+    assert written["volumes"]["claude-code-mcp-setup"]["state"] == "ok"
+
+
+def test_the_keyword_sweep_falls_back_to_the_old_flat_key(ait_root):
+    """The old top-level estimatedMonthlySearches key must keep working if it ever comes back."""
+    from pipeline import topics
+    leaves = topics.leaves(topics.load())
+    replies = [sse({"keyword": t.label, "estimatedMonthlySearches": 8100}) for t in leaves]
+    client = vidiq.VidIQ("KEY", "http://mcp", transport=FakeTransport(replies))
+    vidiq.keyword_sweep(leaves, client, vidiq.CostGuard(1141, 200), TODAY, dry_run=False)
+    written = util.read_json(config.raw_dir() / "keywords" / "2026-07-27.json")
+    assert written["volumes"]["claude-code-mcp-setup"]["volume"] == 8100
+    assert written["volumes"]["claude-code-mcp-setup"]["state"] == "ok"
+
+
+def test_the_keyword_sweep_treats_a_missing_volume_as_unavailable_not_zero(ait_root):
+    from pipeline import topics
+    leaves = topics.leaves(topics.load())
+    replies = [sse({"mode": "research", "seedKeyword": {"keyword": t.label},
+                    "relatedKeywords": []}) for t in leaves]
+    client = vidiq.VidIQ("KEY", "http://mcp", transport=FakeTransport(replies))
+    vidiq.keyword_sweep(leaves, client, vidiq.CostGuard(1141, 200), TODAY, dry_run=False)
+    written = util.read_json(config.raw_dir() / "keywords" / "2026-07-27.json")
+    row = written["volumes"]["claude-code-mcp-setup"]
+    assert row["volume"] is None and row["state"] == "unavailable"
