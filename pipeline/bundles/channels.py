@@ -31,6 +31,19 @@ def _windows(ctx) -> list[int]:
     return list(ctx.thresholds["growth"]["windows_days"])
 
 
+def _newest_with(series: list[dict], field: str) -> dict | None:
+    """The newest row where `field` itself is present, independent of `status`.
+
+    `status` only ever reflects a growth.MONOTONIC_KEYS violation on a specific metric (see
+    growth.filter_monotonic), and a single old violation on one metric can freeze `status` at
+    "corrupt" for every row after it, forever. Gating every headline field on that one shared
+    verdict meant a channel's `subscriber_count` (never itself monotonicity-checked) went stale
+    the moment its `view_count` tripped the check months earlier. Each field now picks its own
+    newest row on its own presence, so one metric's history can never mask another's.
+    """
+    return next((r for r in reversed(series) if r.get(field) is not None), None)
+
+
 def build(ctx) -> dict:
     growth_thresholds = ctx.thresholds["growth"]
     default_window = growth_thresholds["default_window_days"]
@@ -38,8 +51,13 @@ def build(ctx) -> dict:
     for roster_row in ctx.roster:
         channel_id = roster_row["channel_id"]
         series = read.channel_series(channel_id)
-        newest = next((r for r in reversed(series) if r["status"] == "ok"), None)
-        subscriber_count = newest["subscriber_count"] if newest else None
+        subs_row = _newest_with(series, "subscriber_count")
+        view_row = _newest_with(series, "view_count")
+        video_row = _newest_with(series, "video_count")
+        subscriber_count = subs_row["subscriber_count"] if subs_row else None
+        # The channel's own freshest-row verdict, not tied to whichever row supplied any one
+        # field above: it answers "how trustworthy is our latest observation," full stop.
+        tail_status = series[-1]["status"] if series else "insufficient_data"
         channel_videos = [v for v in ctx.videos if v["channel_id"] == channel_id]
 
         view_delta = {"24h": growth.delta_24h(series, "view_count", ctx.today)}
@@ -66,9 +84,9 @@ def build(ctx) -> dict:
             "blurb": None,                       # Inference tier, build step 11
             "subscriber_count": subscriber_count,
             "subscriber_bucket": growth.bucket_width(subscriber_count),
-            "view_count": newest["view_count"] if newest else None,
-            "video_count": newest["video_count"] if newest else None,
-            "status": newest["status"] if newest else "insufficient_data",
+            "view_count": view_row["view_count"] if view_row else None,
+            "video_count": video_row["video_count"] if video_row else None,
+            "status": tail_status,
             "view_delta": view_delta,
             "subscriber_delta": subscriber_delta,
             "subscriber_growth_rate": growth_rate,
