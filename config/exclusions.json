@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "_comment": "What Eric does not want on the board, by hand. The pipeline never writes here. Nothing is deleted: every video stays in _raw/ and _db/videos.json, and every count that is reduced by a rule here is reported in meta.exclusions so the shrinkage is visible rather than silent. Re-including a topic is a one-line edit and a rebuild.",
+  "topics": [
+    "n8n-agent-workflows",
+    "voice-and-multimodal-agents",
+    "multi-agent-orchestration"
+  ],
+  "_topics_comment": "Leaf ids hidden from the shelves, the opportunity table, and the rollups above them. These are subjects Eric has stopped making, so a topic he will not film is noise on a page whose only job is to say what to film next.",
+  "terms": [
+    "openclaw",
+    "open claw"
+  ],
+  "_terms_comment": "Case-insensitive title substrings. A video whose title carries one is dropped from every display surface regardless of which topic it matched: OpenClaw is a tool Eric no longer covers, and its videos were the whole first screen of the multi-agent shelf.",
+  "channels": [
+    "UCLKPca3kwwd-B59HNr-_lvA"
+  ],
+  "_channels_comment": "channel_ids muted from display while still being swept. AI Engineer (UCLKPca3kwwd-B59HNr-_lvA) posts a conference back-catalogue in bursts and held 6 of one week's 28 outliers, so it floods every surface it touches. This is the softer form of channels.json's tracked:false, which stops collection entirely."
+}

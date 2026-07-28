@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "_comment": "The only user state in the product. Hand-edited: the pipeline never writes here. `target` draws a goal line on the leaderboard and shows the gap to the rank above. `hunches` are Eric's own calls on a topic — they SORT it up, they never enter the 0-100 score, and they render as a human annotation rather than as Oracle or Derived.",
+
+  "target": {
+    "mode": "growth",
+    "window_days": 90,
+    "rank": 6
+  },
+
+  "hunches": []
+}

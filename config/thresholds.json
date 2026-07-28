@@ -1,0 +1,122 @@
+{
+  "version": 4,
+  "_comment": "Every adjective the pipeline uses resolves to a number here. These are starting guesses, which is exactly why they live in config. Every emitted band carries `fired`, the list of comparisons that produced it, so a page can show its work. Hand-edited: the pipeline never writes here. NO VIDEO IS EVER DROPPED. traction.recent_daily_n gets a daily snapshot; every older video is swept every traction.tail_sweep_days, so a video that goes viral two years later is caught within a week and rejoins daily tracking. Every point carries the date it was pulled.",
+  "supply": {
+    "window_days": 90,
+    "open_max_videos": 2,
+    "crowded_min_videos": 5,
+    "crowded_min_creators": 3
+  },
+  "demand": {
+    "high_min_keyword_volume": 5000,
+    "high_min_repo_velocity": 100.0,
+    "high_requires": "either"
+  },
+  "topics": {
+    "membership_min_confidence": 0.6,
+    "shelf_window_days": 30,
+    "_membership_min_confidence_comment": "How strong an alias hit must be before a video counts as being ABOUT a topic, on topics.FIELD_CONFIDENCE (title 0.6, tags 0.45, description 0.3). Raised 0.45 -> 0.6 on 2026-07-29: at 0.45 a tags hit counted, and creators stuff comparison keywords into the tags of every upload, so 'Turn Claude Code into your own UI Designer' matched the alias 'claude code vs' on tags alone and sat on the Claude Code vs Codex vs Gemini CLI shelf. That was 5,241 of 8,796 memberships riding on tags. At 0.6 only a title counts, which is the same line build_data already draws for own-coverage. Weak hits are still recorded in videos.json as evidence.",
+    "_shelf_window_days_comment": "How far back a topic shelf's cards reach. The shelf answers 'what is the niche making now', and without a window a 793-day-old video outranks this month's uploads simply by having had two years to accumulate views. 30 days leaves every one of the 25 shelves populated. It does not change video_count or the supply band, which are still measured over supply.window_days: this is a display window, and both numbers are on the page."
+  },
+  "min_n": {
+    "topic_page_min_videos": 3,
+    "topic_page_min_creators": 2,
+    "consensus_min_creators": 3
+  },
+  "github": {
+    "created_within_days": 90,
+    "min_stars": 100,
+    "max_queries_per_run": 25,
+    "max_pages_per_query": 3,
+    "age_days_floor": 1,
+    "trending_windows": [
+      "daily",
+      "weekly"
+    ],
+    "indie": {
+      "user_owner_bonus": 0.5,
+      "max_contributors_for_full_score": 5,
+      "corp_org_penalty": 0.4
+    }
+  },
+  "growth": {
+    "windows_hours": [
+      24
+    ],
+    "windows_days": [
+      7,
+      14,
+      30,
+      90,
+      180,
+      365
+    ],
+    "subscriber_floor_buckets": 5,
+    "view_drop_tolerance": 0.05,
+    "rebase_min_days": 14,
+    "anchor_max_lag_days": 3,
+    "_anchor_max_lag_days_comment": "How far behind today the newest snapshotted day may sit and still anchor a window. The sweep runs once a day, so from midnight until it lands the newest day held is yesterday's; anchoring windows to the calendar's today made that one absent day the newest day of all six windows at once, and all 72 channels read 'building, 89 of 90 days' off 366 days of stored history. Past this lag the anchor stays on today, so a channel whose snapshots stopped in April states its shortfall rather than date-stamping April's growth as current. Changing it changes which channels can report a number at all, which is why it lives here.",
+    "_view_drop_tolerance_comment": "How far view_count may fall in a day before the reading is called corrupt, as a fraction of the last good value. YouTube removes views it judges invalid, so a healthy channel ticks down a fraction of a percent (observed: 22,009 -> 21,991). A bad read falls off a cliff (observed: 192,901 -> 36,338, and a vidIQ series that went 21,103 -> 606). 0.05 admits the first and still rejects the second. Changing it changes which view deltas are measurable at all, which is why it lives here.",
+    "_rebase_min_days_comment": "Consecutive self-consistent days after a break before the series is read as re-based rather than as one long corruption. Holding the pre-break high-water mark forever cost Anthropic 238 days of flawless rising views over a single December drop. 14 outlasts a bad-data burst (Robin Ebers is 3 days deep and still refused) without demanding that a channel climb back over a number that was itself suspect.",
+    "default_rank_mode": "growth",
+    "default_window_days": 90,
+    "rank_weights": {
+      "subscriber_growth": 50,
+      "subscriber_count": 20,
+      "views_gained": 30
+    }
+  },
+  "traction": {
+    "still_growing_min_views_7d": 500,
+    "still_growing_min_share_7d": 0.02,
+    "recent_daily_n": 50,
+    "tail_sweep_days": 7
+  },
+  "multiplier": {
+    "baseline_n": 20,
+    "baseline_min_videos": 5,
+    "maturity_days": 14
+  },
+  "outliers": {
+    "per_channel_cap": 2,
+    "display_floor": 2.5,
+    "_comment": "per_channel_cap is how many of one channel's outliers reach the grid before the rest fall to the tail. On the live 2026-07-29 week AI Engineer alone held 6 of the 28 outliers, posting a conference back-catalogue, so uncapped the first screen is one channel. display_floor is the multiplier under which a row goes to the tail rather than the grid: 2.5x its channel's own normal. feed_window_days is how much history recent.json carries; the corpus is 11,843 videos and 16.7 MB, the feed ships one month of card fields (~300 KB) and the page filters it client-side, so this is the ceiling on every window the feed can offer. All three change what the feed shows you, which is why they live here.",
+    "feed_window_days": 30
+  },
+  "comments": {
+    "roots_per_video": 100,
+    "replies_per_root": 5,
+    "top_n_per_channel": 50,
+    "page_size": 5,
+    "classify_min_likes": 5,
+    "classify_min_replies": 2,
+    "classify_max_per_run": 2000
+  },
+  "scoring": {
+    "weights": {
+      "repo_velocity": 40,
+      "keyword_volume": 25,
+      "supply_gap": 25,
+      "staleness": 10
+    },
+    "full_scale": {
+      "repo_velocity_stars_per_day": 300,
+      "keyword_volume_searches": 15000,
+      "supply_gap_max_videos": 12,
+      "staleness_days": 30
+    }
+  },
+  "own_content": {
+    "suppress_covered_topics": true,
+    "covered_lookback_days": 365
+  },
+  "tier3_qualification": {
+    "min_multiplier": 2.0
+  },
+  "momentum": {
+    "climbing_min_daily_share": 0.02,
+    "flat_max_daily_share": 0.005,
+    "min_age_hours": 48,
+    "_comment": "How much of its own total a video is still adding each day, from vidIQ's vph over 24 hours against the views it already has. At or above 2%/day it is still being found and is worth copying; under 0.5%/day nobody is watching it any more, which looks identical to a breakout on view count alone. 2% mirrors traction.still_growing_min_share_7d, which asks the same question of our own snapshots over a week. min_age_hours keeps day-one uploads out: a video's first day is all burst. Deliberately not vph against the lifetime average - every view curve is concave, so that called 124 of 169 outliers dead including one adding 3.6% of itself daily with a rising curve. All three change which videos the board tells you to make."
+  }
+}
