@@ -24,8 +24,11 @@ class Handler(SimpleHTTPRequestHandler):
             self.send_response(400)
             self.end_headers()
             return
-        with open(os.path.join(ROOT, "picks.json"), "w") as f:
-            json.dump(picks, f, indent=2)
+        # An empty object means the board just loaded and localStorage has no picks yet, not
+        # that every pick should be cleared. Only a real payload overwrites the saved file.
+        if picks:
+            with open(os.path.join(ROOT, "picks.json"), "w") as f:
+                json.dump(picks, f, indent=2)
         self.send_response(204)
         self.end_headers()
 
