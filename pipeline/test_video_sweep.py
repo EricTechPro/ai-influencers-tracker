@@ -38,6 +38,11 @@ def test_duration_classifies_short_and_long():
     assert snapshot.classify_duration("PT1H2M3S") == (3723, "long")
 
 
+def test_duration_of_an_in_progress_live_broadcast_is_zero_not_a_crash():
+    """YouTube reports "P0D" (no T component at all) for a live stream still in progress."""
+    assert snapshot.classify_duration("P0D") == (0, "short")
+
+
 def test_the_registry_appends_only_changed_observations(ait_root):
     items = [_video("v1", 100), _video("v2", 200)]
     assert snapshot.record_video_metadata("UCcole", items) == 2

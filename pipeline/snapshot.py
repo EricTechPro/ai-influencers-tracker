@@ -13,7 +13,7 @@ import re
 
 from . import config, growth, util, youtube
 
-_DURATION = re.compile(r"P(?:(\d+)D)?T(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?")
+_DURATION = re.compile(r"P(?:(\d+)D)?(?:T(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?)?")
 SHORT_MAX_SECONDS = 180    # a constant, not a threshold: it is YouTube's own Shorts boundary
 
 
