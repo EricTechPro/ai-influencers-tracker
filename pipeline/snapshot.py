@@ -228,15 +228,20 @@ def run(today: dt.date | None = None, dry_run: bool = False) -> dict:
     github_thresholds = config.thresholds()["github"]
     gh = github_module.GitHub(os.environ.get("GITHUB_TOKEN", ""))
     leaf_topics = topics_module.leaves(topics_module.load())
-    search = github_module.sweep(
-        gh, github_module.build_queries(leaf_topics, today, github_thresholds),
-        today, github_thresholds, config.excluded_repo_ids(), with_contributors=True)
+    try:
+        search = github_module.sweep(
+            gh, github_module.build_queries(leaf_topics, today, github_thresholds),
+            today, github_thresholds, config.excluded_repo_ids(), with_contributors=True)
+        search_reason = None
+    except github_module.GitHubError as exc:      # non-critical by design, like trending below
+        search = {"repos": [], "partial_run": True}
+        search_reason = f"{type(exc).__name__}: {exc}"
     trending = firecrawl.trending_sweep(
         lambda url: firecrawl.scrape_markdown(url, os.environ.get("FIRECRAWL_API_KEY", "")),
         gh, today, github_thresholds)
     write_repo_snapshot({"date": date_string,
                          "search": search["repos"], "trending": trending["repos"],
-                         "partial_run": search["partial_run"],
+                         "partial_run": search["partial_run"], "search_reason": search_reason,
                          "trending_ok": trending["ok"], "trending_reason": trending["reason"]},
                         today)
 

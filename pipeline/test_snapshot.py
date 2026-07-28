@@ -84,3 +84,40 @@ def test_dry_run_writes_nothing(ait_root, monkeypatch):
     summary = snapshot.run(today=TODAY, dry_run=True)
     assert summary["would_spend_units"] == 1        # 3 ids, one batch of 50
     assert not snapshot.snapshot_path("2026-07-27").exists()
+
+
+def test_a_github_search_failure_mid_run_does_not_kill_the_whole_day(ait_root, monkeypatch):
+    """A plain GitHubError (not a rate limit, which sweep() already survives) must not abort
+    the run after the expensive channel/video/comment phases already ran. The repo snapshot
+    still gets written, flagged partial with a reason, and the run summary still comes back.
+    """
+    monkeypatch.setenv("YOUTUBE_API_KEY", "KEY")
+    monkeypatch.setenv("GITHUB_TOKEN", "")
+    monkeypatch.setenv("FIRECRAWL_API_KEY", "")
+
+    def youtube_transport(url):
+        if "/channels?" in url:
+            ids = url.split("id=")[1].split("&")[0].split("%2C")
+            items = [_item(cid, 1000, 1000, 10) for cid in ids]
+            return json.dumps({"items": items}).encode()
+        return json.dumps({"items": []}).encode()          # playlistItems: no new uploads
+
+    monkeypatch.setattr("pipeline.youtube._default_transport", youtube_transport)
+
+    from pipeline import github as github_module
+
+    def failing_github_transport(url, headers):
+        raise github_module.GitHubError("HTTP 500")
+
+    monkeypatch.setattr("pipeline.github._default_transport", failing_github_transport)
+    monkeypatch.setattr("pipeline.firecrawl.scrape_markdown", lambda url, key: "no repos here")
+
+    summary = snapshot.run(today=TODAY)
+
+    assert summary["partial_run"] is True
+    repo_path = snapshot.config.raw_dir() / "repos" / "2026-07-27.json"
+    written = json.loads(repo_path.read_text())
+    assert written["search"] == []
+    assert written["partial_run"] is True
+    assert "GitHubError" in written["search_reason"]
+    assert written["trending"] == []                      # untouched by the search failure
