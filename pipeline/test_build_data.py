@@ -145,3 +145,146 @@ def test_comment_stats_do_not_break_the_rebuild_byte_identity(ait_root):
     before = util.tree_hashes(config.db_dir())
     build_data.build(today=TODAY)
     assert util.tree_hashes(config.db_dir()) == before
+
+
+def seed_topic_corpus(ait_root):
+    """Two videos on mcp-registry-integration, comments on one, and a hot repo linked to it."""
+    from pipeline import comments, snapshot
+    videos = [
+        {"id": "v1", "snippet": {"title": "MCP registry walkthrough", "description": "",
+                                 "tags": ["mcp registry"], "channelId": "UCcole",
+                                 "publishedAt": "2026-07-21T00:00:00Z"},
+         "contentDetails": {"duration": "PT21M56S"}, "statistics": {"viewCount": "1000"}},
+        {"id": "v2", "snippet": {"title": "Another mcp registry build", "description": "",
+                                 "tags": [], "channelId": "UCdan",
+                                 "publishedAt": "2026-07-21T00:00:00Z"},
+         "contentDetails": {"duration": "PT9M"}, "statistics": {"viewCount": "500"}},
+    ]
+    snapshot.record_video_metadata("UCcole", videos[:1])
+    snapshot.record_video_metadata("UCdan", videos[1:])
+    for i in range(8):
+        day = TODAY - dt.timedelta(days=i)
+        snapshot.write_video_snapshot(
+            {"v1": {"date": util.date_str(day), "status": "ok", "view_count": 1000 - i * 10,
+                    "source": "youtube_api"},
+             "v2": {"date": util.date_str(day), "status": "ok", "view_count": 500 - i * 5,
+                    "source": "youtube_api"}}, day)
+    comments.append_new("UCcole", [{
+        "comment_id": "Ug1", "video_id": "v1", "channel_id": "UCcole",
+        "video_title": "MCP registry walkthrough", "video_url": "https://youtu.be/v1",
+        "video_published_at": "2026-07-21T00:00:00Z", "author": "someguy",
+        "text": "Would love to see this on Windows", "like_count": 412, "reply_count": 7,
+        "published_at": "2026-07-24T00:00:00Z", "answered": False, "lag_days": 3,
+        "topic_ids": ["mcp-registry-integration"], "category": None}])
+    util.write_json(config.raw_dir() / "repos" / "2026-07-27.json", {
+        "date": "2026-07-27", "partial_run": False, "trending_ok": True, "trending_reason": None,
+        "search": [{"github_id": 123456, "full_name": "x/mcp-registry",
+                    "description": "an mcp registry", "repo_topics": ["mcp"],
+                    "stars": 12496, "created_at": "2026-06-10T00:00:00Z", "age_days": 47,
+                    "velocity": 265.87, "owner_type": "Organization",
+                    "discovered_via": "search",
+                    "indie": {"score": 0.58, "owner_type": "Organization",
+                              "contributors": 9, "trust": "derived"}}],
+        "trending": []})
+    util.write_json(config.raw_dir() / "keywords" / "2026-07-27.json", {
+        "date": "2026-07-27",
+        "volumes": {"mcp-registry-integration": {"keyword": "MCP registry integration",
+                                                 "volume": 8100, "state": "ok"}}})
+
+
+def test_the_opportunity_row_reproduces_71_point_9_end_to_end(ait_root):
+    seed_snapshots(days=8)
+    seed_topic_corpus(ait_root)
+    build_data.build(today=TODAY)
+    rows = util.read_json(config.db_dir() / "opportunities.json")["rows"]
+    row = next(r for r in rows if r["topic_id"] == "mcp-registry-integration")
+    assert row["verdict"] == "MAKE_THIS_NOW"
+    assert row["score"]["value"] == 71.9 and row["score"]["out_of"] == 100
+    assert row["supply"]["fired"] == ["videos <= 2"]
+    assert row["demand"]["fired"] == ["keyword_volume >= 5000", "repo_velocity >= 100.0"]
+    assert row["evidence"][0]["github_id"] == 123456
+    assert row["trust"] == {"demand": "derived", "supply": "derived",
+                            "verdict": "derived", "score": "derived"}
+
+
+def test_a_parent_never_appears_in_the_opportunity_bundle(ait_root):
+    seed_snapshots(days=8)
+    seed_topic_corpus(ait_root)
+    build_data.build(today=TODAY)
+    rows = util.read_json(config.db_dir() / "opportunities.json")["rows"]
+    assert "claude-code" not in {r["topic_id"] for r in rows}
+
+
+def test_a_hunch_sorts_but_never_scores(write_config, ait_root):
+    seed_snapshots(days=8)
+    seed_topic_corpus(ait_root)
+    write_config("targets.json", {"version": 1,
+                                  "target": {"mode": "growth", "window_days": 90, "rank": 6},
+                                  "hunches": ["claude-code-subagents"]})
+    build_data.build(today=TODAY)
+    rows = util.read_json(config.db_dir() / "opportunities.json")["rows"]
+    hunched = next(r for r in rows if r["topic_id"] == "claude-code-subagents")
+    plain = next(r for r in rows if r["topic_id"] == "mcp-registry-integration")
+    assert hunched["hunch"] is True and plain["hunch"] is False
+    assert all(c["key"] != "hunch" for c in plain["score"]["components"])
+
+
+def test_a_topic_page_below_the_minimum_says_so_rather_than_hiding(ait_root):
+    seed_snapshots(days=8)
+    seed_topic_corpus(ait_root)
+    build_data.build(today=TODAY)
+    pages = {p["topic_id"]: p for p in util.read_json(
+        config.db_dir() / "topic_pages.json")["topics"]}
+    page = pages["mcp-registry-integration"]
+    assert page["state"] == "insufficient_data"        # 2 videos, min is 3
+    assert page["video_count"] == 2 and page["creator_count"] == 2
+    assert page["nodes"] is None and page["edges"] is None    # reserved for step 15
+    assert pages["claude-code"]["is_leaf"] is False and "shape" not in pages["claude-code"]
+
+
+def test_the_comment_bundle_indexes_the_same_corpus_three_ways(ait_root):
+    seed_snapshots(days=8)
+    seed_topic_corpus(ait_root)
+    build_data.build(today=TODAY)
+    bundle = util.read_json(config.db_dir() / "comments.json")
+    assert bundle["version"] == 2
+    assert bundle["by_channel"]["UCcole"]["totals"]["ingested"] == 1
+    assert bundle["by_video"]["v1"]["totals"]["comments"] == 1
+    topic = bundle["by_topic"]["mcp-registry-integration"]
+    assert topic["totals"] == {"comments": 1, "videos": 2, "creators": 2}
+    assert topic["by_category"]["unsorted"] == 1        # not classified yet, never hidden
+
+
+def test_a_category_can_never_ship_without_its_comment_text(ait_root):
+    seed_snapshots(days=8)
+    seed_topic_corpus(ait_root)
+    build_data.build(today=TODAY)
+    bundle = util.read_json(config.db_dir() / "comments.json")
+    for index in ("by_channel", "by_video", "by_topic"):
+        for entry in bundle[index].values():
+            for row in entry["top"]:
+                assert row["text"], "a comment row shipped without its text"
+                assert "category" in row and "lag_days" in row
+
+
+def test_meta_reports_coverage_health_and_the_target(ait_root):
+    seed_snapshots(days=8)
+    seed_topic_corpus(ait_root)
+    build_data.build(today=TODAY)
+    meta = util.read_json(config.db_dir() / "meta.json")
+    assert meta["version"] == 3 and meta["thresholds_version"] == 3
+    assert meta["self_channel_id"] == "UCself"
+    assert meta["channels"] == {"total": 3, "ok": 3, "absent": 0}
+    assert 0 <= meta["coverage_rate"] <= 1
+    assert meta["target"] == {"mode": "growth", "window_days": 90, "rank": 6}
+    assert meta["partial_run"] is False
+    assert meta["build_step"] == 8
+
+
+def test_all_nine_bundles_are_written(ait_root):
+    seed_snapshots(days=8)
+    seed_topic_corpus(ait_root)
+    build_data.build(today=TODAY)
+    assert sorted(p.name for p in config.db_dir().glob("*.json")) == [
+        "channels.json", "comments.json", "meta.json", "opportunities.json",
+        "snapshots.json", "topic_pages.json", "video_snapshots.json", "videos.json"]
