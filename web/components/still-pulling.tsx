@@ -40,8 +40,8 @@ export function StillPulling({
     )
   }
   return (
-    <div className="card" style={{ overflowX: "auto" }}>
-      <table className="tbl" style={{ fontSize: 12 }}>
+    <div className="card tblwrap">
+      <table className="tbl tbl-sticky" style={{ fontSize: 12 }}>
         <thead>
           <tr>
             <th>video</th>
@@ -72,8 +72,20 @@ function FragmentRow({ row, channelClassified, open, onToggle }: {
 }) {
   return (
     <>
-      <tr className="rowlink" onClick={onToggle} aria-expanded={open}
-        style={{ cursor: "pointer" }}>
+      <tr
+        className="rowlink"
+        role="button"
+        tabIndex={0}
+        aria-expanded={open}
+        aria-label={`${open ? "collapse" : "expand"} comments for ${row.title}`}
+        onClick={onToggle}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault()
+            onToggle()
+          }
+        }}
+      >
         <td style={{ display: "flex", gap: 8, alignItems: "center" }}>
           <span className="mono10">{open ? "▾" : "▸"}</span>
           <img src={`https://i.ytimg.com/vi/${row.video_id}/mqdefault.jpg`} alt=""

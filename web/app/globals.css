@@ -1,4 +1,4 @@
-/* AIT mockup board — social-invest tokens verbatim, P&L retired for trust + verdict */
+/* AIT mockup board: social-invest tokens verbatim, P&L retired for trust + verdict */
 @font-face {
   font-family: "Google Sans Code";
   font-style: normal; font-weight: 400 700; font-display: swap;
@@ -10,6 +10,7 @@
   src: url("/fonts/google-sans-code-latin-ext.woff2") format("woff2");
 }
 :root {
+  color-scheme: light;
   --background: #fdfdfd;
   --foreground: #282728;
   --card: #ffffff;
@@ -109,7 +110,7 @@ img.avatar { object-fit: cover; }
 .av-you { background: linear-gradient(135deg, #0e86c9, #006cac); }
 
 .cardgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(14.5rem, 1fr)); gap: 0.75rem; }
-.gcard { position: relative; display: flex; flex-direction: column; background: var(--card); border: 1px solid var(--border); padding: 1rem; transition: background 0.15s; }
+.gcard { position: relative; display: flex; flex-direction: column; background: var(--card); border: 1px solid var(--border); padding: 1rem; }
 .gcard:hover { background: color-mix(in srgb, var(--accent) 40%, var(--card)); }
 .gcard .id { display: flex; align-items: center; gap: 8px; }
 .gcard .rank { width: 22px; font-size: 10px; color: var(--muted-foreground); flex-shrink: 0; }
@@ -158,11 +159,11 @@ img.avatar { object-fit: cover; }
 
 svg text { font-family: inherit; }
 
-/* variant C: editorial — softened borders, more air, no fills */
+/* variant C: editorial, softened borders, more air, no fills */
 .vc .gcard, .vc .card, .vc .campbox { border-color: #f1eeec; }
 .vc .tbl th { font-size: 10px; letter-spacing: 0.05em; text-transform: uppercase; }
 .vc .tbl td { padding: 10px; }
-/* variant B: gamified — heavier section titles */
+/* variant B: gamified, heavier section titles */
 .vb .bigsec { font-size: 1.15rem; font-weight: 700; letter-spacing: -0.01em; }
 
 /* picks bar + page nav */
@@ -190,3 +191,102 @@ details.sect[open] > summary .kicker::before { content: "\25BE  "; }
 .topichead h1 { font-size: 1.3rem; margin: 0 0 2px; }
 .trow { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .tbl tr.youcard td { background: color-mix(in srgb, var(--primary) 3%, transparent); }
+
+/* craft pass.
+   Everything below exists because a long dense table is read differently from
+   a short one: you scroll past the header, you scan across a row, and you tab
+   through it without a mouse. */
+
+/* Sideways scroll only where the viewport is actually too narrow. Past the
+   page's own max width the wrapper goes back to visible, because an
+   overflow-x container also becomes an overflow-y scrollport, and a sticky
+   thead inside one sticks to a scrollport the same height as its table, which
+   is to say it does not stick at all. */
+.tblwrap { overflow-x: auto; }
+@media (min-width: 64rem) { .tblwrap { overflow-x: visible; } }
+
+/* Scroll shadows, no JS: the two `local` gradients travel with the content and
+   sit on top of the two `scroll` shadows, so a shadow is only visible on an
+   edge that still has table behind it. */
+.tblwrap {
+  background:
+    linear-gradient(to right, var(--card) 40%, transparent) left / 28px 100% no-repeat local,
+    linear-gradient(to left, var(--card) 40%, transparent) right / 28px 100% no-repeat local,
+    radial-gradient(farthest-side at 0 50%, rgba(40, 39, 40, 0.13), transparent)
+      left / 10px 100% no-repeat scroll,
+    radial-gradient(farthest-side at 100% 50%, rgba(40, 39, 40, 0.13), transparent)
+      right / 10px 100% no-repeat scroll,
+    var(--card);
+}
+
+/* The border-bottom on th belongs to the collapsed table and scrolls away with
+   it, so the stuck header carries its own rule as an inset shadow. */
+.tbl-sticky thead th {
+  position: sticky; top: 0; z-index: 2;
+  background: var(--card);
+  box-shadow: inset 0 -1px 0 var(--border);
+}
+
+/* Read-hover: tints the row you are scanning across. No pointer, because these
+   rows do not navigate. Only .rowlink, which expands or links, claims one. */
+.tbl-hover tbody tr:hover td { background: color-mix(in srgb, var(--accent) 55%, transparent); }
+
+/* Tab order reaches rows, sort headers, category tabs and the comment toggles.
+   A row outline sits inset so it is not clipped by the neighbouring cell. */
+:where(a, button, select, summary, input, [tabindex]):focus-visible {
+  outline: 2px solid var(--primary); outline-offset: 2px;
+}
+.tbl tr.rowlink:focus-visible,
+.tbl tr.rowlink:focus-visible td:first-child {
+  outline: 2px solid var(--primary); outline-offset: -2px;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .gcard, .btn, .cattabs .t, .tbl tbody tr, .tbl tbody td, .chain .row {
+    transition: background 120ms ease-out, border-color 120ms ease-out;
+  }
+}
+
+/* Comment tables: fixed layout so switching a category tab or a sort order
+   cannot reflow the columns underneath the cursor. The matching min-width is
+   set per variant on the element, since which columns exist varies. */
+.tbl-fixed { table-layout: fixed; }
+.tbl-fixed td, .tbl-fixed th { overflow-wrap: anywhere; }
+/* A wrapped number is a misread number: 1,457 must never become 1,45 / 7. */
+.tbl-fixed td.num, .tbl-fixed td.nowrap, .tbl-fixed th.nowrap {
+  white-space: nowrap; overflow-wrap: normal;
+}
+/* Handles and display names are identifiers, so they truncate at the column
+   edge rather than breaking across lines. Full value stays in the title. */
+.ell { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* Three lines, then a toggle. Rendered only when the text is long enough to
+   actually clip, so no comment gets a control that does nothing. */
+.clamp3 {
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3;
+  overflow: hidden;
+}
+.linklike.more { display: block; margin-top: 2px; font-size: 10px; }
+
+/* Unclassified stays legible as a state rather than reading as a chip with no
+   text in it. */
+.cat-none { background: none; color: var(--muted-foreground); padding: 0; }
+
+.sortctl { display: inline-flex; gap: 8px; align-items: baseline; }
+
+/* The compare pickers are chips that happen to be selects. Without this the
+   platform control fights the pill and the terminal type. */
+select.chip {
+  appearance: none;
+  background-color: var(--card); color: var(--foreground);
+  font: inherit; font-size: 12px; line-height: 18px;
+  padding: 2px 22px 2px 10px; cursor: pointer; max-width: 15rem;
+  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='6'%3E%3Cpath d='M1 1l3.5 3.5L8 1' fill='none' stroke='%236b6a6b' stroke-width='1.2'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 7px center;
+}
+select.chip:hover { border-color: var(--muted-foreground); }
+
+/* An empty lead section still has to say what it means. */
+.tbl td.stateline {
+  color: var(--muted-foreground); font-size: 12px; padding: 1.1rem 10px; text-align: center;
+}

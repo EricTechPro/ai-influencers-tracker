@@ -114,7 +114,7 @@ export function TopicLeaf({
           <span className="rule" />
           <span className="cap">{trail.length} creators</span>
         </summary>
-        <table className="tbl">
+        <table className="tbl tbl-hover">
           <thead>
             <tr>
               <th>creator</th>
@@ -151,7 +151,7 @@ export function TopicLeaf({
           <span className="rule" />
           <span className="cap">{videos.length}</span>
         </summary>
-        <table className="tbl">
+        <table className="tbl tbl-hover">
           <thead>
             <tr>
               <th>title</th>

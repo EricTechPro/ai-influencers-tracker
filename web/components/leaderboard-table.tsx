@@ -144,7 +144,7 @@ export function LeaderboardTable({ channels }: { channels: SlimChannel[] }) {
           </label>
         ))}
       </div>
-      <table className="tbl">
+      <table className="tbl tbl-sticky tbl-hover">
         <SortableHeader columns={columns} sortKey={sortKey} sortDir={sortDir} onSort={toggle} />
         <tbody>
           {sorted.map((c) => (

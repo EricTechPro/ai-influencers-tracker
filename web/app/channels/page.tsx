@@ -18,11 +18,15 @@ export default function ChannelsPage() {
           {meta.channels.total} tracked · {meta.channels.absent} absent
         </span>
       </div>
-      <div className="card" style={{ overflowX: "auto" }}>
-        <table className="tbl">
+      <div className="card tblwrap">
+        {/* Below this the row would wrap the count away from its bucket and
+            double in height, so the wrapper scrolls sideways instead. */}
+        <table className="tbl tbl-sticky tbl-hover" style={{ minWidth: "48rem" }}>
           <thead>
             <tr>
-              <th>#</th>
+              <th>
+                <span className="derived" title="rank by subscriber growth over 90d">#</span>
+              </th>
               <th>channel</th>
               <th>handle</th>
               <th className="r">subs</th>
@@ -36,8 +40,8 @@ export default function ChannelsPage() {
               const rank = c.rank.growth["90d"]
               const avatarClass = `avatar av20${c.is_self ? " av-you" : ""}`
               return (
-                <tr key={c.channel_id} className="rowlink">
-                  <td className="num muted">{rank ?? "—"}</td>
+                <tr key={c.channel_id} className={c.is_self ? "youcard" : undefined}>
+                  <td className="num muted">{rank ?? "--"}</td>
                   <td>
                     <Link href={`/channels/${c.channel_id}`}>
                       {hasChannelAvatar(c.channel_id) ? (
@@ -58,14 +62,14 @@ export default function ChannelsPage() {
                     )}
                   </td>
                   <td className="mono10">@{c.handle}</td>
-                  <td className="r num">
-                    {c.subscriber_count === null ? "—" : fmtInt(c.subscriber_count)}{" "}
+                  <td className="r num" style={{ whiteSpace: "nowrap" }}>
+                    {c.subscriber_count === null ? "--" : fmtInt(c.subscriber_count)}{" "}
                     {c.subscriber_bucket !== null && (
                       <span className="muted">{bucketText(c.subscriber_bucket)}</span>
                     )}
                   </td>
-                  <td className="r num">{c.view_count === null ? "—" : fmtInt(c.view_count)}</td>
-                  <td className="r num">{c.video_count === null ? "—" : fmtInt(c.video_count)}</td>
+                  <td className="r num">{c.view_count === null ? "--" : fmtInt(c.view_count)}</td>
+                  <td className="r num">{c.video_count === null ? "--" : fmtInt(c.video_count)}</td>
                   <td>{c.status === "absent" && <Chip variant="warn">absent</Chip>}</td>
                 </tr>
               )

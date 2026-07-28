@@ -1,6 +1,6 @@
 import datetime as dt
 
-from pipeline import bundles, build_data, config, snapshot, util
+from pipeline import build_data, bundles, config, snapshot, util
 from pipeline.conftest import FIXTURE_THRESHOLDS as T
 
 TODAY = dt.date(2026, 7, 27)

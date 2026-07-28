@@ -1,9 +1,10 @@
 Tracks 72 AI/automation YouTube channels and answers what to make next.
 
-**Build steps 0 to 10 are done.** `pipeline/`, its tests, and `_db/` all run for real today.
+**Build steps 0 to 11 are done.** `pipeline/`, its tests, and `_db/` all run for real today.
 `web/` is the Next.js dashboard on port 3002 (`cd web && npm run dev`; predev rebuilds `_db/`;
-`npx vitest run` from `web/` for the web tests). Channel pages, the comment table, and /compare
-are the next phase.
+`npx vitest run` from `web/` for the web tests). Channel pages, comment tables, and /compare are
+live; comments are read as per-route slices from `_db/comments/`. Comment classification
+(step 12) and the reply queue are the next phase.
 
 ```bash
 pytest -q                                          # every pipeline test
@@ -18,8 +19,8 @@ rather than at the anonymous rate limit. The launchd agent (`scripts/ait-snapsho
 but not yet installed into `~/Library/LaunchAgents/`; `scripts/install_ait_snapshot_launchd.sh` does
 that by hand.
 
-**Next is step 11** (`docs/spec.md` §10): channel pages, then comment classification. **Step 13 is
-a hard gate**: no extraction work begins until a 20-video manual spike measures artifact capture
+**Next is step 12** (`docs/spec.md` §10): comment classification, then the reply queue. **Step 13
+is a hard gate**: no extraction work begins until a 20-video manual spike measures artifact capture
 against a 50% floor.
 
 ## The rule everything else serves

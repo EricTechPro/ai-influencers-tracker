@@ -56,28 +56,35 @@ export default async function ComparePage({
       </div>
 
       <div className="section-kicker">
-        <span className="kicker">▸ what {him.name} covers that {you.is_self ? "you do" : `${you.name} does`} not</span>
+        <span className="kicker">what {him.name} covers that {you.is_self ? "you do" : `${you.name} does`} not</span>
         <span className="rule" /><span className="cap">the actionable part</span>
       </div>
-      <div className="card" style={{ overflowX: "auto" }}>
-        <table className="tbl" style={{ fontSize: 12 }}>
-          <thead><tr><th>topic</th><th className="r">him</th><th className="r">you</th>
-            <th className="r">his views</th><th>verdict</th></tr></thead>
+      <div className="card tblwrap">
+        <table className="tbl tbl-sticky tbl-hover" style={{ fontSize: 12 }}>
+          <thead><tr><th>topic</th><th className="r">their videos</th>
+            <th className="r">your videos</th>
+            <th className="r">their views</th><th>verdict</th></tr></thead>
           <tbody>
+            {gaps.himOnly.length === 0 && (
+              <tr><td colSpan={5} className="stateline">
+                No topic {him.name} covers is one {you.is_self ? "you have" : `${you.name} has`} left
+                alone. The gaps below run the other way.
+              </td></tr>
+            )}
             {gaps.himOnly.map((g) => (
-              <tr key={g.topic_id} className="rowlink">
+              <tr key={g.topic_id}>
                 <td><Link href={`/topics/${g.topic_id}`}>{g.topic_id}</Link></td>
-                <td className="r num">{g.him!.videos} videos</td>
+                <td className="r num">{g.him!.videos}</td>
                 <td className="r num muted">0</td>
                 <td className="r num">{fmtInt(g.him!.views)}</td>
                 <td>{g.verdict ? <VerdictBadge verdict={g.verdict} /> : <span className="mono10">not scored</span>}</td>
               </tr>
             ))}
             {gaps.youOnly.length > 0 && (
-              <tr><td colSpan={5} className="sub mono10">-- you cover, he does not --</td></tr>
+              <tr><td colSpan={5} className="sub mono10">-- you cover, they do not --</td></tr>
             )}
             {gaps.youOnly.map((g) => (
-              <tr key={g.topic_id} className="rowlink">
+              <tr key={g.topic_id}>
                 <td><Link href={`/topics/${g.topic_id}`}>{g.topic_id}</Link></td>
                 <td className="r num muted">0</td>
                 <td className="r num">{g.you!.videos}</td>
@@ -89,9 +96,9 @@ export default async function ComparePage({
               <tr><td colSpan={5} className="sub mono10">-- both --</td></tr>
             )}
             {gaps.both.map((g) => (
-              <tr key={g.topic_id} className="rowlink">
+              <tr key={g.topic_id}>
                 <td><Link href={`/topics/${g.topic_id}`}>{g.topic_id}</Link></td>
-                <td className="r num">{g.him!.videos} videos</td>
+                <td className="r num">{g.him!.videos}</td>
                 <td className="r num">{g.you!.videos}</td>
                 <td className="r num">{fmtInt(g.him!.views)}</td>
                 <td>{g.verdict ? <VerdictBadge verdict={g.verdict} /> : <span className="mono10">not scored</span>}</td>
@@ -102,7 +109,7 @@ export default async function ComparePage({
       </div>
 
       <div className="section-kicker">
-        <span className="kicker">▸ the numbers</span><span className="rule" />
+        <span className="kicker">the numbers</span><span className="rule" />
       </div>
       {bucketsDiffer && (
         <div className="callout warn" style={{ marginBottom: 8, fontSize: 12 }}>
@@ -111,8 +118,8 @@ export default async function ComparePage({
           A subscriber comparison across this size gap is not like-for-like. Views carry no such caveat.
         </div>
       )}
-      <div className="card" style={{ overflowX: "auto" }}>
-        <table className="tbl" style={{ fontSize: 12 }}>
+      <div className="card tblwrap">
+        <table className="tbl tbl-hover" style={{ fontSize: 12 }}>
           <thead><tr><th></th><th className="r">{him.name}</th>
             <th className="r">{you.name}{you.is_self ? " ★" : ""}</th></tr></thead>
           <tbody>

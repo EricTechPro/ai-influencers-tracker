@@ -71,17 +71,17 @@ export default async function ChannelPage({ params }: { params: Promise<{ id: st
             <div className="num"
               style={{ marginTop: 8, display: "flex", gap: 18, flexWrap: "wrap", fontSize: 13 }}>
               <span>
-                {channel.subscriber_count === null ? "—" : <b>{fmtInt(channel.subscriber_count)}</b>}{" "}
+                {channel.subscriber_count === null ? "--" : <b>{fmtInt(channel.subscriber_count)}</b>}{" "}
                 subs <Chip>{bucketText(channel.subscriber_bucket)}</Chip>
               </span>
               <span>
-                {channel.view_count === null ? "—" : <b>{fmtInt(channel.view_count)}</b>} views
+                {channel.view_count === null ? "--" : <b>{fmtInt(channel.view_count)}</b>} views
               </span>
               <span>
-                {channel.video_count === null ? "—" : <b>{fmtInt(channel.video_count)}</b>} videos
+                {channel.video_count === null ? "--" : <b>{fmtInt(channel.video_count)}</b>} videos
               </span>
               <span>
-                {cadence === null ? "—" : <Derived formula={CADENCE_FORMULA}><b>{cadence}d</b></Derived>}{" "}
+                {cadence === null ? "--" : <Derived formula={CADENCE_FORMULA}><b>{cadence}d</b></Derived>}{" "}
                 cadence
               </span>
             </div>
@@ -95,7 +95,7 @@ export default async function ChannelPage({ params }: { params: Promise<{ id: st
       </div>
 
       <div className="section-kicker">
-        <span className="kicker">▸ growth</span>
+        <span className="kicker">growth</span>
         <span className="rule" />
       </div>
       <ChannelGrowth
@@ -106,12 +106,12 @@ export default async function ChannelPage({ params }: { params: Promise<{ id: st
       />
 
       <div className="section-kicker">
-        <span className="kicker">▸ still pulling views</span><span className="rule" />
+        <span className="kicker">still pulling views</span><span className="rule" />
       </div>
       <StillPulling rows={stillRows} channelClassified={comments?.channel.totals.classified ?? 0} />
 
       <div className="section-kicker">
-        <span className="kicker">▸ what {channel.is_self ? "your" : "their"} viewers ask</span>
+        <span className="kicker">what {channel.is_self ? "your" : "their"} viewers ask</span>
         <span className="rule" />
         {comments && (
           <span className="cap">
