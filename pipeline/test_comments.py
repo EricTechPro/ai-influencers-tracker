@@ -149,7 +149,7 @@ def test_a_crash_mid_ingest_does_not_lose_already_checkpointed_progress(ait_root
 
 def test_a_malformed_thread_is_skipped_recorded_as_an_error_and_left_unmarked(ait_root, tmp_path):
     """One bad payload must not abort the whole day's ingest, and must not be silently marked
-    done as if we knew it had zero comments — that would be a false zero, not a missing state.
+    done as if we knew it had zero comments (that would be a false zero, not a missing state).
     """
     api = _api({"v0": [thread("Ug0")], "v1": [{"id": "Ugbad"}], "v2": [thread("Ug2")]})
     ledger = comments.Ledger(tmp_path / "ledger.json")

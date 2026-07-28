@@ -15,7 +15,7 @@ SKILLS = ROOT / ".agents" / "skills"
 
 FORBIDDEN_SUBSTRINGS = [
     "oauth", "refresh_token", "client_secret", "comments.insert",
-    "captions/download", "search.list",
+    "captions/download", "captions.download", "search.list",
 ]
 
 

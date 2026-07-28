@@ -101,8 +101,8 @@ def ancestors(index: dict[str, Topic], topic_id: str) -> list[str]:
 
 def validate(index: dict[str, Topic]) -> list[str]:
     """Re-check an index that may not have gone through load() (built or mutated
-    programmatically), not one already loaded from config/topics.json — load() enforces its
-    invariants as it walks and never hands back a broken index.
+    programmatically), not one already loaded from config/topics.json (load() enforces its
+    invariants as it walks and never hands back a broken index).
 
     Raises TopicError on the same structural hard failures load() enforces: a parent carrying
     a shape, or a leaf with a missing or invalid shape. Returns warnings for an alias shared

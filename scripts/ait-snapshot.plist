@@ -9,9 +9,11 @@
   <key>WorkingDirectory</key>
   <string>/Users/erictech/Desktop/EricOS/projects/ai-influencers-tracker</string>
   <key>ProgramArguments</key>
-  <array><string>/usr/bin/python3</string><string>-m</string><string>pipeline.snapshot</string></array>
-  <key>StandardOutPath</key><string>.logs/snapshot.log</string>
-  <key>StandardErrorPath</key><string>.logs/snapshot.err</string>
+  <array><string>/opt/homebrew/bin/python3</string><string>-m</string><string>pipeline.snapshot</string></array>
+  <key>StandardOutPath</key>
+  <string>/Users/erictech/Desktop/EricOS/projects/ai-influencers-tracker/.logs/snapshot.log</string>
+  <key>StandardErrorPath</key>
+  <string>/Users/erictech/Desktop/EricOS/projects/ai-influencers-tracker/.logs/snapshot.err</string>
   <key>RunAtLoad</key><false/>
 </dict>
 </plist>
