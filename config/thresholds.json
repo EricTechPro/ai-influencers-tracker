@@ -1,0 +1,98 @@
+{
+  "version": 3,
+  "_comment": "Every adjective the pipeline uses resolves to a number here. These are starting guesses, which is exactly why they live in config. Every emitted band carries `fired`, the list of comparisons that produced it, so a page can show its work. Hand-edited: the pipeline never writes here. NO VIDEO IS EVER DROPPED. traction.recent_daily_n gets a daily snapshot; every older video is swept every traction.tail_sweep_days, so a video that goes viral two years later is caught within a week and rejoins daily tracking. Every point carries the date it was pulled.",
+  "supply": {
+    "window_days": 90,
+    "open_max_videos": 2,
+    "crowded_min_videos": 5,
+    "crowded_min_creators": 3
+  },
+  "demand": {
+    "high_min_keyword_volume": 5000,
+    "high_min_repo_velocity": 100.0,
+    "high_requires": "either"
+  },
+  "min_n": {
+    "topic_page_min_videos": 3,
+    "topic_page_min_creators": 2,
+    "consensus_min_creators": 3
+  },
+  "github": {
+    "created_within_days": 90,
+    "min_stars": 100,
+    "max_queries_per_run": 25,
+    "max_pages_per_query": 3,
+    "age_days_floor": 1,
+    "trending_windows": [
+      "daily",
+      "weekly"
+    ],
+    "indie": {
+      "user_owner_bonus": 0.5,
+      "max_contributors_for_full_score": 5,
+      "corp_org_penalty": 0.4
+    }
+  },
+  "growth": {
+    "windows_hours": [
+      24
+    ],
+    "windows_days": [
+      7,
+      14,
+      30,
+      90,
+      180,
+      365
+    ],
+    "subscriber_floor_buckets": 5,
+    "default_rank_mode": "growth",
+    "default_window_days": 90,
+    "rank_weights": {
+      "subscriber_growth": 50,
+      "subscriber_count": 20,
+      "views_gained": 30
+    }
+  },
+  "traction": {
+    "still_growing_min_views_7d": 500,
+    "still_growing_min_share_7d": 0.02,
+    "recent_daily_n": 50,
+    "tail_sweep_days": 7
+  },
+  "multiplier": {
+    "baseline_n": 20,
+    "baseline_min_videos": 5,
+    "maturity_days": 14
+  },
+  "comments": {
+    "roots_per_video": 100,
+    "replies_per_root": 5,
+    "top_n_per_channel": 50,
+    "page_size": 5,
+    "classify_min_likes": 5,
+    "classify_min_replies": 2,
+    "classify_max_per_run": 2000
+  },
+  "scoring": {
+    "weights": {
+      "repo_velocity": 40,
+      "keyword_volume": 25,
+      "supply_gap": 25,
+      "staleness": 10
+    },
+    "full_scale": {
+      "repo_velocity_stars_per_day": 300,
+      "keyword_volume_searches": 15000,
+      "supply_gap_max_videos": 12,
+      "staleness_days": 30
+    }
+  },
+  "own_content": {
+    "suppress_covered_topics": true,
+    "covered_lookback_days": 365
+  },
+  "tier3_qualification": {
+    "min_multiplier": 2.0
+  }
+}

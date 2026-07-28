@@ -1,0 +1,19 @@
+.DS_Store
+.gstack/
+.env
+.env.local
+node_modules/
+__pycache__/
+.logs/
+
+# The private roster. Copy config/channels.example.json to start one.
+config/channels.json
+
+# The three data layers. Written by the pipeline, never by hand.
+# Contents are ignored; the README explaining each layer is not.
+_raw/*
+!_raw/README.md
+_synthesize/*
+!_synthesize/README.md
+_db/*
+!_db/README.md

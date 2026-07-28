@@ -1,0 +1,6 @@
+{
+  "version": 1,
+  "_comment": "Manual evergreen override. Keyed by the NUMERIC GitHub id, never full_name — a rename changes full_name, which would fork the star history and read as a brand-new spike. Mostly empty by design: the `created:>{today-90d}` search query already excludes evergreens, because a repo created in 2019 cannot appear in a 90-day window. This file is the escape hatch for the cases the query cannot express, e.g. a long-lived project that relaunched under a new repo.",
+
+  "excluded": []
+}

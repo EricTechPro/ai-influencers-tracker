@@ -1,0 +1,76 @@
+{
+  "version": 1,
+  "_comment": "The roster. Hand-edited: the pipeline never writes here. Add a channel by adding an object. channel_id is REQUIRED before the daily sweep works: channels.list?id= batches 50 ids for 1 quota unit, while forHandle does not batch at all, so without ids the sweep costs 72 units instead of 2 and a handle rename silently forks the growth history. niche powers the leaderboard's peer filter. EXACTLY ONE row must have category='own'.",
+  "channels": [
+    {
+      "handle": "your-channel",
+      "name": "Your Channel",
+      "channel_id": null,
+      "niche": null,
+      "lang": "en",
+      "category": "own",
+      "tracked": true,
+      "notes": "Your own channel. Exactly one row must be category=own. It is the baseline every comparison runs against."
+    },
+    {
+      "handle": "example-creator",
+      "name": "Example Creator",
+      "channel_id": null,
+      "niche": null,
+      "lang": "en",
+      "category": "creator",
+      "tracked": true,
+      "notes": "A creator in your lane. Most rows look like this."
+    },
+    {
+      "handle": "example-creator-two",
+      "name": "Example Creator Two",
+      "channel_id": null,
+      "niche": null,
+      "lang": "en",
+      "category": "creator",
+      "tracked": true,
+      "notes": "Sorting by subs_num is conventional but nothing depends on it."
+    },
+    {
+      "handle": "example-adjacent",
+      "name": "Example Adjacent",
+      "channel_id": null,
+      "niche": null,
+      "lang": "en",
+      "category": "adjacent",
+      "tracked": true,
+      "notes": "Near your lane but not in it. Labelled so you can slice it out later."
+    },
+    {
+      "handle": "example-company",
+      "name": "Example Company",
+      "channel_id": null,
+      "niche": null,
+      "lang": "en",
+      "category": "company",
+      "tracked": true,
+      "notes": "An org or product channel rather than a person."
+    },
+    {
+      "handle": "example-other-language",
+      "name": "Example Other Language",
+      "channel_id": null,
+      "niche": null,
+      "lang": "zh",
+      "category": "creator",
+      "tracked": true,
+      "notes": "lang is free-form. Use it to slice the roster by language."
+    },
+    {
+      "handle": "example-muted",
+      "name": "Example Muted",
+      "channel_id": null,
+      "niche": null,
+      "lang": "en",
+      "category": "creator",
+      "tracked": false,
+      "notes": "tracked=no mutes a row without deleting it"
+    }
+  ]
+}
