@@ -1,24 +1,55 @@
-import { loadMeta } from "@/lib/bundles"
+import {
+  loadChannels,
+  loadMeta,
+  loadOpportunities,
+  loadSnapshots,
+  loadTopicPages,
+  videosById,
+} from "@/lib/bundles"
+import { slimChannel, sparkAll } from "@/lib/growth"
+import { oppRowModels } from "@/lib/opportunity"
+import { GrowthPanel } from "@/components/growth-panel"
+import { OpportunityTable } from "@/components/opportunity-table"
 
 export default function HomePage() {
   const meta = loadMeta()
+  const channels = loadChannels().channels
+  const snapshots = loadSnapshots()
+  const slim = channels.map(slimChannel)
+  const sparks = Object.fromEntries(
+    slim.map((c) => [c.channel_id, sparkAll(snapshots, c.channel_id)])
+  )
+  const models = oppRowModels(
+    loadOpportunities().rows,
+    loadTopicPages().topics,
+    channels,
+    videosById
+  )
+
   return (
-    <section>
-      <div className="section-kicker">
-        <span className="kicker">PIPELINE STATE</span>
-        <span className="rule" />
-        <span className="cap">build step {meta.build_step}</span>
-      </div>
-      <div className="callout warn">
-        <b>
-          building, {meta.snapshot_health.days_present} of {meta.target.window_days} days
-        </b>
+    <div className="vb">
+      <section>
+        <div className="section-kicker">
+          <span className="kicker bigsec">WHO IS GROWING</span>
+          <span className="rule" />
+          <a className="cap" href="/leaderboard">
+            see all {meta.channels.total} →
+          </a>
+        </div>
         <p className="note">
-          {meta.channels.ok} of {meta.channels.total} channels ok ·{" "}
-          {meta.comment_health.ingested.toLocaleString("en-US")} comments ingested ·{" "}
-          {meta.comment_health.classified} classified
+          ranked by subscriber growth rate · below a channel&apos;s measurement floor renders
+          &quot;&lt; N&quot;
         </p>
-      </div>
-    </section>
+        <GrowthPanel channels={slim} sparks={sparks} />
+      </section>
+      <section>
+        <div className="section-kicker">
+          <span className="kicker bigsec">WHAT TO MAKE NEXT</span>
+          <span className="rule" />
+          <span className="cap num">score = 40·velocity + 25·keyword + 25·supply gap + 10·staleness</span>
+        </div>
+        <OpportunityTable models={models} />
+      </section>
+    </div>
   )
 }
