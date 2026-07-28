@@ -52,6 +52,12 @@ export function loadSnapshots(): SnapshotsBundle {
   return load("snapshots.json")
 }
 
+// channel_id is always UC[A-Za-z0-9_-]+, topic_id is kebab-case; both fit this
+// shape. Rejecting anything else before it ever reaches path.join is what
+// keeps a URL-derived id (tasks 4-6 pass these straight from route params)
+// from walking out of _db/comments/.
+const COMMENT_ID_SHAPE = /^[A-Za-z0-9_-]+$/
+
 let videoIndex: Map<string, VideoRow> | null = null
 
 /** Server-side slice of videos.json. Unknown ids are dropped, never invented. */
@@ -71,6 +77,7 @@ export function videosById(ids: string[]): VideoRow[] {
 /** Per-channel comment slice (T13). null is a state: the comment ledger has
  *  not reached this channel yet. Never invent an empty bundle for it. */
 export function loadChannelComments(channelId: string): ChannelCommentsFile | null {
+  if (!COMMENT_ID_SHAPE.test(channelId)) return null
   const rel = path.join("comments", "channel", `${channelId}.json`)
   if (!existsSync(path.join(DB_DIR, rel))) return null
   return load<ChannelCommentsFile>(rel)
@@ -79,6 +86,7 @@ export function loadChannelComments(channelId: string): ChannelCommentsFile | nu
 /** Per-topic comment slice (T13). null is a state: the comment ledger has
  *  not reached this topic yet. Never invent an empty bundle for it. */
 export function loadTopicComments(topicId: string): TopicCommentsFile | null {
+  if (!COMMENT_ID_SHAPE.test(topicId)) return null
   const rel = path.join("comments", "topic", `${topicId}.json`)
   if (!existsSync(path.join(DB_DIR, rel))) return null
   return load<TopicCommentsFile>(rel)

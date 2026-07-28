@@ -230,4 +230,18 @@ describe("comment loaders", () => {
     expect(file.topic.totals.comments).toBeGreaterThan(0)
     expect(file.topic.by_category).toHaveProperty("unsorted")
   })
+
+  it("rejects a traversal id for the channel loader instead of reading outside _db/comments", () => {
+    expect(loadChannelComments("../meta")).toBeNull()
+  })
+
+  it("rejects a traversal id that resolves to a real file outside _db/comments", () => {
+    // comments/channel/../../meta.json resolves to the real _db/meta.json;
+    // without the id-shape guard this loader would read and return it.
+    expect(loadChannelComments("../../meta")).toBeNull()
+  })
+
+  it("rejects a traversal id for the topic loader instead of reading outside _db/comments", () => {
+    expect(loadTopicComments("../../etc/passwd")).toBeNull()
+  })
 })
