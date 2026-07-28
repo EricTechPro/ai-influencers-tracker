@@ -1,0 +1,1101 @@
+/* AIT mockup board: social-invest tokens verbatim, P&L retired for trust + verdict */
+@font-face {
+  font-family: "Google Sans Code";
+  font-style: normal; font-weight: 400 700; font-display: swap;
+  src: url("/fonts/google-sans-code-latin.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Google Sans Code";
+  font-style: normal; font-weight: 400 700; font-display: swap;
+  src: url("/fonts/google-sans-code-latin-ext.woff2") format("woff2");
+}
+:root {
+  color-scheme: light;
+  --background: #fdfdfd;
+  --foreground: #282728;
+  --card: #ffffff;
+  --primary: #006cac;
+  --secondary: #f4f3f3;
+  --muted: #e6e6e6;
+  --muted-foreground: #6b6a6b;
+  --accent: #f1efef;
+  --border: #ece9e9;
+  --warning: #f5a623;
+  --radius-code: 0.375rem;
+  --v-make: #16a34a;
+  --v-unserved: #0e7490;
+  --v-early: #f5a623;
+  --v-crowded: #e5484d;
+  --v-none: #6b6a6b;
+  --inf: #7c3aed;
+}
+* { box-sizing: border-box; border-color: var(--border); }
+body {
+  margin: 0; background: #f2f0ef; color: var(--foreground);
+  font: 400 14px/1.5 "Google Sans Code", ui-monospace, SFMono-Regular, Menlo, monospace;
+  -webkit-font-smoothing: antialiased;
+}
+a { color: var(--primary); text-decoration: none; }
+a:hover { text-decoration: underline; }
+h1 { font-size: 1.6rem; line-height: 2.1rem; font-weight: 700; color: var(--primary); margin: 2rem 0 0.25rem; }
+.kicker { font-size: 12px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted-foreground); }
+.num { font-variant-numeric: tabular-nums; }
+/* A cell that stopped carrying a number stops looking like one. Tabular right-aligned mono
+   is the styling of a measurement, and a state wearing it is the failure mode this project
+   names: "1 bad day" sat in the same column and face as "+1,621,192". */
+.statecell { font-variant-numeric: normal; font-style: italic; opacity: 0.72; }
+.mono10 { font-size: 10px; color: var(--muted-foreground); }
+.note { font-size: 12px; color: var(--muted-foreground); }
+
+/* Two measures, and the chrome uses the wide one. Prose keeps 64rem because that is where a
+   line of text stops being readable; the tables need more. The nav sat on the prose measure,
+   which put the logo ~200px inside the left edge of every table under it and read as the board
+   being shoved right. One shared width for chrome and tables, so their left edges line up. */
+:root { --wide: 90rem; }
+
+.page { max-width: 64rem; margin: 0 auto; padding: 0 1.5rem; }
+
+/* app chrome */
+.appnav { display: flex; align-items: center; gap: 1.5rem; height: 5rem; padding: 0 1.5rem; max-width: var(--wide); margin: 0 auto; }
+.appnav .logo { font-size: 1.125rem; font-weight: 700; letter-spacing: -0.02em; white-space: nowrap; }
+.appnav nav { display: flex; gap: 1.25rem; font-size: 13px; }
+.appnav nav a { color: var(--foreground); }
+.appnav nav a.active { text-decoration: underline 2px wavy var(--primary); text-underline-offset: 8px; }
+.appnav .right { margin-left: auto; display: flex; align-items: center; gap: 8px; font-size: 11px; color: var(--muted-foreground); }
+.livedot { width: 7px; height: 7px; border-radius: 999px; background: var(--v-make); display: inline-block; }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+.navrule { border-bottom: 1px solid var(--border); }
+
+/* trust tiers */
+
+/* The disclosure trigger under a Derived number or a state.
+   It has to be a button — a `title` is invisible to a keyboard and to every touch device, and a
+   tier whose definition is "shows its formula" cannot have a mouse-only formula. It has to look
+   like nothing, because there are ~40 of them on a page and a table of numbers is not a toolbar.
+   The trigger inherits the cell's alignment rather than centring itself, so a column of numbers
+   still reads as a column.
+   Declared before `.derived`, and that ordering is load-bearing: both are one class deep, so the
+   `border: 0` in this reset would otherwise win on the cascade and quietly strip the dotted
+   underline that IS the Derived tier's signature. */
+.tipbtn {
+  border: 0; background: none; padding: 0; font: inherit; color: inherit;
+  text-align: inherit; cursor: help;
+}
+.derived { border-bottom: 1px dotted var(--muted-foreground); cursor: help; }
+.tipbtn:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+/* Portalled onto the body at fixed coordinates by useAnchoredPanel, for the same reason the
+   avatar card is: a hidden absolute panel inside `.tblwrap` is still laid out, and forty of them
+   would give the table back the empty scroll band this pattern was built to remove. */
+.tipnote {
+  position: fixed; left: -9999px; top: -9999px; visibility: hidden;
+  z-index: 60; display: block; max-width: 22rem; padding: 7px 10px;
+  font-size: 11px; line-height: 1.45; font-variant-numeric: normal; font-style: normal;
+  text-align: left; color: var(--foreground);
+  background: var(--card); border: 1px solid var(--border);
+  box-shadow: 0 12px 32px -8px rgba(40, 39, 40, 0.28);
+  pointer-events: none;
+  animation: avpop-in 110ms ease-out;
+}
+@media (prefers-reduced-motion: reduce) { .tipnote { animation: none; } }
+.inference { background: color-mix(in srgb, var(--inf) 7%, transparent); border-left: 2px solid color-mix(in srgb, var(--inf) 45%, transparent); padding: 0.15rem 0.4rem; }
+.src-chip { display: inline-flex; align-items: center; gap: 3px; font-size: 10px; color: color-mix(in srgb, var(--inf) 80%, var(--foreground)); border: 1px solid color-mix(in srgb, var(--inf) 35%, transparent); border-radius: 999px; padding: 0 6px; line-height: 16px; white-space: nowrap; }
+.cat { font-size: 10px; background: color-mix(in srgb, var(--inf) 8%, transparent); color: color-mix(in srgb, var(--inf) 85%, var(--foreground)); padding: 0 5px; line-height: 16px; display: inline-block; }
+.cat-req { background: color-mix(in srgb, #0e7490 14%, transparent); color: #0e7490; }
+.cat-que { background: color-mix(in srgb, var(--primary) 14%, transparent); color: var(--primary); }
+.cat-cor { background: color-mix(in srgb, #e5484d 14%, transparent); color: #e5484d; }
+.cat-sug { background: color-mix(in srgb, #f5a623 20%, transparent); color: #9a6a00; }
+.cat-oth { background: var(--secondary); color: var(--muted-foreground); }
+.linklike { border: 0; background: none; font: inherit; font-size: inherit; color: var(--primary); cursor: pointer; padding: 0; }
+.linklike:hover { text-decoration: underline; }
+.linklike:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+.linklike.on { font-weight: 600; text-decoration: underline; }
+/* The same cascade trap the .tipbtn/.derived ordering above documents, one class further along.
+   A /compare row whose label both expands and names a Derived claim wears one control carrying
+   both jobs, so it is `.linklike .derived` — but .linklike's own `border: 0` is declared after
+   .derived and wins at equal specificity, which strips the dotted underline that IS the tier.
+   0-2-0 restores it, and unlike reordering the two it cannot be undone by a later edit to either. */
+.linklike.derived { border-bottom: 1px dotted var(--muted-foreground); }
+
+/* badges */
+.badge { display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 500; line-height: 16px; padding: 1px 8px; border: 1px solid; border-radius: 999px; white-space: nowrap; }
+.v-make { --vc: var(--v-make); } .v-unserved { --vc: var(--v-unserved); } .v-early { --vc: var(--v-early); } .v-crowded { --vc: var(--v-crowded); } .v-none { --vc: var(--v-none); }
+.b-filled { color: var(--vc); border-color: color-mix(in srgb, var(--vc) 40%, transparent); background: color-mix(in srgb, var(--vc) 5%, transparent); }
+
+.chip { display: inline-flex; align-items: center; font-size: 10px; line-height: 16px; border: 1px solid var(--border); border-radius: 999px; padding: 0 6px; color: var(--muted-foreground); white-space: nowrap; }
+.chip.warn { border-color: color-mix(in srgb, var(--warning) 50%, transparent); color: var(--warning); }
+.chip.you { border-color: color-mix(in srgb, var(--primary) 50%, transparent); color: var(--primary); font-weight: 600; }
+.chip.rank1 { border-color: color-mix(in srgb, var(--v-make) 50%, transparent); color: var(--v-make); }
+
+/* cards, tables, misc */
+.card { background: var(--card); border: 1px solid var(--border); }
+.pad { padding: 1rem; }
+table.tbl { width: 100%; border-collapse: collapse; font-size: 13px; }
+.tbl th { text-align: left; font-size: 11px; font-weight: 500; color: var(--muted-foreground); padding: 8px 10px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+.tbl th.r, .tbl td.r { text-align: right; }
+.tbl td { padding: 8px 10px; border-bottom: 1px solid var(--border); vertical-align: top; }
+.tbl th.pickcol, .tbl td.pickcol { width: 30px; padding: 8px 6px; text-align: center; }
+.tbl tr:last-child td { border-bottom: 0; }
+.tbl tr.rowlink:hover { background: var(--accent); cursor: pointer; }
+.tbl .sub { background: #fbfaf9; }
+.muted { color: var(--muted-foreground); }
+.gain { color: var(--v-make); }
+
+/* The gap column's three states. Hue is never the only signal: GapCell also
+   renders a ▲/▼ glyph, so the cell survives a colourblind reader. */
+.gap-ahead { color: var(--v-make); }
+.gap-behind { color: var(--v-crowded); }
+.gap-even { color: var(--muted-foreground); }
+
+/* Proportional share of a two-channel row. Decoration under a printed number,
+   never the number itself — see the aria-hidden on the element. */
+.share { display: block; height: 2px; margin-top: 3px; background: var(--muted); }
+.share > i { display: block; height: 100%; background: color-mix(in srgb, var(--primary) 55%, transparent); }
+
+/* /compare: the leading side of a row, on hover. Direction comes straight off
+   the row's own GapValue (never recomputed), so this and the gap column's
+   ▲/▼ always agree. Needs the extra class to outrank .tbl-hover's plain
+   row tint above. */
+.tbl-hover tbody tr:hover td.lead { background: color-mix(in srgb, var(--primary) 12%, transparent); }
+
+/* /compare: a windowed row's expansion, all six windows at once so a lead
+   reads as widening or closing rather than one snapshot. */
+.windowstrip { display: flex; flex-wrap: wrap; gap: 4px 16px; margin-top: 4px; }
+.windowstrip-cell b { color: var(--foreground); font-weight: 600; margin-right: 3px; }
+
+/* Segmented gauges.
+   A band name is the output of a comparison; the notch puts the number it was
+   compared against back on screen, so "crowded" is legible as a distance past
+   a line rather than as a word you take on faith. Discrete segments, not a
+   smooth fill: the page is a monospace console, and blocks also stop a 1px
+   difference from reading as a meaningful one. */
+.meter {
+  position: relative; display: inline-flex; gap: 1px; align-items: stretch;
+  width: 100%; max-width: 9rem; height: 9px; margin-left: auto;
+  --mc: var(--muted-foreground);
+}
+.meter .seg { flex: 1; background: var(--muted); border-radius: 1px; }
+.meter .seg.on { background: var(--mc); }
+.meter.tone-hot { --mc: var(--v-make); }
+.meter.tone-cool { --mc: var(--primary); }
+.meter.tone-warn { --mc: var(--v-crowded); }
+/* The threshold, drawn through the bar and just past it so it reads as a line
+   on a scale rather than as one more lit segment. */
+.meter .notch {
+  position: absolute; top: -3px; bottom: -3px; width: 0;
+  border-left: 1px dashed var(--foreground); opacity: 0.55; pointer-events: none;
+}
+.meter .over {
+  position: absolute; right: -10px; top: 50%; transform: translateY(-50%);
+  font-size: 9px; color: var(--mc); line-height: 1;
+}
+
+/* The number is the truth; the bar is only for comparing rows at a glance. */
+.gauge { display: flex; flex-direction: column; align-items: flex-end; gap: 3px; min-width: 8rem; }
+.gauge-n { font-size: 14px; font-weight: 600; line-height: 1.1; }
+.gauge-u { font-size: 10px; color: var(--muted-foreground); white-space: nowrap; }
+
+.legend { display: inline-flex; align-items: center; gap: 7px; margin-left: auto; }
+.legend .meter { width: 3.5rem; max-width: none; margin-left: 0; }
+
+/* A section that needs more than the page's reading measure. Centres itself on
+   the viewport instead of the 64rem column, and stops growing at 90rem so the
+   table never becomes a scan across a whole ultrawide display. */
+.breakout {
+  width: min(var(--wide), calc(100vw - 3rem));
+  margin-left: 50%;
+  transform: translateX(-50%);
+}
+
+/* Column widths for the opportunity table.
+   Left to itself the browser hands the topic column whatever the gauges do not
+   want, which is not much, so the fixed-size things (gauges, badge, score)
+   get declared widths and the prose column takes the remainder. Under
+   table-layout: fixed the header row is what sets them, hence nth-child here
+   rather than a class on every cell.
+   Order: topic · volume · competition · verdict · who · score · newest. */
+.opptbl { table-layout: fixed; }
+.opptbl thead th:nth-child(2),
+.opptbl thead th:nth-child(3) { width: 10.5rem; }
+.opptbl thead th:nth-child(4) { width: 12rem; }
+.opptbl thead th:nth-child(5) { width: 11rem; }
+.opptbl thead th:nth-child(6) { width: 5.5rem; }
+.opptbl thead th:nth-child(7) { width: 5rem; }
+.opptbl td { vertical-align: top; }
+/* Long labels wrap; identifiers and repo names break rather than push the
+   column open, since a fixed layout has no give to hand them. */
+.opptbl .opptopic, .opptbl .whynow { overflow-wrap: anywhere; }
+@media (max-width: 75rem) {
+  .opptbl thead th:nth-child(2),
+  .opptbl thead th:nth-child(3) { width: 8.5rem; }
+  .opptbl thead th:nth-child(5) { width: 8rem; }
+}
+
+/* Topic identity: the human label leads, the slug is the filename underneath.
+   "claude-code-hooks-config" is what the row is keyed on; "Hooks, settings and
+   permissions" is what it is about. */
+.opptopic { font-size: 13px; font-weight: 500; }
+.oppsub { margin-top: 1px; line-height: 1.4; }
+
+/* The concrete thing the topic slug stands in for. A folder name is not a
+   video; a 13-day-old repo taking 964 stars a day is. */
+.whynow {
+  margin-top: 5px; padding-left: 7px; font-size: 11px;
+  border-left: 2px solid color-mix(in srgb, var(--v-make) 40%, transparent);
+  color: var(--muted-foreground); line-height: 1.45;
+}
+.whynow-lbl {
+  font-size: 9px; text-transform: uppercase; letter-spacing: 0.07em;
+  color: color-mix(in srgb, var(--v-make) 75%, var(--foreground));
+}
+
+/* The verdict restated in its own numbers, at the top of the derivation. */
+.verdictline {
+  margin: 0 0 10px; font-size: 12px; line-height: 1.6;
+  padding: 8px 11px; background: var(--card); border: 1px solid var(--border);
+}
+
+.section-kicker { display: flex; align-items: center; gap: 10px; margin: 2.2rem 0 0.8rem; }
+.section-kicker .rule { flex: 1; border-top: 1px solid var(--border); }
+.section-kicker .cap { font-size: 11px; color: var(--muted-foreground); white-space: nowrap; }
+
+/* Faces.
+   The roster is 72 people whose names are largely "<First Last> | AI
+   Automation", so the photo is the identifier and the string is the label.
+   Size comes in as an inline style from components/avatar.tsx (one number per
+   surface) and everything here is the shape around it. The hairline ring is
+   what keeps a light-background thumbnail from dissolving into the card. */
+.avatar {
+  border-radius: 999px; flex-shrink: 0; display: inline-flex;
+  align-items: center; justify-content: center;
+  font-weight: 700; color: #fff; letter-spacing: 0.02em;
+  background: linear-gradient(135deg, #d8d4d0, #b9b4af);
+  box-shadow: 0 0 0 1px rgba(40, 39, 40, 0.08);
+  vertical-align: middle;
+}
+img.avatar { object-fit: cover; background: var(--secondary); }
+.av-you { background: linear-gradient(135deg, #0e86c9, #006cac); box-shadow: 0 0 0 1px color-mix(in srgb, var(--primary) 45%, transparent); }
+
+/* Hover blow-up. The inline face is sized to scan a table with; this is the
+   one that lets you actually recognise someone, without a click or a page.
+   No popover library in this project, so: a relative wrapper, an absolute
+   panel, and :focus-within so the keyboard gets what the mouse gets. */
+/* A real button, not a tabindex span: it used to sit inside the row's <a>, which an anchor may
+   not contain, and which meant the avatar's pixels belonged to the link so a tap on a phone
+   navigated instead of opening the card. */
+.avpeek {
+  display: inline-flex; vertical-align: middle; border-radius: 999px;
+  border: 0; background: none; padding: 0; font: inherit; cursor: pointer;
+}
+.avpeek:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+/* Opens to the side, not above.
+   Above-placement clipped straight off the viewport on the first row of any
+   table, which is the row people hover first. Beside the avatar there is
+   always room, and a table's own vertical rhythm keeps it clear of the rows
+   above and below. */
+/* Fixed, not absolute, and portalled onto the body: an absolutely positioned panel is laid out
+   even while hidden, and inside `.tblwrap` — which is a scrollport under 90rem — ten of those
+   under the last row is 121px of empty scrollable band with nothing in it. Coordinates come from
+   avatar-peek.tsx, which measures the panel and clamps it into the window; the only thing set
+   here is what it looks like. `left`/`top` start off-screen so the first paint of a freshly
+   mounted panel cannot flash in the corner before the layout effect places it. */
+.avpop {
+  position: fixed; left: -9999px; top: -9999px; visibility: hidden;
+  z-index: 60; display: flex; flex-direction: column; align-items: center; gap: 8px;
+  padding: 12px; width: 216px;
+  background: var(--card); border: 1px solid var(--border);
+  box-shadow: 0 12px 32px -8px rgba(40, 39, 40, 0.28);
+  pointer-events: none;
+  animation: avpop-in 110ms ease-out;
+}
+@keyframes avpop-in {
+  from { opacity: 0; transform: scale(0.96); }
+}
+@media (prefers-reduced-motion: reduce) { .avpop { animation: none; } }
+/* The panel's own little pointer, drawn as a rotated square so it inherits the
+   card fill and the hairline border on the two edges that show.
+   `--arrow-top` is the face's centre in the panel's own coordinates, so a panel clamped against
+   the top or bottom of the window still points at the row it belongs to rather than at its own
+   middle. It flips sides with the panel. */
+.avpop::after {
+  content: ""; position: absolute; top: var(--arrow-at, 50%); width: 9px; height: 9px;
+  background: var(--card);
+  border-left: 1px solid var(--border); border-bottom: 1px solid var(--border);
+}
+.avpop[data-side="right"]::after {
+  right: 100%; margin: -4.5px -5px 0 0; transform: rotate(45deg);
+}
+.avpop[data-side="left"]::after {
+  left: 100%; margin: -4.5px 0 0 -5px; transform: rotate(-135deg);
+}
+.avpop-face { border-radius: 4px; box-shadow: none; }
+.avpop-meta { display: flex; flex-direction: column; align-items: center; gap: 2px; text-align: center; min-width: 0; max-width: 100%; }
+.avpop-meta b { font-size: 12px; font-weight: 600; line-height: 1.3; }
+
+/* The basics, without leaving the row. Label left, value right, so the numbers
+   form a column you can read down rather than a paragraph you have to parse. */
+.avpop-stats {
+  display: flex; flex-direction: column; gap: 3px; width: 100%;
+  padding-top: 8px; border-top: 1px solid var(--border);
+}
+.avpop-stat { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+.avpop-stat .k { font-size: 10px; color: var(--muted-foreground); white-space: nowrap; }
+.avpop-stat .v { font-size: 11px; font-weight: 600; white-space: nowrap; }
+.avpop-stat .n2 { font-size: 9px; font-weight: 400; color: var(--muted-foreground); }
+
+/* Wider tracks than the mockup board's 14.5rem: the card now leads with a
+   48px face, and a name like "Brock Mesarich | AI for Non Techies" needs the
+   room left over to say more than "Brock Mesa...". */
+/* Wider tracks than the mockup board's 14.5rem: the card now leads with a
+   48px face and carries two headline figures side by side. */
+
+/* The card is a button to the channel page.
+   It used to mark rank 1 with a green border, which spent the palette's
+   strongest "go" signal on a position rather than on a finding, and the card
+   still did not look like the link it wanted to be. So: no rank tint, and a
+   press affordance instead. Colour now only ever means a verdict. */
+.gcard {
+  position: relative; display: flex; flex-direction: column;
+  background: var(--card); border: 1px solid var(--border); padding: 1rem;
+  color: inherit; text-decoration: none;
+}
+.gcard:hover {
+  background: color-mix(in srgb, var(--accent) 40%, var(--card));
+  border-color: var(--muted-foreground);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px -10px rgba(40, 39, 40, 0.4);
+}
+.gcard:active { transform: translateY(0); box-shadow: none; }
+.gcard:hover, .gcard:hover .who b { text-decoration: none; }
+.gcard:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+.gcard .who b { color: var(--primary); }
+/* Rank as a quiet pill for 4th and below; the top three wear a medal on the
+   face instead. Replaces the 44px ghost numeral that sat behind the card and
+   read as a background artefact rather than as a rank. */
+.rankpill { margin-left: auto; align-self: flex-start; font-size: 10px; color: var(--muted-foreground); font-variant-numeric: tabular-nums; }
+.gcard .id { display: flex; align-items: center; gap: 10px; }
+/* Medal pinned to the face, so the badge and the photo are one object rather
+   than two things competing with the rank watermark for the same corner. */
+.facewrap { position: relative; display: inline-flex; flex-shrink: 0; }
+.facewrap .medal {
+  position: absolute; right: -3px; bottom: -3px; font-size: 15px; line-height: 1;
+  filter: drop-shadow(0 1px 1px rgba(40, 39, 40, 0.25)); pointer-events: none;
+}
+.gcard .who { min-width: 0; line-height: 1.3; }
+.gcard .who b { display: block; font-size: 14px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.gcard .who span { font-size: 10px; color: var(--muted-foreground); display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* Hero stack, not a row.
+   Baseline-aligning the unit beside the number is what made "+200.8%" shove
+   "SUBSCRIBER GROWTH 90D" onto a second line and leave every card in the row a
+   different height. Stacked, the number owns the full width (so the 365d
+   window's +5,480.6% has somewhere to go) and the label is one fixed line. */
+.heroes { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem 0.9rem; margin-top: 0.7rem; }
+.heroes .hero:only-child { grid-column: 1 / -1; }
+.hero { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.hero .n {
+  font-size: 1.6rem; font-weight: 600; line-height: 1.05;
+  font-variant-numeric: tabular-nums; letter-spacing: -0.02em;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.hero .u { font-size: 10px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted-foreground); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.gfoot { margin-top: auto; padding-top: 8px; border-top: 1px solid var(--border); display: flex; justify-content: space-between; font-size: 10px; color: var(--muted-foreground); }
+.statline { font-size: 11px; color: var(--muted-foreground); margin-top: 3px; }
+.statline .v { color: var(--foreground); font-variant-numeric: tabular-nums; }
+
+/* The count under the hero: what actually happened, and the width it is
+   rounded to. Bigger than a statline, quieter than the hero. */
+.gained { font-size: 13px; color: var(--muted-foreground); margin-top: 5px; }
+.gained .v { color: var(--foreground); font-weight: 600; font-variant-numeric: tabular-nums; }
+
+/* Signed like a ticker. This colours measured quantities only — a state such as "building"
+   never gets it, because not-yet-measured is not a loss. */
+.gcard .n.up, .gained .v.up { color: var(--v-make); }
+.gcard .n.down, .gained .v.down { color: var(--v-crowded); }
+
+/* Before and after: the two counts the delta is the distance between. This replaced the "±100"
+   that used to sit here — both endpoints already carry that rounding, and two real counts say
+   more than the tolerance on them. The tolerance is still in the delta's hover formula. */
+.ba {
+  display: block; margin-top: 2px;
+  font-size: 11px; color: var(--muted-foreground); font-variant-numeric: tabular-nums;
+}
+.ba .arrow { color: var(--v-make); font-weight: 700; padding: 0 1px; }
+
+/* A state where a number would go. Never hero-sized: at hero weight a phrase
+   like "building, 89 of 90 days" reads as a broken value rather than as the
+   honest answer that the measurement is not in yet. */
+.herostate {
+  font-size: 12px; line-height: 1.4; color: var(--muted-foreground);
+  border-left: 2px solid var(--muted); padding-left: 7px; align-self: flex-start;
+}
+.statline .state { font-style: italic; }
+
+/* Channel names cap on one line wherever they sit in a row or a card. The
+   roster is full of "<First Last> | AI Automation", which wraps a table row to
+   two lines and ragged the column. The full name stays in the title attribute,
+   and the channel page header still renders it whole. */
+.chname {
+  display: inline-block; max-width: 13rem; overflow: hidden;
+  text-overflow: ellipsis; white-space: nowrap; vertical-align: middle;
+}
+/* Keeps the face and the name on one line. Capping the text alone was not
+   enough: the name is an inline-block, so once it no longer fit beside the
+   avatar it wrapped under it and the row was two lines tall anyway. */
+.chcell { display: inline-flex; align-items: center; gap: 6px; max-width: 100%; }
+.gcard.youcard { border-color: color-mix(in srgb, var(--primary) 55%, var(--border)); background: color-mix(in srgb, var(--primary) 3%, var(--card)); }
+
+.chain { font-size: 12px; line-height: 1.9; white-space: pre; overflow-x: auto; font-family: inherit; }
+.chain .lbl { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted-foreground); }
+.chain .row { display: block; width: 100%; text-align: left; border: 0; background: none; font: inherit; color: inherit; padding: 0 4px; cursor: pointer; }
+.chain .row:hover { background: var(--accent); }
+.chain .dim { color: var(--muted-foreground); }
+.chain .verb-alt { color: var(--primary); }
+.chain .verb-con { color: var(--v-crowded); }
+
+.quote { border-left: 2px solid var(--border); padding-left: 12px; margin: 10px 0; }
+.quote p { margin: 0; font-style: italic; font-size: 13px; line-height: 1.55; }
+.quote .cite { font-style: normal; font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted-foreground); margin-top: 4px; }
+
+/* The same keys the feed's rail is drawn in — see .key below. They were a grey tray of tabs,
+   which put a filled block behind every window picker on the board and read as chrome competing
+   with the table under it. One vocabulary for every "pick one of these" on the board. */
+.tabs { display: inline-flex; flex-wrap: wrap; gap: 4px; }
+.tabs button {
+  font: inherit; font-size: 11px; line-height: 1.5; padding: 2px 8px;
+  border: 1px solid var(--border); border-radius: 3px; background: var(--card);
+  color: var(--muted-foreground); cursor: pointer;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .tabs button { transition: border-color 120ms ease, color 120ms ease; }
+}
+.tabs button:hover { border-color: var(--muted-foreground); color: var(--foreground); }
+.tabs button.on {
+  background: var(--foreground); border-color: var(--foreground); color: var(--background);
+  font-weight: 700;
+}
+/* A tab that carries a count: the word is the label and the number is the data, so the number
+   takes the darker ink. On the filled tab it inverts with the button rather than staying dark
+   and disappearing into it. */
+.tabs button b { font-weight: 600; color: var(--foreground); font-variant-numeric: tabular-nums; }
+.tabs button.on b { color: inherit; }
+.cattabs { display: flex; flex-wrap: wrap; gap: 6px; font-size: 11px; }
+.cattabs .t { border: 1px solid var(--border); padding: 2px 9px; color: var(--muted-foreground); cursor: pointer; background: var(--card); font: inherit; font-size: 11px; }
+.cattabs .t.on { border-color: var(--foreground); color: var(--foreground); font-weight: 500; }
+.cattabs .t b { font-weight: 600; color: var(--foreground); }
+
+/* The board's one search field, on /channels and on /topics. It was two — a bordered box here and
+   a ruled underline there — and the same act looked like two controls on two pages of one board.
+   Boxed won: an underline carries no left edge, so on a filter row it read as placeholder text
+   floating between two groups rather than as a field, and nothing said where to click. A box the
+   size of a key, in the key's own border, radius and fill, is not a browser default here — it is
+   the row's own vocabulary at input size.
+   Everything the field needs sits inside its frame: the glyph that says what it is, and one
+   trailing slot that is the `/` shortcut until you type and the clear control after. */
+.srch { position: relative; display: inline-flex; align-items: center; flex: 0 1 15rem; min-width: 9rem; }
+.srch-input {
+  width: 100%; border: 1px solid var(--muted-foreground); border-radius: 3px;
+  background: var(--card);
+  color: var(--foreground); font: inherit; font-size: 13px; line-height: 1.5;
+  padding: 7px 32px 7px 32px;
+}
+.srch-input::placeholder { color: var(--muted-foreground); opacity: 0.9; }
+.srch-input:hover { border-color: var(--foreground); }
+/* The board's global :focus-visible rule already draws the primary outline. The border darkens
+   under it so the field still reads as the live one when the outline is suppressed. */
+.srch-input:focus { border-color: var(--foreground); }
+/* Typed-in is a state the row has to show at a glance, the same way a selected key is: this is
+   the only control here that can be holding a value you cannot see from across the line. */
+.srch:has(.srch-input:not(:placeholder-shown)) .srch-input { border-color: var(--foreground); }
+/* The one control on the board drawn a step darker than the hairlines around it. Everything else
+   here offers a fixed set of answers and can afford to recede; this one takes an answer, and it
+   has to be found before it can be used. At the key's own border weight it was a box in a wall of
+   boxes and read as a fifth facet. */
+.srch-glyph {
+  position: absolute; left: 10px; width: 14px; height: 14px;
+  color: var(--foreground); pointer-events: none;
+}
+/* One slot at the right edge, two occupants, so nothing shifts when the field goes from empty to
+   typed-in. The hint fades on focus: it has been obeyed by then. */
+.srch-key, .srch-clear {
+  position: absolute; right: 6px; display: inline-flex; align-items: center;
+  justify-content: center; width: 19px; height: 19px; font: inherit; font-size: 11px;
+}
+.srch-key {
+  border: 1px solid var(--border); border-radius: 3px; background: var(--secondary);
+  color: var(--muted-foreground); pointer-events: none;
+}
+.srch:focus-within .srch-key { opacity: 0; }
+/* A keyboard shortcut advertised to a device with no keyboard. */
+@media (hover: none) { .srch-key { display: none; } }
+.srch-clear {
+  border: 0; border-radius: 3px; background: none; color: var(--muted-foreground); cursor: pointer;
+}
+.srch-clear:hover { background: var(--accent); color: var(--foreground); }
+@media (prefers-reduced-motion: no-preference) {
+  .srch-input, .srch-glyph, .srch-key {
+    transition: border-color 120ms ease-out, color 120ms ease-out, opacity 120ms ease-out;
+  }
+}
+/* /topics: the full width of the board, on its own line, above the facets.
+   The target is `.fbars`, the sticky block the two facet lines now ride in, and the two-class
+   selector is deliberate: `.fbars` below sets the 12px that clears the section kicker and is
+   declared later in the file, so an equal-specificity override here would silently lose the
+   cascade and leave a 12px gap the search line has already paid. */
+.srch-bar { display: flex; width: 100%; flex: 1 1 100%; margin: 12px 0 0; }
+.srch-bar + .fbars { margin-top: 8px; }
+
+/* /channels: a directory row rather than a table row, so the roster reads as
+   scannable cards, not a ninth copy of the leaderboard's grid. */
+
+/* The directory's control row. Here the search is the page — 74 rows and the question is always
+   "where is this one" — so it takes the width it can get and the language group is pushed to the
+   far end, rather than the two sitting side by side at equal weight as one more box among boxes.
+   On /topics the same field stays narrow, because there it shares the line with four facets. */
+.dirbar { flex-wrap: nowrap; align-items: center; gap: 20px; }
+.dirbar .grp { margin-left: auto; }
+.srch-wide { flex: 0 1 26rem; min-width: 11rem; }
+/* The tabs are the board's, at the board's size, but this row pairs them with a text field rather
+   than with a table header, and 2px of vertical padding beside a 29px input reads as a leftover.
+   Height only — the type, the border and the fill are untouched, so it is still the same control. */
+.dirbar .tabs button { padding: 5px 10px; }
+/* Under the prose measure the two groups stop fitting on one line; the language row goes full
+   width beneath the field rather than each tab wrapping onto its own. */
+@media (max-width: 46rem) {
+  .dirbar { flex-wrap: wrap; gap: 8px 12px; }
+  .srch-wide { flex: 1 1 100%; }
+  .dirbar .grp { margin-left: 0; }
+}
+
+.dirlink { flex: 1; min-width: 0; }
+.dirmeta { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.dirmeta .chname { max-width: none; }
+
+.callout { border: 1px solid; padding: 0.9rem 1.1rem; font-size: 13px; }
+.callout.warn { border-color: color-mix(in srgb, var(--warning) 55%, transparent); background: color-mix(in srgb, var(--warning) 5%, transparent); }
+.btn { display: inline-flex; align-items: center; gap: 5px; border: 1px solid var(--border); background: var(--card); font: inherit; font-size: 12px; padding: 4px 12px; cursor: pointer; }
+.btn:hover { background: var(--accent); }
+.btn.primary { background: var(--primary); border-color: var(--primary); color: #fff; }
+.empty { border: 1px solid var(--border); background: var(--card); padding: 2.2rem 1.5rem; text-align: center; font-size: 13px; color: var(--muted-foreground); }
+
+svg text { font-family: inherit; }
+
+/* variant C: editorial, softened borders, more air, no fills */
+/* variant B: gamified, heavier section titles */
+
+/* picks bar + page nav */
+#picks { position: fixed; bottom: 0; left: 0; right: 0; z-index: 50; background: var(--card); border-top: 1px solid #d9d5d2; padding: 10px 1.5rem; font-size: 12px; display: flex; gap: 0.8rem; align-items: center; flex-wrap: wrap; }
+#picks .lbl { font-weight: 700; text-transform: uppercase; font-size: 10px; letter-spacing: 0.06em; color: var(--muted-foreground); }
+#picks .pick { border: 1px solid var(--primary); color: var(--primary); padding: 1px 8px; }
+#picks .pending { border: 1px dashed var(--border); color: var(--muted-foreground); padding: 1px 8px; }
+
+/* app shell additions (not from the mockup board) */
+body { margin: 0; }
+.page { padding-bottom: 6rem; }
+.thsort { border: 0; background: none; font: inherit; color: inherit; cursor: pointer; padding: 0; text-transform: inherit; letter-spacing: inherit; }
+.thsort:hover { color: var(--foreground); }
+/* One row, read as groups. It was a single flat line of a label, four tabs, a label, six tabs, a
+   sentence, a label and four checkboxes — eighteen controls with nothing saying where one
+   question ended and the next began. The group labels are micro-caps, the gap between groups is
+   double the gap inside one, and the checkboxes became keys so every control on this row picks
+   the same way. */
+.controls {
+  display: flex; gap: 6px 20px; align-items: center; flex-wrap: wrap; margin: 0.6rem 0 0.9rem;
+}
+.controls .grp { display: flex; align-items: center; gap: 7px; }
+.controls .note {
+  font-size: 9px; text-transform: uppercase; letter-spacing: 0.1em; opacity: 0.7;
+}
+.controls select, .controls label { font: inherit; font-size: 12px; }
+.controls select {
+  font-size: 11px; border: 1px solid var(--border); border-radius: 3px;
+  background: var(--card); padding: 2px 6px;
+}
+/* A multi-select row. Ink-fill answers "this is the one"; four ink blocks side by side asked
+   that question four times over. Included reads as outlined-and-dark, excluded as faded out. */
+.tabs.multi button.on {
+  background: var(--card); border-color: var(--foreground); color: var(--foreground);
+}
+.tabs.multi button:not(.on) { opacity: 0.55; text-decoration: line-through; }
+
+/* Pagination.
+   The readout leads and the controls sit at the far end, because the sentence "25 of 72" is the
+   part that has to be read and the arrows are the part that has to be found. Numerals are
+   tabular so the range does not jitter its own width as you page through it. */
+/* The pager, refined.
+   Every long table on the board ends in one of these, so it is read more often than any single
+   number on the page and has to hold still. The composition is one line: the coverage sentence
+   on the left, the size control beside it, the controls pushed right. That order is deliberate.
+   "1-10 of 74" is the sentence and the buttons are how you move; a bare row of numbers tells you
+   where the widget is and never how much you have not seen, and this board's whole contract is
+   that a number never hides what is behind it.
+
+   The type is the board's own mono at 12px with tabular figures, so the readout does not shift
+   width as you page through it. The rule above separates the pager from the last table row
+   without adding a box: the table already has borders, and a second container around the pager
+   would read as a second table. */
+.pager {
+  display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+  margin: 0; padding: 10px 2px 2px; font-size: 12px; color: var(--muted-foreground);
+  border-top: 1px solid var(--border);
+}
+.pgcount { color: var(--foreground); letter-spacing: 0.01em; font-variant-numeric: tabular-nums; }
+.pgof { color: var(--muted-foreground); }
+.pgper { display: flex; align-items: center; }
+.pgper label { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; }
+.pgper select {
+  font: inherit; font-size: 11px; border: 1px solid var(--border);
+  background: var(--card); padding: 2px 6px; color: var(--foreground); cursor: pointer;
+}
+.pgper select:hover { border-color: var(--foreground); }
+
+.pgnav { margin-left: auto; display: inline-flex; align-items: center; gap: 3px; }
+.pgnav button {
+  font: inherit; font-size: 12px; font-variant-numeric: tabular-nums;
+  min-width: 28px; height: 26px; padding: 0 7px;
+  border: 1px solid var(--border); background: var(--card); color: var(--foreground);
+  cursor: pointer; transition: color 120ms ease, border-color 120ms ease, background 120ms ease;
+}
+.pgnav button:hover:not(:disabled):not(.on) { border-color: var(--foreground); }
+.pgnav button:focus-visible { outline: 2px solid var(--primary); outline-offset: 1px; }
+/* The wavy accent the nav links use does not survive being squeezed to one character wide: on a
+   "1" it rendered as a small hooked glyph hanging under the button and read as a broken icon.
+   The current page inverts its box instead, which is legible at any width and needs no glyph. */
+.pgnav button.on {
+  background: var(--foreground); color: var(--background); border-color: var(--foreground);
+  font-weight: 600; cursor: default;
+}
+/* The arrows are the same size box as a page number so the row does not step up and down, but
+   they carry no border until you can actually use them — a disabled bordered box on page one
+   reads as a page you failed to click. */
+.pgnav button[aria-label$="page"] { border-color: transparent; background: none; }
+.pgnav button[aria-label$="page"]:hover:not(:disabled) {
+  border-color: var(--border); background: var(--card);
+}
+.pgnav button:disabled { opacity: 0.28; cursor: default; }
+.pggap { padding: 0 2px; color: var(--muted-foreground); user-select: none; }
+/* Sparkline with a readout.
+   The line auto-scales to its own min and max, so on its own it looks the same
+   whether a channel gained 40 subscribers or 40,000. The endpoints below it
+   are what give the shape a scale, and the middle slot swaps to the hovered
+   day's actual count. */
+.sparkbox { margin-top: 8px; }
+.spark { width: 100%; height: 30px; display: block; cursor: crosshair; }
+.sparkfoot {
+  display: flex; justify-content: space-between; align-items: baseline; gap: 6px;
+  margin-top: 2px; font-size: 10px; color: var(--muted-foreground);
+}
+.sparkread { opacity: 0; transition: opacity 100ms ease-out; white-space: nowrap; }
+.sparkread.on { opacity: 1; }
+.sparkread b { color: var(--foreground); font-weight: 600; }
+@media (prefers-reduced-motion: reduce) { .sparkread { transition: none; } }
+/* Overlapped, not spaced: a row of faces reads as one group of people, and
+   the overlap buys the room to show them at a recognisable size in a cell
+   that only ever had room for a strip. Hovering lifts one clear of the pile. */
+.avcluster { display: inline-flex; align-items: center; padding-left: 3px; }
+.avcluster .avatar { margin-left: -7px; box-shadow: 0 0 0 2px var(--card); position: relative; }
+.avcluster .avatar:hover { z-index: 5; transform: translateY(-2px); }
+.avcluster .chip { margin-left: 5px; }
+@media (prefers-reduced-motion: no-preference) {
+  .avcluster .avatar { transition: transform 120ms ease-out; }
+}
+.overlay { position: fixed; inset: 0; background: rgba(40, 39, 40, 0.35); display: flex; align-items: center; justify-content: center; z-index: 50; }
+.dialogbox { background: var(--card); border: 1px solid var(--border); max-width: 28rem; width: calc(100% - 2rem); max-height: 85vh; overflow-y: auto; padding: 1.2rem 1.4rem; }
+/* Your own row, and it has to outrank the zebra.
+   `.tbl tr.youcard td` (0-2-1) lost to `.tbl-zebra tbody tr:nth-child(even) td` (0-2-3), so
+   whether your row was marked at all depended on whether it landed on an even index — which the
+   rank mode decides, so it changed every time you switched tabs. The left rule is there so the
+   mark survives the next row tint whatever its specificity, since the "★ YOU" chip is 1200px
+   away from the numbers. */
+.tbl tr.youcard td,
+.tbl-zebra tbody tr.youcard td,
+.tbl-hover tbody tr.youcard:hover td {
+  background: color-mix(in srgb, var(--primary) 6%, transparent);
+}
+.tbl tr.youcard td:first-child { box-shadow: inset 2px 0 0 var(--primary); }
+
+/* craft pass.
+   Everything below exists because a long dense table is read differently from
+   a short one: you scroll past the header, you scan across a row, and you tab
+   through it without a mouse. */
+
+/* Sideways scroll only where the viewport is actually too narrow. Past the
+   page's own max width the wrapper goes back to visible, because an
+   overflow-x container also becomes an overflow-y scrollport, and a sticky
+   thead inside one sticks to a scrollport the same height as its table, which
+   is to say it does not stick at all.
+   The breakpoint is the wide measure, not the prose one: the tables live in .breakout now, so
+   64rem here left every viewport between the two measures clipping its last column. */
+.tblwrap { overflow-x: auto; }
+@media (min-width: 90rem) { .tblwrap { overflow-x: visible; } }
+
+/* Scroll shadows, no JS: the two `local` gradients travel with the content and
+   sit on top of the two `scroll` shadows, so a shadow is only visible on an
+   edge that still has table behind it. */
+.tblwrap {
+  background:
+    linear-gradient(to right, var(--card) 40%, transparent) left / 28px 100% no-repeat local,
+    linear-gradient(to left, var(--card) 40%, transparent) right / 28px 100% no-repeat local,
+    radial-gradient(farthest-side at 0 50%, rgba(40, 39, 40, 0.13), transparent)
+      left / 10px 100% no-repeat scroll,
+    radial-gradient(farthest-side at 100% 50%, rgba(40, 39, 40, 0.13), transparent)
+      right / 10px 100% no-repeat scroll,
+    var(--card);
+}
+
+/* The border-bottom on th belongs to the collapsed table and scrolls away with
+   it, so the stuck header carries its own rule as an inset shadow. */
+.tbl-sticky thead th {
+  position: sticky; top: 0; z-index: 2;
+  background: var(--card);
+  box-shadow: inset 0 -1px 0 var(--border);
+}
+
+/* Zebra: on a table this wide the eye loses its row between the name on the
+   left and the number on the right. The banding is deliberately fainter than
+   the hover tint so the row under the cursor still reads as the selected one. */
+.tbl-zebra tbody tr:nth-child(even) td {
+  background: color-mix(in srgb, var(--accent) 40%, transparent);
+}
+
+/* Read-hover: tints the row you are scanning across. No pointer, because these
+   rows do not navigate. Only .rowlink, which expands or links, claims one.
+   Listed after the zebra rule so it wins on even rows too. */
+.tbl-hover tbody tr:hover td { background: color-mix(in srgb, var(--accent) 55%, transparent); }
+
+/* Tab order reaches rows, sort headers, category tabs and the comment toggles.
+   A row outline sits inset so it is not clipped by the neighbouring cell. */
+:where(a, button, select, summary, input, [tabindex]):focus-visible {
+  outline: 2px solid var(--primary); outline-offset: 2px;
+}
+.tbl tr.rowlink:focus-visible,
+.tbl tr.rowlink:focus-visible td:first-child {
+  outline: 2px solid var(--primary); outline-offset: -2px;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .gcard, .btn, .cattabs .t, .tbl tbody tr, .tbl tbody td, .chain .row {
+    transition: background 120ms ease-out, border-color 120ms ease-out;
+  }
+}
+
+/* Comment tables: fixed layout so switching a category tab or a sort order
+   cannot reflow the columns underneath the cursor. The matching min-width is
+   set per variant on the element, since which columns exist varies. */
+.tbl-fixed { table-layout: fixed; }
+.tbl-fixed td, .tbl-fixed th { overflow-wrap: anywhere; }
+/* A wrapped number is a misread number: 1,457 must never become 1,45 / 7. */
+.tbl-fixed td.num, .tbl-fixed td.nowrap, .tbl-fixed th.nowrap {
+  white-space: nowrap; overflow-wrap: normal;
+}
+/* Also outside fixed tables: a state like "building, 89 of 90 days" wraps in a
+   narrow numeric column and doubles the height of over half the leaderboard.
+   The table already scrolls sideways, so it can afford the width. */
+.tbl td.nowrap { white-space: nowrap; }
+/* Handles and display names are identifiers, so they truncate at the column
+   edge rather than breaking across lines. Full value stays in the title. */
+.ell { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* Three lines, then a toggle. Rendered only when the text is long enough to
+   actually clip, so no comment gets a control that does nothing. */
+.clamp3 {
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3;
+  overflow: hidden;
+}
+.linklike.more { display: block; margin-top: 2px; font-size: 10px; }
+
+/* Unclassified stays legible as a state rather than reading as a chip with no
+   text in it. */
+.cat-none { background: none; color: var(--muted-foreground); padding: 0; }
+
+
+/* The compare subject header — the two-channel counterpart of the identity card
+   `/channels/[id]` opens with, and the reason /compare no longer starts on a bare
+   row of selects. Each side is its own block so the pair wraps to one per line on a
+   narrow window instead of shrinking two selects into a shared one; `min-width: 0`
+   is what lets a long channel name in the select ellipsize rather than push the
+   card wider than the reading measure. */
+.comparehead {
+  margin-top: 1.2rem;
+  display: flex; align-items: center; gap: 14px 20px; flex-wrap: wrap;
+}
+.comparehead .who { display: flex; align-items: center; gap: 11px; flex: 1 1 15rem; min-width: 0; }
+.comparehead .whobody { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+/* The pivot, not a side: it keeps its own width when the two blocks grow. */
+.comparehead .vs { flex: 0 0 auto; }
+
+/* The compare pickers are chips that happen to be selects. Without this the
+   platform control fights the pill and the terminal type. */
+select.chip {
+  appearance: none;
+  background-color: var(--card); color: var(--foreground);
+  font: inherit; font-size: 12px; line-height: 18px;
+  padding: 2px 22px 2px 10px; cursor: pointer; max-width: 15rem;
+  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='6'%3E%3Cpath d='M1 1l3.5 3.5L8 1' fill='none' stroke='%236b6a6b' stroke-width='1.2'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 7px center;
+}
+select.chip:hover { border-color: var(--muted-foreground); }
+
+/* Sortable headers.
+   Every column here sorts, which was not discoverable: the indicator was a
+   character glued to the label, so it sat in a different spot in each column
+   and read as decoration. It is now a fixed slot on the trailing edge of the
+   cell, giving all of them one alignment, and the header shows its hit area on
+   hover so "can I click this" answers itself. */
+.thsort {
+  display: flex; align-items: baseline; gap: 6px; width: 100%;
+  justify-content: space-between;
+  border: 0; background: none; font: inherit; color: inherit; cursor: pointer;
+  padding: 2px 0; text-transform: inherit; letter-spacing: inherit;
+}
+/* Right-aligned columns keep their label next to the numbers it heads, and the
+   arrow still lands on the cell's right edge — so every indicator in the row
+   sits on the same side whatever the column's alignment. */
+.tbl th.r .thsort { justify-content: flex-end; }
+.thsort .thlabel { flex: none; white-space: nowrap; }
+.thsort .tharrow {
+  flex: none; width: 0.75em; text-align: center; font-size: 10px;
+  color: var(--muted-foreground); opacity: 0.45;
+}
+.thsort:hover { color: var(--foreground); }
+.thsort:hover .tharrow { opacity: 0.9; }
+.thsort.on { color: var(--foreground); font-weight: 600; }
+.thsort.on .tharrow { opacity: 1; color: var(--primary); }
+
+/* Topic shelves.
+   A topic is a pile of videos, so it is drawn as one. Horizontal rails rather
+   than a grid: the shelf is a sample ranked best-first, and a rail says "there
+   is more this way" where a grid would imply the set is complete. */
+
+/* The .shelf / .vcard family went with components/video-card.tsx: /topics dropped the
+   per-leaf video shelves for one ranked grid, and nothing has rendered these since.
+   The grid's own geometry is .ygrid below. */
+
+/* ————— The recent feed: YouTube's grid geometry, this app's tokens —————
+   Deliberately not .vcard. The shelves stack title-then-channel because they
+   are 15rem rails; a 4-up grid reads faster with the face beside the title,
+   which is what YouTube does and what the eye is already trained on. */
+/* One grid, two users: the feed and the pattern rows. .pgrid only differs in its gap. */
+.ygrid, .pgrid { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 16px 14px; }
+/* Four across, and a page of twelve is then exactly the 4x3 block you are looking at. It was
+   three for as long as the feed paid a column to a left filter rail; the rail is two ruled lines
+   now (.fbar above) and the column came back. */
+@media (max-width: 60rem) {
+  .ygrid, .pgrid { grid-template-columns: repeat(2, minmax(0,1fr)); }
+}
+
+.ycard { display: block; color: inherit; text-decoration: none; }
+.ycard:hover { text-decoration: none; }
+.ycard:hover .ytitle { color: var(--primary); }
+
+.ythumb {
+  position: relative; display: block; aspect-ratio: 16/9; overflow: hidden;
+  background: var(--muted); border: 1px solid var(--border); border-radius: 8px;
+}
+.ythumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+@media (prefers-reduced-motion: no-preference) {
+  .ythumb img { transition: transform 200ms ease-out; }
+  .ycard:hover .ythumb img { transform: scale(1.03); }
+}
+.ylen {
+  position: absolute; right: 5px; bottom: 5px; padding: 0 4px; border-radius: 3px;
+  background: rgba(0,0,0,0.8); color: #fff; font-size: 10px; font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+/* the breakout score takes the slot YouTube uses for LIVE / NEW: it is the sort key */
+.ymult {
+  position: absolute; left: 5px; bottom: 5px; padding: 1px 5px; border-radius: 3px;
+  background: var(--v-make); color: #fff; font-size: 11px; font-weight: 700;
+  font-variant-numeric: tabular-nums; letter-spacing: -0.01em;
+}
+.ymult.t5 { background: #1f8a4c; }
+.ymult.t3 { background: #3f8f5f; }
+.ymult.t2 { background: #6b7f74; }
+.yshort {
+  position: absolute; left: 5px; top: 5px; padding: 0 4px; border-radius: 3px;
+  background: rgba(0,0,0,0.7); color: #fff; font-size: 9px; font-weight: 700;
+  letter-spacing: 0.06em;
+}
+.ybody { display: flex; gap: 10px; padding: 9px 0 0; }
+.ymeta { min-width: 0; }
+.ytitle {
+  font-size: 12.5px; font-weight: 600; line-height: 1.32; margin: 0 0 3px;
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden;
+}
+/* block, not inline: the mockup broke these two lines with a <br>, and the component
+   stacks them structurally instead. .ychan additionally needs a block box for its
+   ellipsis to have anything to clip against. */
+.ychan {
+  display: block;
+  font-size: 11px; color: var(--muted-foreground);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.ystat {
+  display: block;
+  font-size: 11px; color: var(--muted-foreground); font-variant-numeric: tabular-nums;
+}
+.yself { color: var(--primary); font-weight: 700; }
+
+/* ————— The filter bar: two ruled lines, then the results —————
+   These filters have been a row, then a 158px left rail, and are now a row again — but a row of
+   one-line facets rather than of stacked blocks, which is what made the first version tall. The
+   rail cost more than it bought: five labels stacked above their keys plus a boxed tag well sat
+   between the heading and the first thumbnail, taller than two rows of cards, and it took a
+   column off a grid that was drawn for four. Two lines now. Line one is the four short facets
+   with the count and the search pushed to its end; line two is the tag strip. Hairlines rather
+   than boxes, the same vocabulary the rest of the board is ruled in. */
+/* Both lines ride in one sticky block. The rail this replaced was sticky, with a comment saying
+   the filters are how you get back out of a long list and so cannot scroll away above it; the
+   flat bar dropped that, and at 48 per page a reader four thousand pixels down had to scroll the
+   whole way back to change a window or clear a tag. The background is the board's, not the
+   card's: without it the thumbnails read straight through the keys. Static under the prose
+   measure, where the bars wrap to several rows and pinning them would eat the screen — which is
+   what the rail's own narrow-width rule did for the same reason. */
+.fbars {
+  position: sticky; top: 0; z-index: 20; margin-top: 12px;
+  background: #f2f0ef;
+}
+@media (max-width: 60rem) { .fbars { position: static; } }
+.fbars + .ygrid, .fbars + .note { margin-top: 14px; }
+.fbar {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 7px 16px;
+  padding: 9px 0; border-bottom: 1px solid var(--border);
+}
+/* A basis rather than 0. At `flex: 1 1 0` the strip never forced a wrap of its own row, so it
+   simply absorbed whatever the label, the button and the coverage note left — on a 360px phone
+   that was 60-90px, about one tag key. A real basis makes the row wrap instead of crushing it. */
+.tagbar .keys { flex: 1 1 24rem; min-width: 0; align-items: flex-start; }
+.tagbar { align-items: flex-start; }
+/* The label, the button and the note sit on the strip's first row rather than in the middle of
+   it, now that the strip is a block that can be several rows tall in either state. */
+.tagbar .klabel, .kmore, .tcap { margin-top: 4px; }
+/* Says what it holds back, not that there is more. Underlined text rather than a bordered key:
+   it selects nothing, and it must not read as one more facet value in a row of them. */
+.kmore {
+  font: inherit; font-size: 10.5px; padding: 2px 0; flex: 0 0 auto;
+  border: 0; background: transparent; color: var(--primary);
+  text-decoration: underline; text-underline-offset: 2px; cursor: pointer;
+}
+.kmore:hover { color: var(--foreground); }
+.tcap {
+  font-size: 9.5px; color: var(--muted-foreground); opacity: 0.7; flex: 0 0 auto;
+  margin-left: auto; white-space: nowrap;
+}
+/* A limit of the whole facet, stated beside its keys. Muted and unbordered so it does not read as
+   a thirteenth thing to click, but visible — it was a `title` for one commit and that put it out
+   of reach of every touch device and every keyboard. */
+.kcap {
+  font-size: 9.5px; color: var(--muted-foreground); opacity: 0.7; white-space: nowrap;
+  margin-left: 1px;
+}
+
+/* Keys, not lists and not dropdowns. Every facet here has two to six short values, and a row of
+   keys reads faster than a stack of sentences. The label sits beside its keys rather than above
+   them: four labels on their own lines were four lines of chrome for four words.
+   Selected is ink-filled rather than brand-blue: blue is this board's link and primary colour,
+   and four blue blocks competed with the thumbnails for the eye. */
+.keys { display: inline-flex; align-items: center; gap: 7px; }
+.klabel {
+  font-size: 9px; text-transform: uppercase; letter-spacing: 0.1em;
+  color: var(--muted-foreground); opacity: 0.7; white-space: nowrap;
+}
+.krow { display: flex; flex-wrap: wrap; gap: 4px; }
+.key {
+  font: inherit; font-size: 11px; line-height: 1.5; padding: 2px 8px;
+  border: 1px solid var(--border); border-radius: 3px; background: var(--card);
+  color: var(--muted-foreground); cursor: pointer;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .key { transition: border-color 120ms ease, color 120ms ease; }
+}
+.key:hover { border-color: var(--muted-foreground); color: var(--foreground); }
+.key.on {
+  background: var(--foreground); border-color: var(--foreground); color: var(--background);
+  font-weight: 700;
+}
+.key .kn { font-size: 9.5px; opacity: 0.6; margin-left: 5px; font-variant-numeric: tabular-nums; }
+.key.on .kn { opacity: 0.75; }
+/* .krow.tags has no rule of its own, and that is the fix rather than an omission.
+   Tags ran to dozens and the strip has now been three things. First a 16-key slice inside a 142px
+   masked well, which capped them twice and left six reachable by nothing. Then one nowrap line
+   scrolled sideways under a right-edge fade, which cost four defects at once: `overflow-y: hidden`
+   on a row exactly one key tall clipped the board's focus ring on every key, the suppressed
+   scrollbar sat on an axis a plain wheel does not drive in Firefox, the fade was unconditional so
+   it half-erased the last key even with nothing overflowing — and no scroll position ever made
+   that key legible, since a mask positions against the padding box and not the scrolled content.
+   Now it is plain `.krow`: wrapped, in both states. Open renders more keys, it does not switch
+   layout mode. Twelve still land on one line at the board's width, and below it they wrap, which
+   is the only honest behaviour for a control whose contract is that nothing is hidden. */
+
+/* The readout closes the line, so it keeps the auto margin — but it is now the last thing on the
+   row rather than the thing that shoved the search off the end of it. */
+.shopcount { font-size: 12px; margin-left: auto; font-variant-numeric: tabular-nums; }
+.shopcount .of { color: var(--muted-foreground); font-weight: 400; }
+/* The field leads this row, and a facet's label is 9px micro-caps starting at the same left edge,
+   so it sits a hair tighter than the 16px that separates the facet groups from each other: the
+   search is what you reach for first, not a fifth facet. */
+.fbar > .srch { margin-right: -4px; }
+
+.prow { border-top: 1px solid var(--border); padding: 14px 0 4px; }
+.prow:first-of-type { border-top: 0; }
+.phead { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin-bottom: 9px; }
+.plabel { font-size: 13px; font-weight: 700; }
+.pinf {
+  font-size: 9px; font-weight: 700; letter-spacing: 0.06em; color: var(--inf);
+  border: 1px solid color-mix(in srgb, var(--inf) 35%, transparent);
+  border-radius: 3px; padding: 0 5px;
+}
+.pleaf {
+  font-size: 10px; color: var(--v-unserved);
+  border: 1px solid color-mix(in srgb, var(--v-unserved) 35%, transparent);
+  border-radius: 3px; padding: 0 5px;
+}
+.pstat { font-size: 10px; color: var(--muted-foreground); font-variant-numeric: tabular-nums; }
+.ppromote {
+  margin-left: auto; font-size: 11px; border: 1px solid var(--primary); color: var(--primary);
+  background: var(--card); border-radius: 4px; padding: 2px 10px; font-family: inherit;
+}
+.ppromote.padd { border-color: var(--v-unserved); color: var(--v-unserved); }
+.ppromote.pfloor { border-color: var(--border); color: var(--muted-foreground); }
+.pevidence {
+  font-size: 10px; color: var(--muted-foreground); margin: 9px 0 0;
+  border-left: 2px solid color-mix(in srgb, var(--inf) 40%, transparent);
+  padding-left: 9px; line-height: 1.6;
+}
+.pgrid { gap: 14px; }
+.plegend {
+  display: flex; gap: 16px; flex-wrap: wrap; font-size: 10px; color: var(--muted-foreground);
+  border-top: 1px solid var(--border); margin-top: 6px; padding-top: 10px;
+}
+
+.sparkdate { color: var(--muted-foreground); }
+
+/* The breakout badge in vidIQ's own ramp: their outlier UI runs blue into purple, so a vendor
+   number wears vendor colours instead of borrowing this board's verdict green. */
+/* The same badge, out of the thumbnail and into a table cell. */
+.ymult.inline { position: static; display: inline-block; }
+/* A video vidIQ did not measure. It reads as a caption rather than as a score, because it is
+   not one — but it occupies the same corner, so the absence is visible. */
+.ynoscore {
+  background: rgba(0,0,0,0.55); font-weight: 500; font-size: 9px; letter-spacing: 0.04em;
+}
+.ymult { background: #2f6fed; }
+.ymult.t5 { background: #4f5ae8; }
+.ymult.t3 { background: #6b5ce0; }
+.ymult.t2 { background: #7c7f96; }
+
+/* Momentum, beside the channel name rather than stamped on the thumbnail: it is a fact about
+   the video's trajectory, not part of the artwork. Every state says its own word — a video we
+   cannot judge must not be left looking like a flat one. */
+.ymom {
+  display: inline-block; padding: 0 4px; border-radius: 3px; vertical-align: 1px;
+  font-size: 9px; font-weight: 700; letter-spacing: 0.03em; cursor: help;
+}
+.ymom.climbing { background: color-mix(in srgb, var(--v-make) 14%, transparent); color: #12803c; }
+.ymom.steady { background: var(--secondary); color: var(--muted-foreground); }
+.ymom.flat { background: color-mix(in srgb, var(--v-crowded) 12%, transparent); color: #c0343a; }
+.ymom.unmeasured { background: transparent; color: var(--muted-foreground); font-weight: 500; }
+
+/* The topic each card carries. The feed used to say this once per shelf heading; with the
+   shelves gone it belongs on the card, quiet enough not to compete with the title. */
+.ytopic { font-size: 11px; opacity: 0.6; overflow: hidden; text-overflow: ellipsis;
+  white-space: nowrap; }
