@@ -89,17 +89,29 @@ export function LeaderboardTable({ channels }: { channels: SlimChannel[] }) {
     <>
       <div className="controls">
         <span className="note">rank by</span>
-        <div className="tabs">
+        <div className="tabs" role="group" aria-label="rank by">
           {RANK_MODES.map((m) => (
-            <button key={m} type="button" className={m === mode ? "on" : undefined} onClick={() => setMode(m)}>
+            <button
+              key={m}
+              type="button"
+              className={m === mode ? "on" : undefined}
+              aria-pressed={m === mode}
+              onClick={() => setMode(m)}
+            >
               {m}
             </button>
           ))}
         </div>
         <span className="note">window</span>
-        <div className="tabs">
+        <div className="tabs" role="group" aria-label="window">
           {WINDOWS.map((w) => (
-            <button key={w} type="button" className={w === win ? "on" : undefined} onClick={() => setWin(w)}>
+            <button
+              key={w}
+              type="button"
+              className={w === win ? "on" : undefined}
+              aria-pressed={w === win}
+              onClick={() => setWin(w)}
+            >
               {w}
             </button>
           ))}
@@ -107,6 +119,7 @@ export function LeaderboardTable({ channels }: { channels: SlimChannel[] }) {
         <select
           value={niche}
           onChange={(e) => setNiche(e.target.value)}
+          aria-label="filter by niche"
           title={niches.length === 0 ? "no niche data in this build yet" : undefined}
         >
           <option value="all">all niches</option>
