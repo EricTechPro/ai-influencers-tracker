@@ -1,0 +1,14 @@
+# No build system and no dependencies on purpose: pipeline/ is stdlib only.
+# This file exists to configure pytest and ruff.
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["pipeline", "."]
+python_files = ["test_*.py"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
