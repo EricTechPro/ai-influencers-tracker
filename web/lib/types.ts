@@ -335,3 +335,48 @@ export interface Meta {
   discovery: { trending_ok: boolean; reason: string | null }
   target: { mode: string; rank: number; window_days: number }
 }
+
+export interface RecentRow {
+  video_id: string
+  title: string
+  published_at: string
+  view_count: number | null
+  duration_s: number | null
+  type: "short" | "long"
+  channel_id: string
+  channel_name: string
+  /** vidIQ's own breakout score. A vendor number: we never recompute or round it,
+   *  and null means vidIQ did not return one, not that the video underperformed. */
+  breakout_score: number | null
+  pattern_id: string | null
+}
+
+export type PatternAction = "promote" | "add_to_leaf" | "below_floor"
+
+export interface PatternRow {
+  pattern_id: string
+  label: string
+  evidence: string[]
+  creator_count: number
+  existing_leaf: string | null
+  action: PatternAction
+}
+
+export interface RecentCoverage {
+  channels_requested: number
+  batches_ok: number
+  batches_failed: number
+  missing_channel_ids: string[]
+}
+
+export interface RecentBundle {
+  version: number
+  generated_at: string
+  source: "vidiq"
+  fetched_at: string | null
+  window: string | null
+  coverage: RecentCoverage
+  videos: RecentRow[]
+  patterns: PatternRow[]
+  trust: Record<string, string>
+}

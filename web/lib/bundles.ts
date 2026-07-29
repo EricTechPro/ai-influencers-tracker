@@ -12,6 +12,7 @@ import type {
   ChannelsBundle,
   Meta,
   OpportunitiesBundle,
+  RecentBundle,
   SnapshotsBundle,
   TopicCommentsFile,
   TopicPagesBundle,
@@ -46,6 +47,10 @@ export function loadOpportunities(): OpportunitiesBundle {
 
 export function loadTopicPages(): TopicPagesBundle {
   return load("topic_pages.json")
+}
+
+export function loadRecent(): RecentBundle {
+  return load("recent.json")
 }
 
 export function loadSnapshots(): SnapshotsBundle {
