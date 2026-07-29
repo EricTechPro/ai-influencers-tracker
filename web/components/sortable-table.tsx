@@ -71,7 +71,12 @@ export function SortableHeader<K extends string>({
                 ? ("descending" as const)
                 : ("ascending" as const)
               : ("none" as const)
-          const arrow = !sortable ? "" : active ? (sortDir === -1 ? " ▾" : " ▴") : " ↕"
+          // The indicator is its own element pinned to one edge rather than a
+          // character appended to the label. Appended, it sat immediately after
+          // the text, so it landed in a different place in every column: after
+          // "#", after "channel", and hard against the right rule on the
+          // numeric ones. Pinned, the whole row of them lines up.
+          const arrow = !sortable ? "" : active ? (sortDir === -1 ? "▾" : "▴") : "↕"
           return (
             <th
               key={col.key}
@@ -80,9 +85,14 @@ export function SortableHeader<K extends string>({
               title={col.tip}
             >
               {sortable ? (
-                <button type="button" className="thsort" onClick={() => onSort(col.key)}>
-                  {col.label}
-                  {arrow}
+                <button
+                  type="button"
+                  className={active ? "thsort on" : "thsort"}
+                  onClick={() => onSort(col.key)}
+                  title={`Sort by ${col.label}`}
+                >
+                  <span className="thlabel">{col.label}</span>
+                  <span className="tharrow" aria-hidden="true">{arrow}</span>
                 </button>
               ) : (
                 col.label

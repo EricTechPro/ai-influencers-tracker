@@ -4,7 +4,10 @@ _synthesize/. _db/assets/ is regenerable like every other _db/ path: safe to del
 module rebuilds it, and the web route reads it straight off disk.
 
 Idempotent + cheap: a channel whose file already exists is skipped unless --force is passed,
-so a re-run only pays for channels that failed or are new.
+so a re-run only pays for channels that failed or are new. That skip happens after the
+channels.list fetch, though, not before it: a run where every file already exists still
+spends the fetch's quota units, the same way snapshot.py's daily sweep always re-fetches
+every roster channel regardless of what changed.
 """
 from __future__ import annotations
 
@@ -70,10 +73,13 @@ def sync(roster: list[dict], fetched: dict[str, dict], force: bool = False,
             continue
         try:
             data = download(url)
+            _write_atomic(path, data)
         except (urllib.error.URLError, OSError):
+            # Covers both sides of the network act: a download error (bad host, timeout)
+            # and a write error (disk full, permissions) are the same kind of failure here,
+            # and neither may take the rest of the roster down with it.
             failed.append(channel_id)
             continue
-        _write_atomic(path, data)
         written.append(channel_id)
     return {"written": written, "skipped": skipped, "failed": failed}
 

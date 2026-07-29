@@ -6,6 +6,7 @@ import { RANK_MODES, WINDOWS } from "@/lib/types"
 import {
   cardModel,
   panelBuilding,
+  peekStats,
   rankedChannels,
   sparkWindow,
   type SlimChannel,
@@ -17,9 +18,11 @@ import { GrowthCard } from "./growth-card"
 export function GrowthPanel({
   channels,
   sparks,
+  coverage,
 }: {
   channels: SlimChannel[]
   sparks: Record<string, SparkPoint[]>
+  coverage?: Record<string, { videos: number; comments: number | null }>
 }) {
   const [mode, setMode] = useState<RankMode>("growth")
   const [win, setWin] = useState<WindowKey>("90d")
@@ -95,6 +98,7 @@ export function GrowthPanel({
                   sparkWindow(sparks[c.channel_id] ?? [], c.subscriber_delta[win])
                 )}
                 window={win}
+                stats={peekStats(c, coverage?.[c.channel_id])}
               />
             ))}
           </div>

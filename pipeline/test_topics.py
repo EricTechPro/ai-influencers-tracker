@@ -157,3 +157,46 @@ def test_rollup_counts_reach_every_ancestor(ait_root):
                                    "claude-code-subagents": {"videos": 4, "creators": 3}})
     assert rolled["claude-code"] == {"videos": 13, "creators": 10, "leaves": 2}
     assert "claude-code-mcp-setup" not in rolled
+
+
+SIMPLE_TREE = {
+    "version": 1,
+    "topics": [{"id": "n8n", "label": "n8n agent workflows", "shape": "tutorial",
+                "aliases": ["zapier", "n8n"]}],
+}
+
+
+def test_membership_requires_more_than_a_passing_mention_in_a_description():
+    """A description is a link dump, a sponsor blurb and a tool list. "OpenClaw Tutorial for
+    Beginners" says "zapier" once in its description and was thereby filed under n8n agent
+    workflows, where it showed up on the shelf next to actual n8n tutorials.
+
+    Across the roster that was 7,317 of 16,113 assignments — 45% — and those counts are what the
+    supply band is computed from, so a passing mention was inflating how crowded every topic
+    looked. build_data already draws this line for own-coverage ("a description or tags mention
+    is too weak to suppress an opportunity"); membership is the same question.
+    """
+    strong = {"topic_id": "t", "confidence": 0.6, "matched_on": ["title", "description"]}
+    tagged = {"topic_id": "t", "confidence": 0.45, "matched_on": ["tags"]}
+    weak = {"topic_id": "t", "confidence": 0.3, "matched_on": ["description"]}
+    assert topics.is_member(strong, 0.45) is True
+    assert topics.is_member(tagged, 0.45) is True
+    assert topics.is_member(weak, 0.45) is False
+
+
+def test_the_membership_floor_is_configurable_and_inclusive():
+    weak = {"topic_id": "t", "confidence": 0.3, "matched_on": ["description"]}
+    # A build that wants the old behaviour back sets the floor to the description tier.
+    assert topics.is_member(weak, 0.3) is True
+
+
+def test_a_video_matching_only_on_description_still_records_the_assignment():
+    """The weak match is real evidence and stays in videos.json; it just stops counting as
+    membership. Dropping it would lose the only trace of why the video was ever a candidate."""
+    index = topics.load(SIMPLE_TREE)
+    video = {"title": "Something else entirely", "tags": [],
+             "description": "I also use zapier sometimes"}
+    rows = topics.match_video(video, index)
+    assert [r["topic_id"] for r in rows] == ["n8n"]
+    assert rows[0]["matched_on"] == ["description"]
+    assert topics.is_member(rows[0], 0.45) is False

@@ -25,22 +25,36 @@ function renderHeader(sortKey: Key, sortDir: SortDir) {
 }
 
 describe("SortableHeader aria-sort", () => {
+  // Label and indicator are separate elements so the arrow can be pinned to one
+  // edge across every column; these assert the pairing rather than the exact
+  // markup between them.
+  const arrowFor = (html: string, label: string): string | null => {
+    const cell = html.split("<th").find((chunk) => chunk.includes(`>${label}</span>`))
+    return cell?.match(/class="tharrow"[^>]*>(.)</)?.[1] ?? null
+  }
+
   it("the active descending column", () => {
     const html = renderHeader("a", -1)
     expect(html).toContain('aria-sort="descending"')
-    expect(html).toContain("A ▾")
+    expect(arrowFor(html, "A")).toBe("▾")
   })
 
   it("the active ascending column", () => {
     const html = renderHeader("a", 1)
     expect(html).toContain('aria-sort="ascending"')
-    expect(html).toContain("A ▴")
+    expect(arrowFor(html, "A")).toBe("▴")
   })
 
   it("an inactive but sortable column gets aria-sort=none and the neutral arrow", () => {
     const html = renderHeader("b", -1)
     // "a" is not the active key here, so it must read as unsorted
-    expect(html).toMatch(/aria-sort="none"[^]*?A ↕/)
+    expect(html).toContain('aria-sort="none"')
+    expect(arrowFor(html, "A")).toBe("↕")
+  })
+
+  it("only the active column is marked on, so one alignment reads as one sort", () => {
+    const html = renderHeader("a", -1)
+    expect(html.match(/class="thsort on"/g)).toHaveLength(1)
   })
 
   it("a non-sortable column renders plain text, no button, no aria-sort", () => {

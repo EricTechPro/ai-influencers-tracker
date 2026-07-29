@@ -107,6 +107,30 @@ function avatarIds(): Set<string> {
   return (avatarIdCache = new Set(ids))
 }
 
+/** How much of a channel we have actually pulled, as opposed to what YouTube
+ *  says exists. The gap between `videos` here and the channel's own
+ *  `video_count` is our ingest coverage, which is the thing worth surfacing:
+ *  every other number on the row is only as good as this. */
+export interface ChannelCoverage {
+  /** videos of this channel present in videos.json */
+  videos: number
+  /** comment rows ingested for this channel; null means the ledger has not
+   *  reached it yet, which is a state, not a zero. */
+  comments: number | null
+  /** newest published_at we hold for this channel, or null if we hold none */
+  newestVideoAt: string | null
+}
+
+export function channelCoverage(channelId: string): ChannelCoverage {
+  const videos = channelVideos(channelId)
+  const comments = loadChannelComments(channelId)
+  return {
+    videos: videos.length,
+    comments: comments ? comments.channel.totals.ingested : null,
+    newestVideoAt: videos.length ? videos[videos.length - 1].published_at : null,
+  }
+}
+
 let videosByChannel: Map<string, VideoRow[]> | null = null
 
 /** Server-side slice: all registered videos for one channel, newest last. */

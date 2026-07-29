@@ -14,7 +14,8 @@ import {
 import { RANK_MODES, WINDOWS } from "./types"
 import type { LeafTopicPage, StateCell } from "./types"
 
-const CELL_STATES = ["ok", "bounded", "building", "insufficient_data", "no_baseline", "unavailable"]
+const CELL_STATES = ["ok", "bounded", "building", "blocked", "insufficient_data", "no_baseline",
+  "unavailable"]
 const VERDICTS = ["MAKE_THIS_NOW", "ONLY_IF_UNSERVED", "TOO_EARLY", "SKIP", "INSUFFICIENT_DATA"]
 
 /** haveNeed: subscriber_delta, growth-rate and view_delta building cells carry
@@ -30,6 +31,13 @@ function expectCell(cell: StateCell, path: string, opts: { haveNeed?: boolean } 
   if (cell.state === "bounded") expect(typeof cell.upper, `${path}.upper`).toBe("number")
   if (cell.state === "building" && opts.haveNeed !== false) {
     expect(typeof cell.have, `${path}.have`).toBe("number")
+    expect(typeof cell.need, `${path}.need`).toBe("number")
+  }
+  // A blocked window always says how many of its days are unusable; that count
+  // is the whole difference between "wait" and "this will never complete".
+  if (cell.state === "blocked" && opts.haveNeed !== false) {
+    expect(typeof cell.unusable, `${path}.unusable`).toBe("number")
+    expect(cell.unusable, `${path}.unusable`).toBeGreaterThan(0)
     expect(typeof cell.need, `${path}.need`).toBe("number")
   }
 }
@@ -63,7 +71,7 @@ describe("channels.json", () => {
       expect(typeof c.channel_id, p).toBe("string")
       expect(typeof c.name, p).toBe("string")
       expect(typeof c.handle, p).toBe("string")
-      expect(["ok", "absent"], p).toContain(c.status)
+      expect(["ok", "absent", "corrupt"], p).toContain(c.status)
       expect(typeof c.is_self, p).toBe("boolean")
       expect(["ai-creator", "company", "adjacent", "own", "unknown"], p).toContain(c.category)
       if (c.status === "ok") {

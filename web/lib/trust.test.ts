@@ -7,6 +7,7 @@ import {
   capPctText,
   compactM,
   compactSigned,
+  compactSignedAuto,
   deltaText,
   fmtDate,
   fmtInt,
@@ -106,6 +107,32 @@ describe("formatting helpers", () => {
   it("initials", () => {
     expect(initials("Dan Martell")).toBe("DM")
     expect(initials("AICodeKing")).toBe("A")
+  })
+})
+
+describe("compactSignedAuto: the unit follows the number, not the column", () => {
+  it("picks thousands for thousands and millions for millions", () => {
+    expect(compactSignedAuto(100_000)).toBe("+100k")
+    expect(compactSignedAuto(500_000)).toBe("+500k")
+    expect(compactSignedAuto(2_800_000)).toBe("+2.8M")
+    expect(compactSignedAuto(13_300_000)).toBe("+13.3M")
+  })
+  // The old formatter was millions-only, so every channel under a million views
+  // rendered as "+0.1M" / "+0.04M" — a number you have to decode before you can
+  // compare it to the one on the next row.
+  it("never renders a fraction of a million", () => {
+    expect(compactSignedAuto(100_000)).not.toContain("M")
+    expect(compactSignedAuto(40_000)).toBe("+40k")
+    expect(compactSignedAuto(9_000)).toBe("+9,000")
+  })
+  it("keeps small counts exact, and keeps the sign", () => {
+    expect(compactSignedAuto(0)).toBe("+0")
+    expect(compactSignedAuto(-2_800_000)).toBe("-2.8M")
+    expect(compactSignedAuto(-450)).toBe("-450")
+  })
+  it("drops a trailing .0 rather than printing +3.0M", () => {
+    expect(compactSignedAuto(3_000_000)).toBe("+3M")
+    expect(compactSignedAuto(250_000)).toBe("+250k")
   })
 })
 

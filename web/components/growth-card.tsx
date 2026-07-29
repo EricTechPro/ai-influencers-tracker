@@ -1,13 +1,17 @@
 import Link from "next/link"
 import { bucketText, capDeltaText, capPctText, deltaText, heroScale } from "@/lib/trust"
 import type { CardModel } from "@/lib/growth"
-import { AvatarPeek } from "./avatar"
+import { AvatarPeek, type PeekStat } from "./avatar"
 import { Chip, Derived } from "./trust"
 import { Sparkline } from "./sparkline"
 
 const MEDALS: Record<number, string> = { 1: "🥇", 2: "🥈", 3: "🥉" }
 
-export function GrowthCard({ card, window }: { card: CardModel; window: string }) {
+export function GrowthCard({ card, window, stats }: {
+  card: CardModel
+  window: string
+  stats?: PeekStat[]
+}) {
   const g = card.growth
   const classes = ["gcard"]
   if (card.is_self) classes.push("youcard")
@@ -35,6 +39,7 @@ export function GrowthCard({ card, window }: { card: CardModel; window: string }
             handle={card.handle}
             size={48}
             isSelf={card.is_self}
+            stats={stats}
           />
           {MEDALS[card.rank ?? 0] && (
             <span className="medal" aria-hidden="true">

@@ -9,14 +9,18 @@ VERSION = 3
 def build(ctx) -> dict:
     min_n = ctx.thresholds["min_n"]
     window = ctx.thresholds["supply"]["window_days"]
+    floor = ctx.thresholds["topics"]["membership_min_confidence"]
     pages = []
     per_leaf = {}
     for topic in ctx.topic_index.values():
         if not topics.is_leaf(topic):
             continue
+        # Membership, not every recorded hit: a description-only match is evidence that this
+        # video mentioned the topic, not a claim that it is about it. See topics.is_member.
         matched = [v for v in ctx.videos
                    if topic.id in [a["topic_id"]
-                                   for a in ctx.assignments_by_video.get(v["video_id"], [])]]
+                                   for a in ctx.assignments_by_video.get(v["video_id"], [])
+                                   if topics.is_member(a, floor)]]
         creators = {v["channel_id"] for v in matched}
         per_leaf[topic.id] = {"videos": len(matched), "creators": len(creators)}
         enough = (len(matched) >= min_n["topic_page_min_videos"]

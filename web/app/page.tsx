@@ -1,5 +1,6 @@
 import {
   channelAvatarUrl,
+  channelCoverage,
   loadChannels,
   loadMeta,
   loadOpportunities,
@@ -18,6 +19,12 @@ export default function HomePage() {
   const channels = loadChannels().channels
   const snapshots = loadSnapshots()
   const slim = channels.map((c) => slimChannel(c, channelAvatarUrl(c.channel_id)))
+  const coverage = Object.fromEntries(
+    slim.map((c) => {
+      const { videos, comments } = channelCoverage(c.channel_id)
+      return [c.channel_id, { videos, comments }]
+    })
+  )
   const sparks = Object.fromEntries(
     slim.map((c) => [c.channel_id, sparkAll(snapshots, c.channel_id)])
   )
@@ -43,7 +50,7 @@ export default function HomePage() {
           ranked by subscriber growth rate · below a channel&apos;s measurement floor renders
           &quot;&lt; N&quot;
         </p>
-        <GrowthPanel channels={slim} sparks={sparks} />
+        <GrowthPanel channels={slim} sparks={sparks} coverage={coverage} />
       </section>
       {/* Seven columns, two of them gauges, do not fit the 64rem reading
           measure the rest of the app is set to. This section breaks out to the

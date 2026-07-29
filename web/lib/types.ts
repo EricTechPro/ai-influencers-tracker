@@ -8,7 +8,11 @@ export const WINDOWS: WindowKey[] = ["7d", "14d", "30d", "90d", "180d", "365d"]
 export type CellState =
   | "ok"
   | "bounded"
+  /** fewer dates exist than the window needs; the sweep fills this in */
   | "building"
+  /** the dates exist but one or more cannot be used, so no amount of waiting
+   *  completes this window. `unusable` counts the holes. */
+  | "blocked"
   | "insufficient_data"
   | "no_baseline"
   | "unavailable"
@@ -28,6 +32,8 @@ export interface StateCell {
   /** building only */
   have?: number
   need?: number
+  /** blocked only: how many of the window's days are unusable */
+  unusable?: number
 }
 
 export type RankMode = "growth" | "general" | "subscribers" | "views"
@@ -43,7 +49,10 @@ export interface ChannelRow {
   lang: string | null
   category: "ai-creator" | "company" | "adjacent" | "own" | "unknown"
   is_self: boolean
-  status: "ok" | "absent"
+  /** "corrupt" means the freshest snapshot row failed the view_count monotonicity
+   *  check. The channel is still present and still ranks; only its view-derived
+   *  cells are affected, and each of those says so itself. */
+  status: "ok" | "absent" | "corrupt"
   subscriber_count: number | null
   subscriber_bucket: number | null
   view_count: number | null

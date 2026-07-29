@@ -1,3 +1,4 @@
+import type { VideoCardModel } from "@/components/video-card"
 import type { ChannelRow, OpportunityRow, TopicPage, VideoRow } from "./types"
 
 export function findTopic(topics: TopicPage[], id: string): TopicPage | null {
@@ -58,4 +59,39 @@ export function multText(m: VideoRow["multiplier"]): string {
  *  route. Verbatim wording from spec.md's own example, "1 video, need 3". */
 export function insufficientText(videoCount: number, minVideos: number): string {
   return `${videoCount} video${videoCount === 1 ? "" : "s"}, need ${minVideos}`
+}
+
+/** A topic's videos as cards, best first. "Best" is the channel's own
+ *  multiplier where there is one, falling back to raw views, so a small
+ *  channel's breakout is not buried under a large channel's routine upload. */
+export function topVideoCards(
+  videos: VideoRow[],
+  channels: ChannelRow[],
+  avatarFor: (channelId: string) => string | null,
+  limit = 12
+): VideoCardModel[] {
+  const byId = new Map(channels.map((c) => [c.channel_id, c]))
+  return videos
+    .map((v) => {
+      const c = byId.get(v.channel_id)
+      return {
+        video_id: v.video_id,
+        title: v.title,
+        published_at: v.published_at,
+        view_count: v.view_count,
+        duration_s: v.duration_s,
+        type: v.type,
+        channel_id: v.channel_id,
+        channel_name: c?.name ?? v.channel_id,
+        channel_avatar: avatarFor(v.channel_id),
+        multiplier: v.multiplier.state === "ok" ? v.multiplier.value : null,
+        still_growing: v.traction.still_growing,
+      }
+    })
+    .sort((a, b) => {
+      const rank = (x: VideoCardModel) =>
+        x.multiplier !== null ? x.multiplier * 1e12 : (x.view_count ?? 0)
+      return rank(b) - rank(a)
+    })
+    .slice(0, limit)
 }

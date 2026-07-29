@@ -1,73 +1,110 @@
 import Link from "next/link"
-import { loadOpportunities, loadTopicPages } from "@/lib/bundles"
-import { findOpp } from "@/lib/topic"
+import {
+  channelAvatarUrl,
+  loadChannels,
+  loadOpportunities,
+  loadTopicPages,
+  videosById,
+} from "@/lib/bundles"
+import { findOpp, topVideoCards } from "@/lib/topic"
+import { fmtInt } from "@/lib/trust"
 import { VerdictBadge } from "@/components/trust"
-import type { OpportunityRow, TopicPage } from "@/lib/types"
+import { VideoCard } from "@/components/video-card"
+import type { LeafTopicPage, TopicPage } from "@/lib/types"
 
+const PER_SHELF = 8
+
+/**
+ * Topics, as the videos they are actually made of.
+ *
+ * This page used to be an indented list of slugs and counts — "1,936 videos ·
+ * 55 creators" — which ranks topics well and says nothing about what is in
+ * them. The counts are the summary; the videos are the thing. So each leaf now
+ * opens as a shelf of its best-performing videos, ranked by each channel's own
+ * multiplier where it has one, so a small channel's breakout is not buried
+ * under a big channel's routine upload.
+ */
 export default function TopicsIndexPage() {
   const topics = loadTopicPages().topics
   const opps = loadOpportunities().rows
+  const channels = loadChannels().channels
   const roots = topics.filter((t) => t.parent_id === null)
+  const leafById = new Map(
+    topics.filter((t): t is LeafTopicPage => t.is_leaf).map((t) => [t.topic_id, t])
+  )
+
+  const leavesUnder = (t: TopicPage): LeafTopicPage[] =>
+    t.is_leaf
+      ? [leafById.get(t.topic_id)!]
+      : t.children.flatMap((id) => {
+          const child = topics.find((x) => x.topic_id === id)
+          return child ? leavesUnder(child) : []
+        })
+
   return (
-    <section>
+    <section className="breakout">
       <div className="section-kicker">
-        <span className="kicker">ALL TOPICS</span>
+        <span className="kicker">WHAT THE NICHE IS MAKING</span>
         <span className="rule" />
         <span className="cap">
-          {topics.filter((t) => t.is_leaf).length} leaves ·{" "}
-          {topics.filter((t) => !t.is_leaf).length} parents
+          {topics.filter((t) => t.is_leaf).length} topics ·{" "}
+          {fmtInt(roots.reduce((n, r) => n + r.video_count, 0))} videos
         </span>
       </div>
-      <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
-        {roots.map((t) => (
-          <TopicNode key={t.topic_id} topic={t} topics={topics} opps={opps} depth={0} />
-        ))}
-      </ul>
-    </section>
-  )
-}
+      <p className="note">
+        every topic opened as its best-performing videos · ranked by each channel&apos;s own
+        multiplier where it has one, otherwise by views · a card links straight to the video
+      </p>
 
-function TopicNode({
-  topic,
-  topics,
-  opps,
-  depth,
-}: {
-  topic: TopicPage
-  topics: TopicPage[]
-  opps: OpportunityRow[]
-  depth: number
-}) {
-  const opp = topic.is_leaf ? findOpp(opps, topic.topic_id) : null
-  const children = topic.is_leaf
-    ? []
-    : topic.children
-        .map((id) => topics.find((t) => t.topic_id === id))
-        .filter((t): t is TopicPage => t !== undefined)
-  return (
-    <li style={{ paddingLeft: depth * 20, marginBottom: 6 }}>
-      <Link href={`/topics/${topic.topic_id}`} className="num">
-        {topic.topic_id}
-      </Link>{" "}
-      <span className="muted">
-        {topic.label} · {topic.video_count} videos · {topic.creator_count} creators
-      </span>{" "}
-      {topic.is_leaf ? (
-        opp ? (
-          <VerdictBadge verdict={opp.verdict} />
-        ) : (
-          <span className="chip">not scored</span>
-        )
-      ) : (
-        <span className="chip">parent</span>
-      )}
-      {children.length > 0 && (
-        <ul style={{ listStyle: "none", padding: 0, marginTop: 6 }}>
-          {children.map((c) => (
-            <TopicNode key={c.topic_id} topic={c} topics={topics} opps={opps} depth={depth + 1} />
-          ))}
-        </ul>
-      )}
-    </li>
+      {roots.map((root) => (
+        <div key={root.topic_id} className="tgroup">
+          <div className="tgroup-head">
+            <h2>{root.label}</h2>
+            <span className="mono10">
+              {fmtInt(root.video_count)} videos · {fmtInt(root.creator_count)} creators
+            </span>
+          </div>
+
+          {leavesUnder(root).map((leaf) => {
+            const opp = findOpp(opps, leaf.topic_id)
+            const cards = topVideoCards(
+              videosById(leaf.video_ids),
+              channels,
+              channelAvatarUrl,
+              PER_SHELF
+            )
+            return (
+              <div key={leaf.topic_id} className="shelf">
+                <div className="shelf-head">
+                  <Link href={`/topics/${leaf.topic_id}`} className="shelf-title">
+                    {leaf.label}
+                  </Link>
+                  <span className="mono10">
+                    {fmtInt(leaf.video_count)} videos · {fmtInt(leaf.creator_count)} creators
+                  </span>
+                  {opp ? (
+                    <VerdictBadge verdict={opp.verdict} />
+                  ) : (
+                    <span className="chip">not scored</span>
+                  )}
+                  <Link href={`/topics/${leaf.topic_id}`} className="shelf-all">
+                    open topic →
+                  </Link>
+                </div>
+                {cards.length === 0 ? (
+                  <p className="note">no videos registered on this topic yet</p>
+                ) : (
+                  <div className="shelf-rail">
+                    {cards.map((v) => (
+                      <VideoCard key={v.video_id} v={v} />
+                    ))}
+                  </div>
+                )}
+              </div>
+            )
+          })}
+        </div>
+      ))}
+    </section>
   )
 }

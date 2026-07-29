@@ -69,28 +69,54 @@ export function Avatar({
  * none, and `:focus-within` on the tabbable wrapper hands the keyboard the
  * same affordance the mouse gets.
  */
+/** One line in the peek card. `value` is already formatted; `null` renders as
+ *  the two-character unmeasured state rather than as a zero. */
+export interface PeekStat {
+  label: string
+  value: string | null
+  /** shown under the value in smaller type, e.g. a bucket or a denominator */
+  note?: string | null
+}
+
 export function AvatarPeek({
   src,
   name,
   handle,
   size = 20,
   isSelf = false,
+  stats,
 }: {
   src: string | null
   name: string
   handle?: string | null
   size?: number
   isSelf?: boolean
+  /** The basics worth having without leaving the row: how big this channel is,
+   *  and how much of it we have actually pulled. */
+  stats?: PeekStat[]
 }) {
   return (
     <span className="avpeek" tabIndex={0} aria-label={name}>
       <Avatar src={src} name={name} size={size} isSelf={isSelf} />
       <span className="avpop" aria-hidden="true">
-        <Avatar src={src} name={name} size={176} isSelf={isSelf} className="avpop-face" />
+        <Avatar src={src} name={name} size={132} isSelf={isSelf} className="avpop-face" />
         <span className="avpop-meta">
           <b>{name}</b>
           {handle && <span className="mono10">@{handle}</span>}
         </span>
+        {stats && stats.length > 0 && (
+          <span className="avpop-stats">
+            {stats.map((s) => (
+              <span className="avpop-stat" key={s.label}>
+                <span className="k">{s.label}</span>
+                <span className="v num">
+                  {s.value ?? "--"}
+                  {s.note && <span className="n2"> {s.note}</span>}
+                </span>
+              </span>
+            ))}
+          </span>
+        )}
       </span>
     </span>
   )

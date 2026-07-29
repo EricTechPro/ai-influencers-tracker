@@ -6,6 +6,12 @@ import functools
 from . import comments, config, growth, snapshot, util, vidiq
 
 
+def _g() -> dict:
+    """The growth threshold block. filter_monotonic's knobs live in config, and growth.py stays
+    pure by taking them as arguments, so the read happens here at the call site."""
+    return config.thresholds()["growth"]
+
+
 def _snapshot_files():
     directory = config.raw_dir() / "snapshots"
     return sorted(directory.glob("*.json")) if directory.exists() else []
@@ -29,7 +35,8 @@ def channel_series(channel_id: str) -> list[dict]:
     for row in merged:
         if row.get("subscriber_bucket") is None:
             row["subscriber_bucket"] = growth.bucket_width(row.get("subscriber_count"))
-    return growth.filter_monotonic(merged)
+    return growth.filter_monotonic(merged, view_drop_tolerance=_g()["view_drop_tolerance"],
+                                   rebase_min_days=_g()["rebase_min_days"])
 
 
 @functools.cache
@@ -44,7 +51,9 @@ def _all_video_rows() -> dict[str, list[dict]]:
 
 def video_series(video_id: str) -> list[dict]:
     return growth.filter_monotonic(sorted(_all_video_rows().get(video_id, []),
-                                          key=lambda r: r["date"]))
+                                          key=lambda r: r["date"]),
+                                   view_drop_tolerance=_g()["view_drop_tolerance"],
+                                   rebase_min_days=_g()["rebase_min_days"])
 
 
 def all_videos(roster: list[dict]) -> list[dict]:

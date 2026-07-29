@@ -13,6 +13,12 @@ import urllib.request
 
 from . import config, growth, util
 
+
+def _g() -> dict:
+    """The growth threshold block. filter_monotonic's knobs live in config, and growth.py stays
+    pure by taking them as arguments, so the read happens here at the call site."""
+    return config.thresholds()["growth"]
+
 DEFAULT_URL = "https://mcp.vidiq.com/mcp"
 CHANNEL_STATS_COST = 5
 KEYWORD_COST = 5
@@ -156,7 +162,8 @@ def channel_stats_series(client: VidIQ, channel_id: str, start: dt.date,
             "video_count": point.get("videos", point.get("videoCount")),
             "source": "vidiq_backfill",
         })
-    return growth.filter_monotonic(rows)
+    return growth.filter_monotonic(rows, view_drop_tolerance=_g()["view_drop_tolerance"],
+                                   rebase_min_days=_g()["rebase_min_days"])
 
 
 def merge_backfill(existing: list[dict], bought: list[dict]) -> list[dict]:

@@ -12,6 +12,10 @@
     "high_min_repo_velocity": 100.0,
     "high_requires": "either"
   },
+  "topics": {
+    "membership_min_confidence": 0.45,
+    "_membership_min_confidence_comment": "How strong an alias hit must be before a video counts as being ABOUT a topic, on topics.FIELD_CONFIDENCE (title 0.6, tags 0.45, description 0.3). At 0.45 a title or a tag counts and a description alone does not: descriptions are link dumps and sponsor reads, and one stray 'zapier' was filing an OpenClaw tutorial under n8n agent workflows. 45% of all assignments were description-only, and membership is what the supply band counts, so this changes how crowded every topic looks - which is exactly why it lives here. Weak hits are still recorded in videos.json as evidence."
+  },
   "min_n": {
     "topic_page_min_videos": 3,
     "topic_page_min_creators": 2,
@@ -46,6 +50,10 @@
       365
     ],
     "subscriber_floor_buckets": 5,
+    "view_drop_tolerance": 0.05,
+    "rebase_min_days": 14,
+    "_view_drop_tolerance_comment": "How far view_count may fall in a day before the reading is called corrupt, as a fraction of the last good value. YouTube removes views it judges invalid, so a healthy channel ticks down a fraction of a percent (observed: 22,009 -> 21,991). A bad read falls off a cliff (observed: 192,901 -> 36,338, and a vidIQ series that went 21,103 -> 606). 0.05 admits the first and still rejects the second. Changing it changes which view deltas are measurable at all, which is why it lives here.",
+    "_rebase_min_days_comment": "Consecutive self-consistent days after a break before the series is read as re-based rather than as one long corruption. Holding the pre-break high-water mark forever cost Anthropic 238 days of flawless rising views over a single December drop. 14 outlasts a bad-data burst (Robin Ebers is 3 days deep and still refused) without demanding that a channel climb back over a number that was itself suspect.",
     "default_rank_mode": "growth",
     "default_window_days": 90,
     "rank_weights": {

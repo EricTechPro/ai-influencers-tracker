@@ -16,6 +16,23 @@ export function signedPct(fraction: number): string {
   return (fraction >= 0 ? "+" : "-") + (Math.abs(fraction) * 100).toFixed(1) + "%"
 }
 
+/**
+ * A signed count at whatever unit actually fits it: +9,000 / +250k / +2.8M.
+ *
+ * The view-delta column used to be millions-only, so a channel that gained
+ * 100,000 views read "+0.1M" and one that gained 40,000 read "+0.04M" — every
+ * value below a million arrived as a fraction you had to decode before you
+ * could compare it to the row above. The unit now follows the number.
+ */
+export function compactSignedAuto(n: number): string {
+  const sign = n >= 0 ? "+" : "-"
+  const abs = Math.abs(n)
+  const trim = (v: number) => String(Number(v.toFixed(1)))
+  if (abs >= 1_000_000) return sign + trim(abs / 1_000_000) + "M"
+  if (abs >= 10_000) return sign + trim(abs / 1000) + "k"
+  return sign + fmtInt(abs)
+}
+
 /** Wireframe view-delta format: +3.1M, +0.02M. */
 export function compactM(n: number): string {
   const m = Math.abs(n) / 1_000_000
@@ -112,6 +129,14 @@ export function bucketText(width: number | null): string {
   return width === null ? "" : "±" + fmtInt(width)
 }
 
+/** Why this window has no number, in the terms of the thing that is wrong.
+ *  "building" is a promise that waiting helps; "blocked" is the opposite, and
+ *  conflating them told you to wait for days that had already happened. */
+function blockedText(cell: StateCell): string {
+  const n = cell.unusable ?? 0
+  return n === 1 ? "1 bad day" : `${n} bad days`
+}
+
 function buildingText(cell: StateCell): string {
   // subs_per_1k_views building cells carry no window bookkeeping; the state
   // still renders as itself, never as a number and never as fake bookkeeping.
@@ -124,6 +149,7 @@ export function deltaText(cell: StateCell): string {
   if (cell.state === "ok") return signedInt(cell.value ?? 0)
   if (cell.state === "bounded") return `< ${fmtInt(cell.upper ?? 0)}`
   if (cell.state === "building") return buildingText(cell)
+  if (cell.state === "blocked") return blockedText(cell)
   return "--"
 }
 
@@ -131,7 +157,23 @@ export function pctText(cell: StateCell): string {
   if (cell.state === "ok") return signedPct(cell.value ?? 0)
   if (cell.state === "bounded") return `< ${((cell.upper ?? 0) * 100).toFixed(1)}%`
   if (cell.state === "building") return buildingText(cell)
+  if (cell.state === "blocked") return blockedText(cell)
   return "--"
+}
+
+/** The sentence behind a stateful cell, for a tooltip. */
+export function stateExplain(cell: StateCell): string | undefined {
+  if (cell.state === "building") {
+    return `Collecting: ${cell.have ?? 0} of the ${cell.need ?? 0} days this window needs have been ` +
+      "snapshotted so far. The daily sweep fills the rest in."
+  }
+  if (cell.state === "blocked") {
+    const n = cell.unusable ?? 0
+    return `Every day this ${cell.need ?? 0}-day window needs was snapshotted, but ${n} of them ` +
+      `failed the view-count check and cannot be used. That day has already happened, so waiting ` +
+      "will not fix it; a window that avoids it will measure."
+  }
+  return undefined
 }
 
 export const SCORE_FORMULA = "score = 40·velocity + 25·keyword + 25·supply gap + 10·staleness"

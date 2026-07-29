@@ -9,6 +9,7 @@ import {
   sparkWindow,
 } from "./growth"
 import type { SlimChannel } from "./growth"
+import { WINDOWS } from "./types"
 import type { StateCell, WindowKey } from "./types"
 
 const W: WindowKey = "90d"
@@ -143,6 +144,61 @@ describe("cardModel", () => {
   })
 })
 
+describe("sparkAll: a view_count corruption flag must not hide a usable subscriber_count", () => {
+  // pipeline/growth.py delta(): "status only ever reflects a MONOTONIC_KEYS violation, so it only
+  // gates those metrics. subscriber_count is never monotonicity-checked ... so a view_count
+  // corruption flag on a row must not also mask that row's otherwise-usable subscriber_count."
+  // Filtering the subscriber series on status broke that: Pat Simmons' 90d delta reads +19,020
+  // from 2,680 -> 21,700, while the line skipped every corrupt day and drew 6,800 -> 21,700, so
+  // the chart under the number disagreed with it by 4,120 subscribers.
+  const bundle = {
+    generated_at: "",
+    version: 3,
+    dates_present: [],
+    dates_missing: [],
+    channels: {
+      c1: {
+        handle: "c1",
+        series: [
+          { date: "2026-04-30", status: "corrupt", subscriber_count: 2680 },
+          { date: "2026-06-11", status: "ok", subscriber_count: 6800 },
+          { date: "2026-07-28", status: "ok", subscriber_count: 21700 },
+        ],
+      },
+    },
+  } as unknown as Parameters<typeof sparkAll>[0]
+
+  it("keeps a corrupt day that still carries a subscriber count", () => {
+    expect(sparkAll(bundle, "c1")).toEqual([
+      { date: "2026-04-30", value: 2680 },
+      { date: "2026-06-11", value: 6800 },
+      { date: "2026-07-28", value: 21700 },
+    ])
+  })
+
+  it("so the line's endpoints reproduce the delta exactly", () => {
+    const cell: StateCell = { state: "ok", value: 19020, from: "2026-04-30", to: "2026-07-28" }
+    const pts = sparkWindow(sparkAll(bundle, "c1"), cell)
+    expect(pts[pts.length - 1] - pts[0]).toBe(cell.value)
+  })
+
+  it("a day with no subscriber count at all is still dropped", () => {
+    const missing = {
+      ...bundle,
+      channels: {
+        c1: {
+          handle: "c1",
+          series: [
+            { date: "2026-04-30", status: "ok", subscriber_count: null },
+            { date: "2026-07-28", status: "ok", subscriber_count: 21700 },
+          ],
+        },
+      },
+    } as unknown as Parameters<typeof sparkAll>[0]
+    expect(sparkAll(missing, "c1")).toEqual([{ date: "2026-07-28", value: 21700 }])
+  })
+})
+
 describe("sparkWindow: the line and the number beside it describe the same span", () => {
   const dated = [
     { date: "2025-07-28", value: 2530 },
@@ -174,6 +230,34 @@ describe("sparkWindow: the line and the number beside it describe the same span"
 
   it("a cell carrying no window dates plots nothing rather than guessing a span", () => {
     expect(sparkWindow(dated, { state: "building", value: null })).toEqual([])
+  })
+})
+
+describe("the chart reconciles with the number, across the whole real roster", () => {
+  // The card prints a delta and draws a line directly under it. If the line's
+  // own endpoints do not reproduce that delta, one of them is lying, and which
+  // one is not obvious to a reader. This is the invariant that keeps them
+  // honest for every channel and every window at once.
+  it("last minus first equals the delta, for every measurable window", () => {
+    const channels = loadChannels().channels.map((c) => slimChannel(c, null))
+    const snapshots = loadSnapshots()
+    let checked = 0
+    for (const c of channels) {
+      const all = sparkAll(snapshots, c.channel_id)
+      for (const w of WINDOWS) {
+        const cell = c.subscriber_delta[w]
+        if (cell.state !== "ok" || cell.value === null) continue
+        const pts = sparkWindow(all, cell)
+        if (pts.length < 2) continue
+        expect(
+          pts[pts.length - 1] - pts[0],
+          `${c.name} ${w}: line says ${pts[pts.length - 1] - pts[0]}, delta says ${cell.value}`
+        ).toBe(cell.value)
+        checked++
+      }
+    }
+    // Guard against the assertion silently checking nothing.
+    expect(checked).toBeGreaterThan(50)
   })
 })
 

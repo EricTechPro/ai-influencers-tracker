@@ -88,6 +88,28 @@ def test_sync_counts_a_download_failure_and_continues(ait_root):
     assert not avatars.avatar_path("UCcole").exists()
 
 
+def test_sync_counts_a_write_failure_and_continues(ait_root, monkeypatch):
+    """A disk-full or permission error on the write side must be isolated exactly like a
+    download error: the failing channel is counted, its siblings still land."""
+    roster = [{"channel_id": "UCcole"}, {"channel_id": "UCdan"}]
+    fetched = {"UCcole": _item("UCcole", {"medium": {"url": "http://x/cole.jpg"}}),
+              "UCdan": _item("UCdan", {"medium": {"url": "http://x/dan.jpg"}})}
+    download = FakeDownload({"http://x/cole.jpg": b"COLEDATA", "http://x/dan.jpg": b"DANDATA"})
+
+    real_write = avatars._write_atomic
+
+    def flaky_write(path, data):
+        if "UCcole" in path.name:
+            raise OSError("disk full")
+        real_write(path, data)
+
+    monkeypatch.setattr(avatars, "_write_atomic", flaky_write)
+    result = avatars.sync(roster, fetched, download=download)
+    assert result == {"written": ["UCdan"], "skipped": [], "failed": ["UCcole"]}
+    assert avatars.avatar_path("UCdan").read_bytes() == b"DANDATA"
+    assert not avatars.avatar_path("UCcole").exists()
+
+
 def test_sync_marks_a_channel_absent_from_the_fetch_as_failed(ait_root):
     roster = [{"channel_id": "UCcole"}]
     result = avatars.sync(roster, fetched={}, download=FakeDownload({}))

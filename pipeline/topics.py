@@ -187,6 +187,22 @@ def match_video(video: dict, index: dict[str, Topic]) -> list[dict]:
     return rows
 
 
+def is_member(assignment: dict, min_confidence: float) -> bool:
+    """Whether an assignment is strong enough to say the video is *about* the topic.
+
+    Every alias hit is recorded, because a hit is evidence and evidence is kept. But a hit in a
+    description is not the same claim as a hit in a title: descriptions carry link dumps, sponsor
+    reads and tool lists, so "OpenClaw Tutorial for Beginners" saying "zapier" once put it on the
+    n8n agent workflows shelf beside real n8n tutorials. Across the roster that was 45% of all
+    assignments, and topic membership is what the supply band counts, so a passing mention was
+    making every topic look more crowded than it is.
+
+    build_data draws exactly this line for own-coverage already: "a description or tags mention is
+    too weak to suppress an opportunity." This is the same judgment applied to the same evidence.
+    """
+    return assignment.get("confidence", 0) >= min_confidence
+
+
 def coverage_rate(videos: list[dict], assignments: Iterable[dict]) -> float | None:
     """Assigned videos over total. None on an empty roster: missing is a state, never a zero."""
     total = len({v["video_id"] for v in videos})

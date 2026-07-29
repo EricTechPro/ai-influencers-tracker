@@ -217,28 +217,44 @@ img.avatar { object-fit: cover; background: var(--secondary); }
    panel, and :focus-within so the keyboard gets what the mouse gets. */
 .avpeek { position: relative; display: inline-flex; vertical-align: middle; border-radius: 999px; }
 .avpeek:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+/* Opens to the side, not above.
+   Above-placement clipped straight off the viewport on the first row of any
+   table, which is the row people hover first. Beside the avatar there is
+   always room, and a table's own vertical rhythm keeps it clear of the rows
+   above and below. */
 .avpop {
-  position: absolute; left: 50%; bottom: calc(100% + 10px); transform: translateX(-50%) scale(0.96);
+  position: absolute; left: calc(100% + 12px); top: 50%; transform: translateY(-50%) scale(0.96);
   z-index: 60; display: flex; flex-direction: column; align-items: center; gap: 8px;
-  padding: 12px; width: 200px;
+  padding: 12px; width: 216px;
   background: var(--card); border: 1px solid var(--border);
   box-shadow: 0 12px 32px -8px rgba(40, 39, 40, 0.28);
   opacity: 0; visibility: hidden; pointer-events: none;
   transition: opacity 110ms ease-out, transform 110ms ease-out, visibility 110ms;
 }
 .avpeek:hover .avpop, .avpeek:focus-within .avpop {
-  opacity: 1; visibility: visible; transform: translateX(-50%) scale(1);
+  opacity: 1; visibility: visible; transform: translateY(-50%) scale(1);
 }
 /* The panel's own little pointer, drawn as a rotated square so it inherits the
    card fill and the hairline border on the two edges that show. */
 .avpop::after {
-  content: ""; position: absolute; top: 100%; left: 50%; width: 9px; height: 9px;
-  margin: -5px 0 0 -4.5px; transform: rotate(45deg);
-  background: var(--card); border-right: 1px solid var(--border); border-bottom: 1px solid var(--border);
+  content: ""; position: absolute; right: 100%; top: 50%; width: 9px; height: 9px;
+  margin: -4.5px -5px 0 0; transform: rotate(45deg);
+  background: var(--card); border-left: 1px solid var(--border); border-bottom: 1px solid var(--border);
 }
 .avpop-face { border-radius: 4px; box-shadow: none; }
 .avpop-meta { display: flex; flex-direction: column; align-items: center; gap: 2px; text-align: center; min-width: 0; max-width: 100%; }
 .avpop-meta b { font-size: 12px; font-weight: 600; line-height: 1.3; }
+
+/* The basics, without leaving the row. Label left, value right, so the numbers
+   form a column you can read down rather than a paragraph you have to parse. */
+.avpop-stats {
+  display: flex; flex-direction: column; gap: 3px; width: 100%;
+  padding-top: 8px; border-top: 1px solid var(--border);
+}
+.avpop-stat { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+.avpop-stat .k { font-size: 10px; color: var(--muted-foreground); white-space: nowrap; }
+.avpop-stat .v { font-size: 11px; font-weight: 600; white-space: nowrap; }
+.avpop-stat .n2 { font-size: 9px; font-weight: 400; color: var(--muted-foreground); }
 @media (prefers-reduced-motion: reduce) { .avpop { transition: none; } }
 
 /* Wider tracks than the mockup board's 14.5rem: the card now leads with a
@@ -520,3 +536,89 @@ select.chip:hover { border-color: var(--muted-foreground); }
 .tbl td.stateline {
   color: var(--muted-foreground); font-size: 12px; padding: 1.1rem 10px; text-align: center;
 }
+
+/* Sortable headers.
+   Every column here sorts, which was not discoverable: the indicator was a
+   character glued to the label, so it sat in a different spot in each column
+   and read as decoration. It is now a fixed slot on the trailing edge of the
+   cell, giving all of them one alignment, and the header shows its hit area on
+   hover so "can I click this" answers itself. */
+.thsort {
+  display: flex; align-items: baseline; gap: 6px; width: 100%;
+  justify-content: space-between;
+  border: 0; background: none; font: inherit; color: inherit; cursor: pointer;
+  padding: 2px 0; text-transform: inherit; letter-spacing: inherit;
+}
+/* Right-aligned columns keep their label next to the numbers it heads, and the
+   arrow still lands on the cell's right edge — so every indicator in the row
+   sits on the same side whatever the column's alignment. */
+.tbl th.r .thsort { justify-content: flex-end; }
+.thsort .thlabel { flex: none; white-space: nowrap; }
+.thsort .tharrow {
+  flex: none; width: 0.75em; text-align: center; font-size: 10px;
+  color: var(--muted-foreground); opacity: 0.45;
+}
+.thsort:hover { color: var(--foreground); }
+.thsort:hover .tharrow { opacity: 0.9; }
+.thsort.on { color: var(--foreground); font-weight: 600; }
+.thsort.on .tharrow { opacity: 1; color: var(--primary); }
+
+/* Topic shelves.
+   A topic is a pile of videos, so it is drawn as one. Horizontal rails rather
+   than a grid: the shelf is a sample ranked best-first, and a rail says "there
+   is more this way" where a grid would imply the set is complete. */
+.tgroup { margin-top: 2.2rem; }
+.tgroup-head {
+  display: flex; align-items: baseline; gap: 10px;
+  padding-bottom: 6px; border-bottom: 1px solid var(--border);
+}
+.tgroup-head h2 { margin: 0; font-size: 1.05rem; font-weight: 700; letter-spacing: -0.01em; }
+
+.shelf { margin-top: 1.1rem; }
+.shelf-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; }
+.shelf-title { font-size: 13px; font-weight: 600; color: var(--foreground); }
+.shelf-title:hover { color: var(--primary); }
+.shelf-all { margin-left: auto; font-size: 11px; white-space: nowrap; }
+
+/* Scroll-snap so a flick lands on a card edge rather than mid-thumbnail. */
+.shelf-rail {
+  display: grid; grid-auto-flow: column; grid-auto-columns: 15rem;
+  gap: 10px; overflow-x: auto; scroll-snap-type: x proximity;
+  padding-bottom: 6px;
+}
+.shelf-rail > * { scroll-snap-align: start; }
+
+.vcard { display: flex; flex-direction: column; gap: 7px; color: inherit; text-decoration: none; }
+.vcard:hover { text-decoration: none; }
+.vcard:hover .vtitle { color: var(--primary); }
+.vthumb {
+  position: relative; display: block; aspect-ratio: 16 / 9; overflow: hidden;
+  background: var(--muted); border: 1px solid var(--border);
+}
+.vthumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+@media (prefers-reduced-motion: no-preference) {
+  .vthumb img { transition: transform 200ms ease-out; }
+  .vcard:hover .vthumb img { transform: scale(1.04); }
+}
+/* Duration and format sit on the image, so they carry their own backdrop
+   rather than relying on whatever the frame happens to be. */
+.vlen, .vshort {
+  position: absolute; bottom: 5px; font-size: 10px; line-height: 15px;
+  padding: 0 5px; border-radius: 3px; color: #fff; background: rgba(20, 19, 20, 0.82);
+}
+.vlen { right: 5px; }
+.vshort { left: 5px; background: rgba(229, 72, 77, 0.92); letter-spacing: 0.04em; }
+
+.vbody { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.vtitle {
+  font-size: 12px; font-weight: 500; line-height: 1.35;
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden;
+}
+.vchan { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--muted-foreground); min-width: 0; }
+.vmeta { font-size: 10px; color: var(--muted-foreground); }
+.vmult {
+  color: var(--v-make); font-weight: 600;
+  border: 1px solid color-mix(in srgb, var(--v-make) 35%, transparent);
+  border-radius: 3px; padding: 0 4px;
+}
+.vgrow { color: var(--primary); }

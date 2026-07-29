@@ -459,3 +459,103 @@ Rejected alternatives:
 
 `verdict.decide` never reads a video count. `topic_pages.state` carries `insufficient_data` plus
 `min_videos` so the page can render the shortfall rather than hiding the route.
+
+## 0010 — A video deletion is an event, not a corrupt reading
+
+### Context
+
+`filter_monotonic` marked any day where a `MONOTONIC_KEYS` metric went backwards as `corrupt`, and
+a corrupt day is excluded from every window computed over those metrics. The keys were
+`("view_count", "video_count")`.
+
+Both halves misfired against real data:
+
+- **`video_count` decreases whenever a creator deletes or unlists a video.** That is a normal thing
+  for a channel to do. Of the 72 channels on the roster, **58 first broke on `video_count`** —
+  Anthropic at 114 → 107, Austin Marchese at 485 → 484, corbin at 363 → 362. Nothing anywhere in
+  the pipeline computes a delta over `video_count`, so the check protected no number while taking
+  each of those channels' *view* deltas down with it.
+- **`view_count` decreases slightly when YouTube removes views it judges invalid.** Observed live:
+  22,009 → 21,991 and 19,367 → 19,363. A strict `<` treats a 0.08% correction the same as
+  192,901 → 36,338.
+
+The result was 3,723 of 24,841 stored snapshot rows flagged corrupt, 20 of 72 channels unable to
+report a 7d view delta and 44 of 72 unable to report a 90d one — surfacing on the board as
+`building 0/7` on channels that had a full year of history sitting in `_raw/`.
+
+A second problem sat underneath: `vidiq.py` writes the verdict into `_raw/backfill/*.json` at fetch
+time, so those 3,723 rows carried `status: "corrupt"` on disk and no rule change could clear them.
+
+### Decision
+
+`MONOTONIC_KEYS` is `("view_count",)`. A deletion is an event the channel had every right to
+perform, and it is not evidence about the view count.
+
+A `view_count` fall is corrupt only past `thresholds.growth.view_drop_tolerance` (0.05), measured
+**relative** to the last good value — 500 views is noise on a million and a cliff on a thousand.
+The tolerance is a threshold rather than a constant because changing it changes which cells the
+dashboard can measure at all.
+
+`corrupt` is `filter_monotonic`'s own verdict, so it is **cleared and re-derived from the values on
+every build** rather than inherited from disk. Values are still never repaired; only the judgment
+about them is recomputed. Any other status (`absent`, written by `snapshot.py`) is not this
+function's to overturn and passes through.
+
+Effect: corrupt rows 3,723 → 1,283, channels short of a full 7d run 20 → 3, short of 90d 44 → 6.
+What remains is genuine — the mildest surviving drop is −5.0% and the worst are −98%, including the
+vidIQ series (21,103 → 606) that `test_growth` already pinned as really corrupt.
+
+Rejected alternatives:
+
+- **Wait for the daily sweep to fill the gaps.** It cannot. These are historical days already
+  snapshotted; a new day only helps if nothing ticks backwards, and across 72 channels deletions
+  and view purges happen continuously. The data was never missing, only condemned.
+- **Repair the values on the way in.** Spec §7's standing rule: correcting a value on the way in
+  makes the error invisible on the way out.
+- **Drop monotonicity entirely.** Then Robin Ebers' live 2,854,571 → 49,605 becomes a −98% view
+  delta rendered as measurement.
+
+### A third misfire: the high-water mark never expired
+
+Clearing the first two got corrupt rows from 3,723 to 1,283 and still left channels reading
+`building` on flawless data. The cause was the baseline itself: comparison is against the last
+*accepted* point, so after one bad reading a channel stayed condemned until it climbed back over a
+number that was itself suspect. **Anthropic dropped once in December 2025 and lost the following
+238 days** — a pristine rising series, 31,306,618 to 31,964,440 views, thrown away in full. Pat
+Simmons lost 240 days the same way.
+
+So a condemned run that lasts `thresholds.growth.rebase_min_days` (14) is re-judged against its
+own first point instead of against the mark it already failed. Long enough to outlast a burst of
+bad data — Robin Ebers is three days into a live 2,854,571 -> 49,605 break and is still refused —
+without demanding a channel out-climb a suspect number.
+
+The run is re-judged by `filter_monotonic` itself rather than required to be flawless. Demanding
+flawless was too brittle to fire: Anthropic's 238 days contain a single wobble, which is nothing
+across eight months and was enough to condemn all of them. The re-judged run must still yield
+`rebase_min_days` consecutive clean days, which is the same thing as "enough data to measure a
+window with".
+
+**The reading that broke the sequence stays corrupt in every case.** The step into a new baseline
+is a discontinuity, and no window may be computed across it — which is why Pat Simmons still reads
+`building` at 365d on 364 of 365 usable days, and should.
+
+Final state: corrupt rows **3,723 -> 46**, and every one of the 46 is the discontinuity step
+itself (-97.1%, -81.2%, -53.3%, -51.7%, -44.1% ...). Channels able to report a 7d view delta go
+**52/72 -> 71/72**; 90d goes **30/72 -> 68/72**.
+
+What still reads `building` is honest and only two things: a channel with a discontinuity inside
+the requested window, and a channel not tracked long enough to fill it (Tristen O'Brien has 122
+days of history against a 365-day window). The second is the only kind that calendar time fixes.
+
+### Scope
+
+`growth.MONOTONIC_KEYS`, `growth.filter_monotonic` (tolerance, re-derivation, and re-basing),
+`growth._longest_ok_streak`, `thresholds.growth.view_drop_tolerance` and
+`thresholds.growth.rebase_min_days`, and the call sites in `read.py` and `vidiq.py` that pass them.
+`growth.VIEW_DROP_TOLERANCE` and `growth.REBASE_MIN_DAYS` mirror config for direct calls and
+`test_growth` proves they never drift.
+
+`web/lib/growth.ts sparkAll` stopped filtering the subscriber series on `status`, which this work
+exposed: a `view_count` flag was hiding a usable `subscriber_count`, so the card's line disagreed
+with the delta printed above it by 4,120 subscribers on Pat Simmons. `growth.test.ts` now asserts
+last-minus-first equals the delta for every channel and window in the real bundles.

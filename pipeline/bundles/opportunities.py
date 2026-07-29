@@ -10,15 +10,21 @@ TRUST = {"demand": "derived", "supply": "derived", "verdict": "derived", "score"
 def build(ctx) -> dict:
     thresholds = ctx.thresholds
     window = thresholds["supply"]["window_days"]
+    floor = thresholds["topics"]["membership_min_confidence"]
     hunches = set(config.targets().get("hunches") or [])
     all_repos = list(ctx.repos.get("search") or []) + list(ctx.repos.get("trending") or [])
     linked = github.link_topics(all_repos, ctx.topic_index)
 
     rows = []
     for leaf in topics.leaves(ctx.topic_index):
+        # Membership, not every recorded hit. This is the count the supply band is computed
+        # from, so a video that merely name-drops the topic in its description must not make the
+        # niche look more crowded than it is. See topics.is_member.
         in_window = [
             v for v in ctx.videos
-            if leaf.id in [a["topic_id"] for a in ctx.assignments_by_video.get(v["video_id"], [])]
+            if leaf.id in [a["topic_id"]
+                           for a in ctx.assignments_by_video.get(v["video_id"], [])
+                           if topics.is_member(a, floor)]
             and util.days_between(util.parse_ts(v["published_at"]).date(), ctx.today) <= window
         ]
         creators = {v["channel_id"] for v in in_window}

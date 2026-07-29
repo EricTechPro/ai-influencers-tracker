@@ -1,5 +1,6 @@
 // Card models for home panel 1. Pure and client-safe: the server slims the
 // channel rows and precomputes sparkline series; this module never touches fs.
+import type { PeekStat } from "@/components/avatar"
 import type {
   ChannelRow,
   RankMode,
@@ -102,8 +103,11 @@ export function rankedChannels(
   mode: RankMode,
   window: WindowKey
 ): SlimChannel[] {
+  // Only "absent" drops a channel. "corrupt" is a verdict on the freshest row's view_count and
+  // nothing else, so excluding it here silently vanished a live channel from the board over a
+  // metric the growth ranking does not even use.
   return channels
-    .filter((c) => c.status === "ok")
+    .filter((c) => c.status !== "absent")
     .slice()
     .sort(
       (a, b) =>
@@ -146,11 +150,22 @@ export interface SparkPoint {
   value: number
 }
 
-/** Full subscriber-count series for one channel; the client slices per window. */
+/**
+ * Full subscriber-count series for one channel; the client slices per window.
+ *
+ * Deliberately not filtered on `status`. A row's status only ever reports a
+ * monotonicity violation on view_count, and pipeline/growth.py is explicit
+ * that such a flag "must not also mask that row's otherwise-usable
+ * subscriber_count" — its own delta ignores status for this metric. Filtering
+ * here broke that agreement in the one place it is most visible: Pat Simmons'
+ * 90d delta reads +19,020 from 2,680 to 21,700, while a status-filtered line
+ * skipped every corrupt day and drew 6,800 to 21,700, disagreeing with the
+ * number printed directly above it by 4,120 subscribers.
+ */
 export function sparkAll(snapshots: SnapshotsBundle, channelId: string): SparkPoint[] {
   const series = snapshots.channels[channelId]?.series ?? []
   return series
-    .filter((d) => d.status === "ok" && d.subscriber_count !== null)
+    .filter((d) => d.subscriber_count !== null)
     .map((d) => ({ date: d.date, value: d.subscriber_count as number }))
 }
 
@@ -172,4 +187,45 @@ export function sparkWindow(points: SparkPoint[], cell: StateCell): number[] {
   const { from, to } = cell
   if (!from || !to) return []
   return points.filter((p) => p.date >= from && p.date <= to).map((p) => p.value)
+}
+
+/**
+ * The basics for the hover card, built once so every surface says the same
+ * thing. Two halves: how big this channel is, and how much of it we hold.
+ *
+ * The second half is the one that is easy to miss and hardest to reconstruct
+ * later — "159 videos" on a channel whose own count is 493 means every derived
+ * number on that row is drawn from a third of its output. A count we do not
+ * have renders as the unmeasured state, never as a zero.
+ */
+export function peekStats(
+  row: SlimChannel,
+  coverage?: { videos: number; comments: number | null }
+): PeekStat[] {
+  const int = (n: number | null | undefined) =>
+    n === null || n === undefined ? null : Math.round(n).toLocaleString("en-US")
+  const stats: PeekStat[] = [
+    {
+      label: "subscribers",
+      value: int(row.subscriber_count),
+      note: row.subscriber_bucket ? `±${int(row.subscriber_bucket)}` : null,
+    },
+    { label: "total views", value: int(row.view_count) },
+    { label: "videos", value: int(row.video_count) },
+  ]
+  if (coverage) {
+    // "72 of 70" is not a fraction, it is a fact about deletions: we keep every
+    // video we have ever seen, and a channel's own count only reflects what is
+    // public today. Saying "of N" when we hold more than N reads as a bug, so
+    // that case names what it actually is instead.
+    const total = row.video_count
+    const over = total !== null && coverage.videos > total
+    stats.push({
+      label: "scraped",
+      value: int(coverage.videos),
+      note: total === null ? null : over ? `${int(total)} still public` : `of ${int(total)}`,
+    })
+    stats.push({ label: "comments", value: int(coverage.comments) })
+  }
+  return stats
 }
