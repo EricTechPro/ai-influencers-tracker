@@ -51,21 +51,34 @@ already reads at speed:
 The existing `.vcard` in `globals.css` stays as it is for the taxonomy shelves. The feed gets a
 sibling class rather than a rewrite of the shared one.
 
-**Controls.** Three segmented toggles, all pure client-side filters over the same bundle:
+**Controls.** Three segmented toggles, all pure client-side filters over the same bundle. Format
+comes first and is rendered a size larger, because it is the first decision:
 
+- **format: videos / shorts / all, default `videos`** (long-form)
 - window: 7d / 14d / 30d, default 7d
-- format: all / long / shorts
-- per channel: max 2 / show all, **default max 2**
+- per channel: max 2 / show all, default max 2
 
-The per-channel cap is not a nicety. Ranking the real 7-day window purely by multiplier puts Samin
-Yasar in 6 of the top 14 slots: his shorts baseline is small, so nearly every short he posts scores
-8-11x. That is one channel flooding the feed, which is the exact failure of the subscriptions page
-this section exists to replace. Capping at 2 per channel is what makes the top 12 read as 9
-different creators.
+Format leads and defaults to long-form because the two formats are different jobs and a mixed list
+asks the eye to do a conversion it cannot do. A 5.2K-view short at 11.8x and a 32.8K-view
+long-form at 19.4x are not comparable decisions. Defaulting to long-form also changes what the page
+is for: it is a "what should I film" page, and the long-form feed answers that directly.
 
-The format filter exists for the same reason in the other direction: a 5.2K-view short at 11.8x and
-a 32.8K-view long-form at 19.4x are not comparable decisions, and mixing them in one ranked list
-asks the eye to do a conversion it cannot do.
+Both effects are visible in the real 7-day window. Ranked with shorts mixed in, Samin Yasar takes 6
+of the top 14 (small shorts baseline, so nearly every short he posts scores 8-11x) and the top of
+the feed is dominated by one channel's quote cards. Filtered to long-form the same window opens with
+Hermes Agent at 19.4x, an Opus 5 build-off at 12.7x, and three independent Opus 5 reviews. The
+second list is the one worth acting on.
+
+Window counts under the default:
+
+| window | long-form | scored | no baseline |
+|---|---|---|---|
+| 7d | 159 | 112 | 47 |
+| 14d | 310 | 209 | 101 |
+| 30d | 649 | 452 | 197 |
+
+The per-channel cap is not a nicety either. It is what keeps a single prolific channel from
+recreating the exact failure of the subscriptions page this section exists to replace.
 
 - Cards sorted by `multiplier.value` descending.
 - Renders the existing `components/video-card.tsx` unchanged except for one thing: the card

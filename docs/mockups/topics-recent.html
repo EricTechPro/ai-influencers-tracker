@@ -69,6 +69,8 @@
 }
 .seg button:last-child { border-right: 0; }
 .seg button.on { background: var(--primary); color: #fff; font-weight: 600; }
+/* format is the first decision, so it is the loudest control */
+.seg.big button { font-size: 12px; padding: 4px 14px; font-weight: 600; }
 
 /* ————— pattern rows ————— */
 .prow { border-top: 1px solid var(--border); padding: 14px 0 4px; }
@@ -133,7 +135,7 @@
       <div class="section-kicker">
         <span class="kicker">WHAT WENT UP THIS WEEK</span>
         <span class="rule"></span>
-        <span class="cap">214 scored of 302 · 7d</span>
+        <span class="cap">112 scored of 159 · 7d · long-form</span>
       </div>
       <p class="note" style="margin:0 0 12px">
         every video published in the window, ranked by views ÷ its own channel's median for its own
@@ -142,24 +144,15 @@
       </p>
 
       <div class="ctrls">
+        <div class="ctrl"><span class="lbl">format</span>
+          <span class="seg big"><button class="on">videos</button><button>shorts</button><button>all</button></span></div>
         <div class="ctrl"><span class="lbl">window</span>
           <span class="seg"><button class="on">7d</button><button>14d</button><button>30d</button></span></div>
-        <div class="ctrl"><span class="lbl">format</span>
-          <span class="seg"><button class="on">all</button><button>long</button><button>shorts</button></span></div>
         <div class="ctrl"><span class="lbl">per channel</span>
           <span class="seg"><button class="on">max 2</button><button>show all</button></span></div>
       </div>
 
       <div class="ygrid">
-
-        <a class="ycard" href="https://youtu.be/6CkhaZbDesY" target="_blank" rel="noreferrer">
-          <span class="ythumb"><img src="https://i.ytimg.com/vi/6CkhaZbDesY/mqdefault.jpg" alt="">
-            <span class="yshort">SHORT</span><span class="ymult">21.0×</span><span class="ylen">1:02</span></span>
-          <span class="ybody"><span class="yav">CA</span><span class="ymeta">
-            <span class="ytitle">Your Sales Pipeline Is About to Get 10x Faster</span>
-            <span class="ychan">Charlie Automates</span><br>
-            <span class="ystat">107K views · 7d ago</span></span></span>
-        </a>
 
         <a class="ycard" href="https://youtu.be/IbFaY3xFpZM" target="_blank" rel="noreferrer">
           <span class="ythumb"><img src="https://i.ytimg.com/vi/IbFaY3xFpZM/mqdefault.jpg" alt="">
@@ -179,33 +172,6 @@
             <span class="ystat">21.5K views · 3d ago</span></span></span>
         </a>
 
-        <a class="ycard" href="https://youtu.be/RaD3G2qD8p4" target="_blank" rel="noreferrer">
-          <span class="ythumb"><img src="https://i.ytimg.com/vi/RaD3G2qD8p4/mqdefault.jpg" alt="">
-            <span class="yshort">SHORT</span><span class="ymult">11.8×</span><span class="ylen">1:15</span></span>
-          <span class="ybody"><span class="yav">SY</span><span class="ymeta">
-            <span class="ytitle">The best AI advice comes from multiple viewpoints, not a single response.</span>
-            <span class="ychan">Samin Yasar</span><br>
-            <span class="ystat">5.2K views · 3d ago</span></span></span>
-        </a>
-
-        <a class="ycard" href="https://youtu.be/Q9S6syJUCF8" target="_blank" rel="noreferrer">
-          <span class="ythumb"><img src="https://i.ytimg.com/vi/Q9S6syJUCF8/mqdefault.jpg" alt="">
-            <span class="yshort">SHORT</span><span class="ymult">11.4×</span><span class="ylen">0:49</span></span>
-          <span class="ybody"><span class="yav">SY</span><span class="ymeta">
-            <span class="ytitle">If you can't defend every claim AI generated, it's still a draft, not a deliverable.</span>
-            <span class="ychan">Samin Yasar</span><br>
-            <span class="ystat">5.0K views · 7d ago</span></span></span>
-        </a>
-
-        <a class="ycard" href="https://youtu.be/orGRrhyhtfc" target="_blank" rel="noreferrer">
-          <span class="ythumb"><img src="https://i.ytimg.com/vi/orGRrhyhtfc/mqdefault.jpg" alt="">
-            <span class="yshort">SHORT</span><span class="ymult tier2">6.6×</span><span class="ylen">0:47</span></span>
-          <span class="ybody"><span class="yav">DM</span><span class="ymeta">
-            <span class="ytitle">Should you SKIP, READ, or STUDY these books if you're a young entrepreneur</span>
-            <span class="ychan">Dan Martell</span><br>
-            <span class="ystat">250K views · 4d ago</span></span></span>
-        </a>
-
         <a class="ycard" href="https://youtu.be/g89FJiNAlEs" target="_blank" rel="noreferrer">
           <span class="ythumb"><img src="https://i.ytimg.com/vi/g89FJiNAlEs/mqdefault.jpg" alt="">
             <span class="ymult tier2">4.6×</span><span class="ylen">15:08</span></span>
@@ -213,33 +179,6 @@
             <span class="ytitle">4 Free Repos That Cut Claude Code Token Usage</span>
             <span class="ychan yself">Eric Tech · you</span><br>
             <span class="ystat">7.5K views · 7d ago</span></span></span>
-        </a>
-
-        <a class="ycard" href="https://youtu.be/dUHpFuUIyi0" target="_blank" rel="noreferrer">
-          <span class="ythumb"><img src="https://i.ytimg.com/vi/dUHpFuUIyi0/mqdefault.jpg" alt="">
-            <span class="yshort">SHORT</span><span class="ymult tier2">4.3×</span><span class="ylen">0:41</span></span>
-          <span class="ybody"><span class="yav">JR</span><span class="ymeta">
-            <span class="ytitle">The FREE GitHub skill that deletes every AI tell.</span>
-            <span class="ychan">Jack Roberts</span><br>
-            <span class="ystat">37.3K views · 2d ago</span></span></span>
-        </a>
-
-        <a class="ycard" href="https://youtu.be/tPl4oRb9LLs" target="_blank" rel="noreferrer">
-          <span class="ythumb"><img src="https://i.ytimg.com/vi/tPl4oRb9LLs/mqdefault.jpg" alt="">
-            <span class="yshort">SHORT</span><span class="ymult tier2">4.2×</span><span class="ylen">0:32</span></span>
-          <span class="ybody"><span class="yav">JR</span><span class="ymeta">
-            <span class="ytitle">Run Claude Code and Cursor for FREE</span>
-            <span class="ychan">Jack Roberts</span><br>
-            <span class="ystat">36.2K views · 7d ago</span></span></span>
-        </a>
-
-        <a class="ycard" href="https://youtu.be/tOThVwny0jE" target="_blank" rel="noreferrer">
-          <span class="ythumb"><img src="https://i.ytimg.com/vi/tOThVwny0jE/mqdefault.jpg" alt="">
-            <span class="yshort">SHORT</span><span class="ymult tier2">3.9×</span><span class="ylen">0:54</span></span>
-          <span class="ybody"><span class="yav">DR</span><span class="ymeta">
-            <span class="ytitle">This Free GitHub Repo Gives Claude Internet Access</span>
-            <span class="ychan">Duncan Rogoff | Learn Claude Code</span><br>
-            <span class="ystat">18.1K views · 7d ago</span></span></span>
         </a>
 
         <a class="ycard" href="https://youtu.be/rD20wJkPUB4" target="_blank" rel="noreferrer">
@@ -253,17 +192,80 @@
 
         <a class="ycard" href="https://youtu.be/7FU98O0JLHs" target="_blank" rel="noreferrer">
           <span class="ythumb"><img src="https://i.ytimg.com/vi/7FU98O0JLHs/mqdefault.jpg" alt="">
-            <span class="ymult tier3">3.4×</span><span class="ylen">23:00</span></span>
+            <span class="ymult tier2">3.4×</span><span class="ylen">23:00</span></span>
           <span class="ybody"><span class="yav">CA</span><span class="ymeta">
             <span class="ytitle">Turn Claude Into A Design GENIUS In 3 Simple Steps</span>
             <span class="ychan">Chase AI</span><br>
             <span class="ystat">145K views · 5d ago</span></span></span>
         </a>
 
+        <a class="ycard" href="https://youtu.be/FrAAxWbxSyE" target="_blank" rel="noreferrer">
+          <span class="ythumb"><img src="https://i.ytimg.com/vi/FrAAxWbxSyE/mqdefault.jpg" alt="">
+            <span class="ymult tier2">3.4×</span><span class="ylen">8:23</span></span>
+          <span class="ybody"><span class="yav">01</span><span class="ymeta">
+            <span class="ytitle">Context Engineering 的全新规则：Claude 5 时代，Claude Code 删掉了 80% 系统提示词</span>
+            <span class="ychan">01Coder</span><br>
+            <span class="ystat">4.6K views · 2d ago</span></span></span>
+        </a>
+
+        <a class="ycard" href="https://youtu.be/W973FsTECa8" target="_blank" rel="noreferrer">
+          <span class="ythumb"><img src="https://i.ytimg.com/vi/W973FsTECa8/mqdefault.jpg" alt="">
+            <span class="ymult tier2">3.1×</span><span class="ylen">10:10</span></span>
+          <span class="ybody"><span class="yav">01</span><span class="ymeta">
+            <span class="ytitle">18 万星 Skills 项目的工程链三件套之三 to-tickets</span>
+            <span class="ychan">01Coder</span><br>
+            <span class="ystat">4.3K views · 5d ago</span></span></span>
+        </a>
+
+        <a class="ycard" href="https://youtu.be/z_7J_iKuSzU" target="_blank" rel="noreferrer">
+          <span class="ythumb"><img src="https://i.ytimg.com/vi/z_7J_iKuSzU/mqdefault.jpg" alt="">
+            <span class="ymult tier2">3.1×</span><span class="ylen">27:44</span></span>
+          <span class="ybody"><span class="yav">PS</span><span class="ymeta">
+            <span class="ytitle">Opus 5: No-Hype Full Review &amp; Testing</span>
+            <span class="ychan">Pat Simmons</span><br>
+            <span class="ystat">64.8K views · 3d ago</span></span></span>
+        </a>
+
+        <a class="ycard" href="https://youtu.be/4kMep3c96kI" target="_blank" rel="noreferrer">
+          <span class="ythumb"><img src="https://i.ytimg.com/vi/4kMep3c96kI/mqdefault.jpg" alt="">
+            <span class="ymult tier3">2.9×</span><span class="ylen">22:41</span></span>
+          <span class="ybody"><span class="yav">KR</span><span class="ymeta">
+            <span class="ytitle">I Tried Laguna S 2.1 So You Don't Have To...</span>
+            <span class="ychan">Kacper Rutkiewicz | AI Made Simple</span><br>
+            <span class="ystat">5.2K views · 5d ago</span></span></span>
+        </a>
+
+        <a class="ycard" href="https://youtu.be/4sAmpcSOVEw" target="_blank" rel="noreferrer">
+          <span class="ythumb"><img src="https://i.ytimg.com/vi/4sAmpcSOVEw/mqdefault.jpg" alt="">
+            <span class="ymult tier3">2.7×</span><span class="ylen">22:19</span></span>
+          <span class="ybody"><span class="yav">AT</span><span class="ymeta">
+            <span class="ytitle">Hermes Agent - Ultimate Crash Course for Beginners (AI Agent)</span>
+            <span class="ychan">Adrian Twarog</span><br>
+            <span class="ystat">22.6K views · 7d ago</span></span></span>
+        </a>
+
+        <a class="ycard" href="https://youtu.be/3OqZHYNKc9A" target="_blank" rel="noreferrer">
+          <span class="ythumb"><img src="https://i.ytimg.com/vi/3OqZHYNKc9A/mqdefault.jpg" alt="">
+            <span class="ymult tier3">2.5×</span><span class="ylen">11:35</span></span>
+          <span class="ybody"><span class="yav">BS</span><span class="ymeta">
+            <span class="ytitle">This Tiny Engine Runs Impossibly Big AI Models Locally! (colibrì)</span>
+            <span class="ychan">Better Stack</span><br>
+            <span class="ystat">68.1K views · 3d ago</span></span></span>
+        </a>
+
+        <a class="ycard" href="https://youtu.be/jbiMx17fEK0" target="_blank" rel="noreferrer">
+          <span class="ythumb"><img src="https://i.ytimg.com/vi/jbiMx17fEK0/mqdefault.jpg" alt="">
+            <span class="ymult tier3">2.4×</span><span class="ylen">9:35</span></span>
+          <span class="ybody"><span class="yav">BM</span><span class="ymeta">
+            <span class="ytitle">Anthropic Just Changed How We Build Skills Forever</span>
+            <span class="ychan">Brock Mesarich | AI for Non Techies</span><br>
+            <span class="ystat">72.4K views · 7d ago</span></span></span>
+        </a>
+
       </div>
 
       <div class="tail">
-        <span class="t1">88 more in this window have no baseline yet</span>
+        <span class="t1">47 more long-form videos in this window have no baseline yet</span>
         <span class="t2">their channel has under 5 mature uploads of that format, so there is nothing
           to divide by. Unmeasured, never sorted as a zero.</span>
         <button>show them</button>
@@ -281,7 +283,7 @@
         topic worth authoring
       </p>
       <p class="note" style="margin:-6px 0 14px;color:var(--inf)">
-        ⓘ the grouping pass has not been built yet, so the two rows below were formed by hand from
+        ⓘ the grouping pass has not been built yet, so the three rows below were formed by hand from
         the real 7-day titles to show the shape. The labels are illustrative; the videos, multipliers
         and creator counts under them are not.
       </p>
@@ -290,51 +292,58 @@
 
         <div class="prow">
           <div class="phead">
-            <span class="plabel">Free repos and skills that cut Claude Code cost</span>
+            <span class="plabel">Hermes Agent crash courses</span>
             <span class="pinf">INFERENCE</span>
-            <span class="pstat">4 videos · 3 creators · avg 4.3× · newest 2d</span>
-            <button class="ppromote">promote to a topic →</button>
+            <span class="pstat">2 videos · 2 creators · avg 11.1× · newest 5d</span>
+            <button class="ppromote" style="border-color:var(--border);color:var(--muted-foreground)">below floor</button>
           </div>
           <div class="pgrid">
-            <a class="ycard" href="#"><span class="ythumb"><img src="https://i.ytimg.com/vi/g89FJiNAlEs/mqdefault.jpg" alt=""><span class="ymult tier2">4.6×</span></span>
-              <span class="ybody"><span class="ymeta"><span class="ytitle">4 Free Repos That Cut Claude Code Token Usage</span><span class="ystat yself">Eric Tech · you · 7.5K</span></span></span></a>
-            <a class="ycard" href="#"><span class="ythumb"><img src="https://i.ytimg.com/vi/dUHpFuUIyi0/mqdefault.jpg" alt=""><span class="ymult tier2">4.3×</span></span>
-              <span class="ybody"><span class="ymeta"><span class="ytitle">The FREE GitHub skill that deletes every AI tell.</span><span class="ystat">Jack Roberts · 37.3K</span></span></span></a>
-            <a class="ycard" href="#"><span class="ythumb"><img src="https://i.ytimg.com/vi/tPl4oRb9LLs/mqdefault.jpg" alt=""><span class="ymult tier2">4.2×</span></span>
-              <span class="ybody"><span class="ymeta"><span class="ytitle">Run Claude Code and Cursor for FREE</span><span class="ystat">Jack Roberts · 36.2K</span></span></span></a>
-            <a class="ycard" href="#"><span class="ythumb"><img src="https://i.ytimg.com/vi/tOThVwny0jE/mqdefault.jpg" alt=""><span class="ymult tier2">3.9×</span></span>
-              <span class="ybody"><span class="ymeta"><span class="ytitle">This Free GitHub Repo Gives Claude Internet Access</span><span class="ystat">Duncan Rogoff · 18.1K</span></span></span></a>
+            <a class="ycard" href="https://youtu.be/IbFaY3xFpZM" target="_blank" rel="noreferrer"><span class="ythumb"><img src="https://i.ytimg.com/vi/IbFaY3xFpZM/mqdefault.jpg" alt=""><span class="ymult">19.4×</span></span>
+              <span class="ybody"><span class="ymeta"><span class="ytitle">I Tested 100+ Hermes Agent Automations. These Are The Best</span><span class="ystat">Dubibubi · 32.8K</span></span></span></a>
+            <a class="ycard" href="https://youtu.be/4sAmpcSOVEw" target="_blank" rel="noreferrer"><span class="ythumb"><img src="https://i.ytimg.com/vi/4sAmpcSOVEw/mqdefault.jpg" alt=""><span class="ymult tier3">2.7×</span></span>
+              <span class="ybody"><span class="ymeta"><span class="ytitle">Hermes Agent - Ultimate Crash Course for Beginners (AI Agent)</span><span class="ystat">Adrian Twarog · 22.6K</span></span></span></a>
           </div>
-          <p class="pevidence">grouped on these titles: “4 Free Repos That Cut Claude Code Token
-            Usage” · “The FREE GitHub skill that deletes every AI tell.” · “Run Claude Code and
-            Cursor for FREE” · “This Free GitHub Repo Gives Claude Internet Access”
-            <br><b>you are already in this one</b> — your own video sits mid-row, so this pattern is
-            confirmation rather than an opening.</p>
+          <p class="pevidence">grouped on these titles: “I Tested 100+ Hermes Agent Automations. These Are The Best” · “Hermes Agent - Ultimate Crash Course for Beginners (AI Agent)”<br><b>the strongest signal on the page and still below the floor.</b> 2 creators, and the floor is 3. A 19.4× alongside a 2.7× from a second channel inside one week is what a topic looks like the week before it is obvious. Watch it, do not author it yet.</p>
         </div>
 
         <div class="prow">
           <div class="phead">
-            <span class="plabel">New-model explainers</span>
+            <span class="plabel">Opus 5 and Claude 5 hands-on reviews</span>
             <span class="pinf">INFERENCE</span>
-            <span class="pstat">2 videos · 2 creators · avg 8.3× · newest 3d</span>
+            <span class="pstat">3 videos · 3 creators · avg 6.4× · newest 2d</span>
+            <button class="ppromote">promote to a topic →</button>
+          </div>
+          <div class="pgrid">
+            <a class="ycard" href="https://youtu.be/JQInc4V6SWg" target="_blank" rel="noreferrer"><span class="ythumb"><img src="https://i.ytimg.com/vi/JQInc4V6SWg/mqdefault.jpg" alt=""><span class="ymult">12.7×</span></span>
+              <span class="ybody"><span class="ymeta"><span class="ytitle">I Made Claude Opus 5 and Fable 5 Build the Same App (Raw Results)</span><span class="ystat">Dubibubi · 21.5K</span></span></span></a>
+            <a class="ycard" href="https://youtu.be/FrAAxWbxSyE" target="_blank" rel="noreferrer"><span class="ythumb"><img src="https://i.ytimg.com/vi/FrAAxWbxSyE/mqdefault.jpg" alt=""><span class="ymult tier2">3.4×</span></span>
+              <span class="ybody"><span class="ymeta"><span class="ytitle">Context Engineering 的全新规则：Claude 5 时代，Claude Code 删掉了 80% 系统提示词</span><span class="ystat">01Coder · 4.6K</span></span></span></a>
+            <a class="ycard" href="https://youtu.be/z_7J_iKuSzU" target="_blank" rel="noreferrer"><span class="ythumb"><img src="https://i.ytimg.com/vi/z_7J_iKuSzU/mqdefault.jpg" alt=""><span class="ymult tier2">3.1×</span></span>
+              <span class="ybody"><span class="ymeta"><span class="ytitle">Opus 5: No-Hype Full Review &amp; Testing</span><span class="ystat">Pat Simmons · 64.8K</span></span></span></a>
+          </div>
+          <p class="pevidence">grouped on these titles: “I Made Claude Opus 5 and Fable 5 Build the Same App (Raw Results)” · “Context Engineering 的全新规则：Claude 5 时代…” · “Opus 5: No-Hype Full Review &amp; Testing”<br><b>3 creators, clears the consensus floor.</b> Three channels independently reviewing the same release in one week, none of them you.</p>
+        </div>
+
+        <div class="prow">
+          <div class="phead">
+            <span class="plabel">Skills as an engineering workflow</span>
+            <span class="pinf">INFERENCE</span>
+            <span class="pstat">2 videos · 2 creators · avg 2.8× · newest 5d</span>
             <button class="ppromote" style="border-color:var(--border);color:var(--muted-foreground)">below floor</button>
           </div>
           <div class="pgrid">
-            <a class="ycard" href="#"><span class="ythumb"><img src="https://i.ytimg.com/vi/JQInc4V6SWg/mqdefault.jpg" alt=""><span class="ymult">12.7×</span></span>
-              <span class="ybody"><span class="ymeta"><span class="ytitle">I Made Claude Opus 5 and Fable 5 Build the Same App (Raw Results)</span><span class="ystat">Dubibubi · 21.5K</span></span></span></a>
-            <a class="ycard" href="#"><span class="ythumb"><img src="https://i.ytimg.com/vi/rD20wJkPUB4/mqdefault.jpg" alt=""><span class="ymult tier2">3.9×</span></span>
-              <span class="ybody"><span class="ymeta"><span class="ytitle">Kimi K3 explained in 13min..</span><span class="ystat">Caleb Writes Code · 147K</span></span></span></a>
+            <a class="ycard" href="https://youtu.be/W973FsTECa8" target="_blank" rel="noreferrer"><span class="ythumb"><img src="https://i.ytimg.com/vi/W973FsTECa8/mqdefault.jpg" alt=""><span class="ymult tier2">3.1×</span></span>
+              <span class="ybody"><span class="ymeta"><span class="ytitle">18 万星 Skills 项目的工程链三件套之三 to-tickets</span><span class="ystat">01Coder · 4.3K</span></span></span></a>
+            <a class="ycard" href="https://youtu.be/jbiMx17fEK0" target="_blank" rel="noreferrer"><span class="ythumb"><img src="https://i.ytimg.com/vi/jbiMx17fEK0/mqdefault.jpg" alt=""><span class="ymult tier3">2.4×</span></span>
+              <span class="ybody"><span class="ymeta"><span class="ytitle">Anthropic Just Changed How We Build Skills Forever</span><span class="ystat">Brock Mesarich · 72.4K</span></span></span></a>
           </div>
-          <p class="pevidence">grouped on these titles: “I Made Claude Opus 5 and Fable 5 Build the
-            Same App (Raw Results)” · “Kimi K3 explained in 13min..”
-            <br><b>2 creators, below the consensus floor of 3</b> — shown, but it cannot be promoted
-            yet. This is what a pattern looks like while it is still forming.</p>
+          <p class="pevidence">grouped on these titles: “18 万星 Skills 项目的工程链三件套之三 to-tickets” · “Anthropic Just Changed How We Build Skills Forever”<br><code>claude-code-skills-authoring</code> already exists as a leaf, so this row would offer <b>add to existing topic</b> rather than a new one.</p>
         </div>
 
         <div class="prow">
           <div class="phead">
             <span class="plabel">no pattern yet</span>
-            <span class="pstat">11 videos · nothing the pass could group with confidence</span>
+            <span class="pstat">5 videos · nothing the pass could group with confidence</span>
             <button class="ppromote" style="border-color:var(--border);color:var(--muted-foreground)">show →</button>
           </div>
         </div>
