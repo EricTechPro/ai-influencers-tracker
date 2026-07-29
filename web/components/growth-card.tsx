@@ -36,8 +36,8 @@ export function GrowthCard({ card, window, stats }: {
 
   // Before and after, the two numbers the delta is the distance between. They are the same
   // endpoints the sparkline labels, and lib/growth's own test pins last-minus-first to the delta.
-  const before = card.spark.length >= 2 ? card.spark[0] : null
-  const after = card.spark.length >= 2 ? card.spark[card.spark.length - 1] : null
+  const before = card.spark.length >= 2 ? card.spark[0].value : null
+  const after = card.spark.length >= 2 ? card.spark[card.spark.length - 1].value : null
 
   // Signed like a ticker: green up, red down. This is a measured quantity, so the colour is
   // reporting its sign. States never get it — "building" is not a loss.

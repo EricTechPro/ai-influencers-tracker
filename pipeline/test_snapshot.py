@@ -121,3 +121,50 @@ def test_a_github_search_failure_mid_run_does_not_kill_the_whole_day(ait_root, m
     assert written["partial_run"] is True
     assert "GitHubError" in written["search_reason"]
     assert written["trending"] == []                      # untouched by the search failure
+
+
+def test_the_metadata_call_keeps_the_view_count_it_already_paid_for(ait_root):
+    """videos.list returns statistics.viewCount in the same response as the title, and it was
+    being thrown away. view_count then came only from the traction snapshot series, which has
+    reached 3,220 of 11,657 videos, so 8,437 cards rendered "views --" for a number YouTube had
+    already handed us. A registry count is exact at seen_at; the series is still preferred when
+    one exists, because it is dated."""
+    snapshot.record_video_metadata("UCcole", [{
+        "id": "v1",
+        "snippet": {"title": "t", "description": "", "tags": [], "channelId": "UCcole",
+                    "publishedAt": "2026-07-20T00:00:00Z"},
+        "contentDetails": {"duration": "PT10M"},
+        "statistics": {"viewCount": "43056"},
+    }])
+    rows = snapshot.registry("UCcole")
+    assert rows["v1"]["view_count"] == 43056
+
+
+def test_a_video_with_no_statistics_block_keeps_a_null_not_a_zero(ait_root):
+    snapshot.record_video_metadata("UCcole", [{
+        "id": "v2",
+        "snippet": {"title": "t", "description": "", "tags": [], "channelId": "UCcole",
+                    "publishedAt": "2026-07-20T00:00:00Z"},
+        "contentDetails": {"duration": "PT10M"},
+    }])
+    assert snapshot.registry("UCcole")["v2"]["view_count"] is None
+
+
+def test_a_video_with_no_duration_does_not_kill_the_sweep(ait_root):
+    """A live broadcast or a video whose contentDetails came back without a duration used to
+    raise straight out of the daily run, so one bad row cost the whole sweep — including the
+    unattended 09:00 launchd one, which has no operator to rerun it. An unparseable duration is
+    missing data: the length is None and the format is unknown, which is a state the surfaces
+    already render."""
+    written = snapshot.record_video_metadata("UCcole", [{
+        "id": "live1",
+        "snippet": {"title": "live", "description": "", "tags": [], "channelId": "UCcole",
+                    "publishedAt": "2026-07-20T00:00:00Z"},
+        "contentDetails": {"duration": ""},
+        "statistics": {"viewCount": "5"},
+    }])
+    row = snapshot.registry("UCcole")["live1"]
+    assert written == 1
+    assert row["duration_s"] is None
+    assert row["type"] is None
+    assert row["view_count"] == 5

@@ -23,11 +23,10 @@ def build(ctx) -> dict:
             continue
         # Membership, not every recorded hit: a description-only match is evidence that this
         # video mentioned the topic, not a claim that it is about it. See topics.is_member.
-        matched = [v for v in ctx.videos
-                   if v["video_id"] not in ctx.excluded_video_ids
-                   and topic.id in [a["topic_id"]
-                                    for a in ctx.assignments_by_video.get(v["video_id"], [])
-                                    if topics.is_member(a, floor)]]
+        matched = topics.members_of(
+            topic.id,
+            [v for v in ctx.videos if v["video_id"] not in ctx.excluded_video_ids],
+            ctx.assignments_by_video, floor, ctx.classified)
         creators = {v["channel_id"] for v in matched}
         per_leaf[topic.id] = {"videos": len(matched), "creators": len(creators)}
         enough = (len(matched) >= min_n["topic_page_min_videos"]

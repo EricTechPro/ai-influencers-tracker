@@ -3,7 +3,6 @@
 import { useMemo, useState } from "react"
 import Link from "next/link"
 import type { OppRowModel } from "@/lib/opportunity"
-import { verdictSentence } from "@/lib/opportunity"
 import type { Verdict } from "@/lib/types"
 import { agoText, fmtInt, SCORE_FORMULA, scoreText } from "@/lib/trust"
 import type { VideoCardModel } from "./video-card"
@@ -76,9 +75,8 @@ export function OpportunityShelves({
             checked={hideCovered}
             onChange={(e) => setHideCovered(e.target.checked)}
           />
-          <span className="lbl">hide topics you have covered</span>
+          <span className="lbl">hide covered</span>
         </label>
-        <span className="cap num">{SCORE_FORMULA}</span>
       </div>
 
       {shown.length === 0 && <div className="empty">no topics match these filters</div>}
@@ -106,24 +104,18 @@ export function OpportunityShelves({
                 {m.row.keyword && <span className="okw"> · &ldquo;{m.row.keyword}&rdquo;</span>}
               </span>
               <span>
-                <b>{fmtInt(cards.length)}</b> videos · 90d
-              </span>
-              <span>
-                newest <b>{m.newest_video_at ? agoText(m.newest_video_at) : "--"}</b>
+                <b>{fmtInt(cards.length)}</b> videos · 30d
               </span>
               {repo && (
-                <span className="owhy">
-                  why now <b>{repo.full_name}</b> {fmtInt(repo.stars)}★ ·{" "}
-                  {repo.velocity.toFixed(0)}/day
+                <span className="owhy" title={`${fmtInt(repo.stars)} stars, ${repo.velocity.toFixed(0)}/day`}>
+                  {repo.full_name}
                 </span>
               )}
             </div>
 
-            <p className="note">{verdictSentence(m.row)}</p>
-
             {cards.length === 0 ? (
               <p className="note">
-                nothing published on this topic in the last 90 days — which is what makes it a gap
+                nothing in the last 30 days
               </p>
             ) : (
               <div className="shelf-rail">

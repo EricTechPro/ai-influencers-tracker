@@ -12,6 +12,8 @@
     "open claw"
   ],
   "_terms_comment": "Case-insensitive title substrings. A video whose title carries one is dropped from every display surface regardless of which topic it matched: OpenClaw is a tool Eric no longer covers, and its videos were the whole first screen of the multi-agent shelf.",
-  "channels": [],
-  "_channels_comment": "channel_ids muted from display while still being swept. Empty today. This is the softer form of channels.json's tracked:false, which stops collection entirely."
+  "channels": [
+    "UCLKPca3kwwd-B59HNr-_lvA"
+  ],
+  "_channels_comment": "channel_ids muted from display while still being swept. AI Engineer (UCLKPca3kwwd-B59HNr-_lvA) posts a conference back-catalogue in bursts and held 6 of one week's 28 outliers, so it floods every surface it touches. This is the softer form of channels.json's tracked:false, which stops collection entirely."
 }

@@ -71,14 +71,14 @@ export interface CardModel {
   bucket: number | null
   videos30d: number | null
   medianViews30d: number | null
-  spark: number[]
+  spark: SparkPoint[]
 }
 
 export function cardModel(
   row: SlimChannel,
   window: WindowKey,
   mode: RankMode,
-  spark: number[]
+  spark: SparkPoint[]
 ): CardModel {
   return {
     rank: row.rank[mode][window],
@@ -183,10 +183,12 @@ export function sparkAll(snapshots: SnapshotsBundle, channelId: string): SparkPo
  * construction. A window with no points inside it returns none, and the card
  * says so rather than drawing the nearest thing it can find.
  */
-export function sparkWindow(points: SparkPoint[], cell: StateCell): number[] {
+export function sparkWindow(points: SparkPoint[], cell: StateCell): SparkPoint[] {
   const { from, to } = cell
   if (!from || !to) return []
-  return points.filter((p) => p.date >= from && p.date <= to).map((p) => p.value)
+  // The dates ride along: a hover that reads out a count without saying which day it fell on
+  // is half a measurement, and the card already knows the day.
+  return points.filter((p) => p.date >= from && p.date <= to)
 }
 
 /**

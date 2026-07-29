@@ -64,7 +64,11 @@ def all_videos(roster: list[dict]) -> list[dict]:
             series = video_series(video_id)
             newest = next((r for r in reversed(series) if r["status"] == "ok"), None)
             out.append({**meta, "video_id": video_id,
-                        "view_count": newest["view_count"] if newest else None,
+                        # The dated series wins when there is one; otherwise the exact count
+                        # the registry recorded at seen_at. Neither is invented: both are
+                        # numbers YouTube returned, and None still means nobody has asked yet.
+                        "view_count": (newest["view_count"] if newest
+                                       else meta.get("view_count")),
                         "series": series})
     return out
 

@@ -10,7 +10,7 @@ import dataclasses
 import datetime as dt
 from typing import Any
 
-from . import bundles, config, exclusions, multiplier, read, topics, traction, util
+from . import bundles, classify, config, exclusions, multiplier, read, topics, traction, util
 
 
 @dataclasses.dataclass
@@ -35,6 +35,10 @@ class Context:
     # what the niche made and it does not change shape when Eric stops making something.
     excluded_video_ids: frozenset[str] = frozenset()
     excluded_topic_ids: frozenset[str] = frozenset()
+    # video_id -> {topic_id, reason}. A model's verdict on what a video is primarily about.
+    # Where one exists it is the membership authority for that video; keyword matching covers
+    # the rest. Inference tier: the reason travels with it so the page can show its evidence.
+    classified: dict = dataclasses.field(default_factory=dict)
     extra: dict[str, Any] = dataclasses.field(default_factory=dict)
 
 
@@ -82,6 +86,7 @@ def make_context(today: dt.date) -> Context:
     }
 
     rules = exclusions.load()
+    classified = classify.read_assignments()
     excluded_video_ids = frozenset(v["video_id"] for v in videos if rules.excludes_video(v))
     excluded_topic_ids = frozenset(
         t.id for t in topic_index.values() if rules.excludes_topic(t.id))
@@ -96,7 +101,8 @@ def make_context(today: dt.date) -> Context:
         traction=traction_by_video, comment_stats=read.comment_stats(), repos=read.repos(today),
         keyword_volumes=read.keyword_volumes(),
         assignments_by_video=assignments_by_video, own_coverage=own_coverage,
-        excluded_video_ids=excluded_video_ids, excluded_topic_ids=excluded_topic_ids)
+        excluded_video_ids=excluded_video_ids, excluded_topic_ids=excluded_topic_ids,
+        classified=classified)
 
 
 def build(today: dt.date | None = None) -> dict:

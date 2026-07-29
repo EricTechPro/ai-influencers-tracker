@@ -60,11 +60,18 @@ def write_channel_snapshot(rows: dict[str, dict], today: dt.date) -> pathlib.Pat
     return path
 
 
-def classify_duration(iso8601: str) -> tuple[int, str]:
-    """ISO-8601 duration -> (seconds, "short"|"long"). Separate baselines per length."""
+def classify_duration(iso8601: str) -> tuple[int | None, str | None]:
+    """ISO-8601 duration -> (seconds, "short"|"long"). Separate baselines per length.
+
+    An absent or unparseable duration returns (None, None) rather than raising. Live broadcasts
+    and the occasional row whose contentDetails arrives without a duration are real, and one of
+    them used to end the whole daily sweep — including the unattended 09:00 launchd run, where
+    there is nobody to notice and rerun it. A length we do not have is missing data, which every
+    surface downstream already knows how to render; a crash is not.
+    """
     match = _DURATION.fullmatch(iso8601 or "")
     if not match:
-        raise ValueError(f"unparseable duration {iso8601!r}")
+        return None, None
     days, hours, minutes, seconds = (int(g or 0) for g in match.groups())
     total = ((days * 24 + hours) * 60 + minutes) * 60 + seconds
     return total, ("short" if total <= SHORT_MAX_SECONDS else "long")
@@ -89,10 +96,18 @@ def known_video_ids(channel_id: str) -> set[str]:
 def _observation(channel_id: str, item: dict, seen_at: str) -> dict:
     snippet = item.get("snippet", {})
     duration_s, kind = classify_duration(item.get("contentDetails", {}).get("duration", ""))
+    # videos.list hands back statistics.viewCount in the same response as the title, already
+    # paid for. It used to be discarded, which left view_count sourced only from the traction
+    # snapshot series — and that series has reached about a quarter of the corpus, so the rest
+    # rendered "views --" for a number we were holding. Absent statistics stays None: a video
+    # with comments or stats disabled has an unknown count, not zero.
+    views = (item.get("statistics") or {}).get("viewCount")
     return {"video_id": item["id"], "channel_id": channel_id,
             "title": snippet.get("title"), "description": snippet.get("description") or "",
             "tags": snippet.get("tags") or [], "published_at": snippet.get("publishedAt"),
-            "duration_s": duration_s, "type": kind, "seen_at": seen_at}
+            "duration_s": duration_s, "type": kind,
+            "view_count": int(views) if views is not None else None,
+            "seen_at": seen_at}
 
 
 def record_video_metadata(channel_id: str, items: list[dict],

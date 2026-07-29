@@ -1,7 +1,8 @@
 "use client"
 
 import { useState } from "react"
-import { fmtInt, signedInt } from "@/lib/trust"
+import { fmtDate, fmtInt, signedInt } from "@/lib/trust"
+import type { SparkPoint } from "@/lib/growth"
 
 /**
  * Subscriber history for the selected window.
@@ -17,22 +18,24 @@ import { fmtInt, signedInt } from "@/lib/trust"
  * shows the one the cursor is nearest, never an interpolation between two
  * days, which would be a number nobody measured.
  */
-export function Sparkline({ points, label }: { points: number[]; label?: string }) {
+export function Sparkline({ points, label }: { points: SparkPoint[]; label?: string }) {
   const [hover, setHover] = useState<number | null>(null)
 
   // Fewer than 2 points is not a trend, and faking a flat line would be a claim.
   if (points.length < 2) return null
 
-  const min = Math.min(...points)
-  const max = Math.max(...points)
+  const values = points.map((p) => p.value)
+  const min = Math.min(...values)
+  const max = Math.max(...values)
   const range = max - min || 1
   const x = (i: number) => (i / (points.length - 1)) * 100
   const y = (p: number) => 26 - ((p - min) / range) * 22
-  const coords = points.map((p, i) => `${x(i).toFixed(2)},${y(p).toFixed(2)}`).join(" ")
+  const coords = points.map((p, i) => `${x(i).toFixed(2)},${y(p.value).toFixed(2)}`).join(" ")
 
-  const first = points[0]
-  const last = points[points.length - 1]
-  const shown = hover === null ? last : points[hover]
+  const first = points[0].value
+  const last = points[points.length - 1].value
+  const at = hover === null ? points[points.length - 1] : points[hover]
+  const shown = at.value
   const delta = shown - first
 
   function onMove(e: React.MouseEvent<SVGSVGElement>) {
@@ -78,7 +81,7 @@ export function Sparkline({ points, label }: { points: number[]; label?: string 
             />
             <circle
               cx={x(hover)}
-              cy={y(points[hover])}
+              cy={y(points[hover].value)}
               r="2.5"
               fill="var(--primary)"
               stroke="var(--card)"
@@ -91,7 +94,8 @@ export function Sparkline({ points, label }: { points: number[]; label?: string 
       <div className="sparkfoot">
         <span className="num">{fmtInt(first)}</span>
         <span className={hover === null ? "sparkread" : "sparkread on"}>
-          <b className="num">{fmtInt(shown)}</b> <span className="num">{signedInt(delta)}</span>
+          <b className="num">{fmtInt(shown)}</b> <span className="num">{signedInt(delta)}</span>{" "}
+          <span className="sparkdate">{fmtDate(at.date)}</span>
         </span>
         <span className="num">{fmtInt(last)}</span>
       </div>

@@ -193,6 +193,28 @@ def match_video(video: dict, index: dict[str, Topic]) -> list[dict]:
     return rows
 
 
+def members_of(topic_id: str, videos: list[dict], assignments_by_video: dict,
+               floor: float, classified: dict) -> list[dict]:
+    """The videos that belong to a topic, model verdict first.
+
+    A classified video belongs to exactly the topic the model named, and to nothing else — even
+    when its title carries three other topics' aliases, which is the case the keyword matcher
+    could never resolve. A video the pass never reached falls back to keyword membership, so the
+    board keeps working while the classification is partial.
+    """
+    out = []
+    for video in videos:
+        verdict = classified.get(video["video_id"])
+        if verdict is not None:
+            if verdict.get("topic_id") == topic_id:
+                out.append(video)
+            continue
+        if topic_id in [a["topic_id"] for a in assignments_by_video.get(video["video_id"], [])
+                        if is_member(a, floor)]:
+            out.append(video)
+    return out
+
+
 def is_member(assignment: dict, min_confidence: float) -> bool:
     """Whether an assignment is strong enough to say the video is *about* the topic.
 

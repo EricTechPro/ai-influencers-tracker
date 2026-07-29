@@ -11,6 +11,7 @@ def build(ctx) -> dict:
     thresholds = ctx.thresholds
     window = thresholds["supply"]["window_days"]
     floor = thresholds["topics"]["membership_min_confidence"]
+    shelf_days = thresholds["topics"]["shelf_window_days"]
     hunches = set(config.targets().get("hunches") or [])
     all_repos = list(ctx.repos.get("search") or []) + list(ctx.repos.get("trending") or [])
     linked = github.link_topics(all_repos, ctx.topic_index)
@@ -25,12 +26,11 @@ def build(ctx) -> dict:
         # from, so a video that merely name-drops the topic in its description must not make the
         # niche look more crowded than it is. See topics.is_member.
         in_window = [
-            v for v in ctx.videos
-            if v["video_id"] not in ctx.excluded_video_ids
-            and leaf.id in [a["topic_id"]
-                           for a in ctx.assignments_by_video.get(v["video_id"], [])
-                           if topics.is_member(a, floor)]
-            and util.days_between(util.parse_ts(v["published_at"]).date(), ctx.today) <= window
+            v for v in topics.members_of(
+                leaf.id,
+                [x for x in ctx.videos if x["video_id"] not in ctx.excluded_video_ids],
+                ctx.assignments_by_video, floor, ctx.classified)
+            if util.days_between(util.parse_ts(v["published_at"]).date(), ctx.today) <= window
         ]
         creators = {v["channel_id"] for v in in_window}
         repos = sorted(linked.get(leaf.id, []), key=lambda r: -r["velocity"])
@@ -53,8 +53,11 @@ def build(ctx) -> dict:
             # The exact videos the competition count counted, best first. Printing the number
             # beside the videos it was computed from is what makes "8 videos · 7 creators"
             # checkable instead of taken on faith.
+            # The rail is the recent slice, not the whole 90-day supply window: a two-month-old
+            # video is what the count is made of, but it is not what the niche is making now.
+            # supply.videos beside it still reports all 90 days.
             "video_ids": [v["video_id"] for v in sorted(
-                in_window,
+                [v for v in in_window if util.published_within(v, ctx.today, shelf_days)],
                 key=lambda v: (-((v.get("multiplier") or {}).get("value") or 0),
                                -(v.get("view_count") or 0), v["video_id"]))],
             "keyword": volume_row.get("keyword"),

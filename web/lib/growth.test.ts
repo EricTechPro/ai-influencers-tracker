@@ -134,13 +134,17 @@ describe("panelBuilding: no_data is not building", () => {
 
 describe("cardModel", () => {
   it("carries the window cells and the 30d stats verbatim", () => {
-    const m = cardModel(chan({}), W, "growth", [1, 2, 3])
+    const m = cardModel(chan({}), W, "growth", [
+      { date: "2026-07-01", value: 1 },
+      { date: "2026-07-02", value: 2 },
+      { date: "2026-07-03", value: 3 },
+    ])
     expect(m.rank).toBe(1)
     expect(m.growth.state).toBe("building")
     expect(m.bucket).toBe(1000)
     expect(m.videos30d).toBe(12)
     expect(m.medianViews30d).toBe(25246)
-    expect(m.spark).toEqual([1, 2, 3])
+    expect(m.spark.map((p) => p.value)).toEqual([1, 2, 3])
   })
 })
 
@@ -179,7 +183,7 @@ describe("sparkAll: a view_count corruption flag must not hide a usable subscrib
   it("so the line's endpoints reproduce the delta exactly", () => {
     const cell: StateCell = { state: "ok", value: 19020, from: "2026-04-30", to: "2026-07-28" }
     const pts = sparkWindow(sparkAll(bundle, "c1"), cell)
-    expect(pts[pts.length - 1] - pts[0]).toBe(cell.value)
+    expect(pts[pts.length - 1].value - pts[0].value).toBe(cell.value)
   })
 
   it("a day with no subscriber count at all is still dropped", () => {
@@ -210,12 +214,12 @@ describe("sparkWindow: the line and the number beside it describe the same span"
 
   it("keeps only the points inside the window's own from/to dates", () => {
     const cell: StateCell = { state: "ok", value: 19020, from: "2026-04-30", to: "2026-07-28" }
-    expect(sparkWindow(dated, cell)).toEqual([2680, 12000, 21700])
+    expect(sparkWindow(dated, cell).map((p) => p.value)).toEqual([2680, 12000, 21700])
   })
 
   it("both endpoints are inclusive", () => {
     const cell: StateCell = { state: "ok", value: 0, from: "2026-06-15", to: "2026-06-15" }
-    expect(sparkWindow(dated, cell)).toEqual([12000])
+    expect(sparkWindow(dated, cell).map((p) => p.value)).toEqual([12000])
   })
 
   // The bug this function exists for: Pat Simmons' snapshots stop in October
@@ -249,9 +253,10 @@ describe("the chart reconciles with the number, across the whole real roster", (
         if (cell.state !== "ok" || cell.value === null) continue
         const pts = sparkWindow(all, cell)
         if (pts.length < 2) continue
+        const span = pts[pts.length - 1].value - pts[0].value
         expect(
-          pts[pts.length - 1] - pts[0],
-          `${c.name} ${w}: line says ${pts[pts.length - 1] - pts[0]}, delta says ${cell.value}`
+          span,
+          `${c.name} ${w}: line says ${span}, delta says ${cell.value}`
         ).toBe(cell.value)
         checked++
       }

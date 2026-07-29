@@ -61,8 +61,7 @@ export default function HomePage() {
           </a>
         </div>
         <p className="note">
-          ranked by subscriber growth rate · below a channel&apos;s measurement floor renders
-          &quot;&lt; N&quot;
+          ranked by subscriber growth rate
         </p>
         <GrowthPanel channels={slim} sparks={sparks} coverage={coverage} />
       </section>
@@ -75,13 +74,6 @@ export default function HomePage() {
           <span className="rule" />
           <span className="cap num">{SCORE_FORMULA}</span>
         </div>
-        <p className="note">
-          each topic opened as the videos it is actually made of · <b>search volume</b> is vidIQ
-          searches/mo for the keyword printed beside it · the rail is every video published on the
-          topic in the last 90d, the same set the count is measured over, best first on each
-          channel&apos;s own multiplier · <b>why now</b> names the fastest-moving repo behind the
-          demand
-        </p>
         <OpportunityShelves models={models} cardsByTopic={cardsByTopic} />
       </section>
     </div>

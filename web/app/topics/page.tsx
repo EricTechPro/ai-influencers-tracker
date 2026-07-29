@@ -71,10 +71,6 @@ export default function TopicsIndexPage() {
           {fmtInt(roots.reduce((n, r) => n + r.video_count, 0))} videos
         </span>
       </div>
-      <p className="note">
-        every topic opened as its best-performing videos · ranked by each channel&apos;s own
-        multiplier where it has one, otherwise by views · a card links straight to the video
-      </p>
 
       {roots.map((root) => (
         <div key={root.topic_id} className="tgroup">
