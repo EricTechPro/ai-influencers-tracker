@@ -84,8 +84,11 @@ export default function TopicsIndexPage() {
 
           {leavesUnder(root).map((leaf) => {
             const opp = findOpp(opps, leaf.topic_id)
+            // recent_video_ids, not video_ids: the shelf answers "what is the niche making
+            // now", and without the window a two-year-old video outranks this month's uploads
+            // purely on accumulated views. leaf.video_count beside it is still all-time.
             const cards = topVideoCards(
-              videosById(leaf.video_ids),
+              videosById(leaf.recent_video_ids),
               channels,
               channelAvatarUrl,
               PER_SHELF
@@ -97,7 +100,8 @@ export default function TopicsIndexPage() {
                     {leaf.label}
                   </Link>
                   <span className="mono10">
-                    {fmtInt(leaf.video_count)} videos · {fmtInt(leaf.creator_count)} creators
+                    {fmtInt(leaf.video_count)} videos · {fmtInt(leaf.creator_count)} creators ·
+                    last {leaf.shelf_window_days}d
                   </span>
                   {opp ? (
                     <VerdictBadge verdict={opp.verdict} />
@@ -109,7 +113,14 @@ export default function TopicsIndexPage() {
                   </Link>
                 </div>
                 {cards.length === 0 ? (
-                  <p className="note">no videos registered on this topic yet</p>
+                  // An empty shelf on a topic that has videos is not a gap in the data, it is
+                  // the finding: nobody has published on it this month. Staleness is one of the
+                  // four scoring axes, so this says the quiet part rather than hiding it.
+                  <p className="note">
+                    {leaf.video_count === 0
+                      ? "no videos registered on this topic yet"
+                      : `nothing published on this topic in the last ${leaf.shelf_window_days} days · ${fmtInt(leaf.video_count)} older`}
+                  </p>
                 ) : (
                   <div className="shelf-rail">
                     {cards.map((v) => (

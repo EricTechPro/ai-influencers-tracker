@@ -12,7 +12,7 @@ FIXTURE_THRESHOLDS = {
                "crowded_min_videos": 5, "crowded_min_creators": 3},
     "demand": {"high_min_keyword_volume": 5000, "high_min_repo_velocity": 100.0,
                "high_requires": "either"},
-    "topics": {"membership_min_confidence": 0.45},
+    "topics": {"membership_min_confidence": 0.6, "shelf_window_days": 30},
     "min_n": {"topic_page_min_videos": 3, "topic_page_min_creators": 2,
               "consensus_min_creators": 3},
     "github": {"created_within_days": 90, "min_stars": 100, "max_queries_per_run": 25,

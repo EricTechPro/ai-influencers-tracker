@@ -76,6 +76,17 @@ def _load(name: str) -> dict:
     return data
 
 
+@functools.cache
+def optional(name: str) -> dict:
+    """A config file that a repo is allowed not to have, as {} when it is absent.
+
+    _load raises for the files nothing works without. This is for the ones whose absence is a
+    valid state — exclusions.json means "exclude nothing" when it is not there — so a fresh clone
+    builds without hand-authoring every file first.
+    """
+    return util.read_json(config_dir() / name) or {}
+
+
 def thresholds() -> dict:
     return _load("thresholds.json")
 
@@ -115,3 +126,4 @@ def self_channel(rows: list[dict]) -> dict:
 
 def reset_caches() -> None:
     _load.cache_clear()
+    optional.cache_clear()

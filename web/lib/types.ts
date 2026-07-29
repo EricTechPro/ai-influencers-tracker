@@ -175,6 +175,9 @@ export interface LeafTopicPage {
   newest_video_at: string | null
   window_days: number
   video_ids: string[]
+  /** the subset of video_ids published inside shelf_window_days; the shelf renders these */
+  recent_video_ids: string[]
+  shelf_window_days: number
   nodes: unknown[] | null
   edges: ChainEdge[] | null
 }

@@ -5,10 +5,25 @@ needs new leaves.
 """
 from __future__ import annotations
 
-from .. import config, read, snapshot, topics, util
+from .. import config, exclusions, read, snapshot, topics, util
 
 VERSION = 3
 BUILD_STEP = 8
+
+
+def _exclusion_counts(ctx) -> dict:
+    """How much the hand-written exclusions took off the board, counted against what exists.
+
+    `topics` counts excluded leaves that are real leaves in the taxonomy, so a stale id left in
+    the config after a topic is renamed does not inflate the number into a claim.
+    """
+    rules = exclusions.load()
+    leaves = {t.id for t in ctx.topic_index.values() if topics.is_leaf(t)}
+    return {
+        "topics": len(rules.topics & leaves),
+        "videos": sum(1 for v in ctx.videos if rules.excludes_video(v)),
+        "channels": len(rules.channels),
+    }
 
 
 def build(ctx) -> dict:
@@ -30,6 +45,9 @@ def build(ctx) -> dict:
         "thresholds_version": ctx.thresholds["version"],
         "build_step": BUILD_STEP,
         "coverage_rate": topics.coverage_rate(ctx.videos, assignments),
+        # What config/exclusions.json withheld from the display surfaces this build. A board that
+        # quietly got smaller is the failure mode; these two counts are what makes it visible.
+        "exclusions": _exclusion_counts(ctx),
         "self_channel_id": ctx.self_channel_id,
         "snapshot_health": {"first_date": history[0] if history else None,
                             "days_present": len(present),

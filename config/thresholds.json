@@ -13,8 +13,10 @@
     "high_requires": "either"
   },
   "topics": {
-    "membership_min_confidence": 0.45,
-    "_membership_min_confidence_comment": "How strong an alias hit must be before a video counts as being ABOUT a topic, on topics.FIELD_CONFIDENCE (title 0.6, tags 0.45, description 0.3). At 0.45 a title or a tag counts and a description alone does not: descriptions are link dumps and sponsor reads, and one stray 'zapier' was filing an OpenClaw tutorial under n8n agent workflows. 45% of all assignments were description-only, and membership is what the supply band counts, so this changes how crowded every topic looks - which is exactly why it lives here. Weak hits are still recorded in videos.json as evidence."
+    "membership_min_confidence": 0.6,
+    "shelf_window_days": 30,
+    "_membership_min_confidence_comment": "How strong an alias hit must be before a video counts as being ABOUT a topic, on topics.FIELD_CONFIDENCE (title 0.6, tags 0.45, description 0.3). Raised 0.45 -> 0.6 on 2026-07-29: at 0.45 a tags hit counted, and creators stuff comparison keywords into the tags of every upload, so 'Turn Claude Code into your own UI Designer' matched the alias 'claude code vs' on tags alone and sat on the Claude Code vs Codex vs Gemini CLI shelf. That was 5,241 of 8,796 memberships riding on tags. At 0.6 only a title counts, which is the same line build_data already draws for own-coverage. Weak hits are still recorded in videos.json as evidence.",
+    "_shelf_window_days_comment": "How far back a topic shelf's cards reach. The shelf answers 'what is the niche making now', and without a window a 793-day-old video outranks this month's uploads simply by having had two years to accumulate views. 30 days leaves every one of the 25 shelves populated. It does not change video_count or the supply band, which are still measured over supply.window_days: this is a display window, and both numbers are on the page."
   },
   "min_n": {
     "topic_page_min_videos": 3,

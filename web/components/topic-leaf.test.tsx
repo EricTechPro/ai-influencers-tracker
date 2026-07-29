@@ -21,6 +21,8 @@ function leaf(overrides: Partial<LeafTopicPage>): LeafTopicPage {
     newest_video_at: "2026-07-20T00:00:00Z",
     window_days: 90,
     video_ids: [],
+    recent_video_ids: [],
+    shelf_window_days: 30,
     nodes: null,
     edges: null,
     ...overrides,
