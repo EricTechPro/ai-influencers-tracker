@@ -689,3 +689,35 @@ select.chip:hover { border-color: var(--muted-foreground); }
   font-size: 11px; color: var(--muted-foreground); font-variant-numeric: tabular-nums;
 }
 .yself { color: var(--primary); font-weight: 700; }
+
+.ctrls { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; margin: 0 0 14px; }
+.ctrl { display: flex; align-items: center; gap: 6px; }
+.ctrl > .lbl {
+  font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em;
+  color: var(--muted-foreground);
+}
+/* Scoped to .ctrls on purpose: .seg is already the meter's segment class above, and an
+   unscoped rule here puts a 1px border around all nine segments of every gauge in the app. */
+.ctrls .seg {
+  display: inline-flex; border: 1px solid var(--border); border-radius: 4px;
+  overflow: hidden; background: var(--card);
+}
+.ctrls .seg button {
+  font: inherit; font-size: 11px; padding: 3px 10px; border: 0; background: transparent;
+  color: var(--muted-foreground); cursor: pointer; border-right: 1px solid var(--border);
+}
+.ctrls .seg button:last-child { border-right: 0; }
+.ctrls .seg button.on { background: var(--primary); color: #fff; font-weight: 600; }
+/* format is the first decision, so it is the loudest control */
+.ctrls .seg.big button { font-size: 12px; padding: 4px 14px; font-weight: 600; }
+
+.tail {
+  margin-top: 20px; border: 1px dashed var(--border); border-radius: 6px; padding: 11px 14px;
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap; background: var(--card);
+}
+.tail .t1 { font-size: 12px; font-weight: 600; }
+.tail .t2 { font-size: 10px; color: var(--muted-foreground); }
+.tail button {
+  margin-left: auto; font: inherit; font-size: 11px; border: 1px solid var(--border);
+  background: var(--secondary); border-radius: 4px; padding: 2px 12px; cursor: pointer;
+}

@@ -2,12 +2,15 @@ import Link from "next/link"
 import {
   channelAvatarUrl,
   loadChannels,
+  loadMeta,
   loadOpportunities,
+  loadRecent,
   loadTopicPages,
   videosById,
 } from "@/lib/bundles"
 import { findOpp, topVideoCards } from "@/lib/topic"
 import { fmtInt } from "@/lib/trust"
+import { RecentFeed } from "@/components/recent-feed"
 import { VerdictBadge } from "@/components/trust"
 import { VideoCard } from "@/components/video-card"
 import type { LeafTopicPage, TopicPage } from "@/lib/types"
@@ -41,8 +44,22 @@ export default function TopicsIndexPage() {
           return child ? leavesUnder(child) : []
         })
 
+  const recent = loadRecent()
+  const meta = loadMeta()
+  const avatars = Object.fromEntries(
+    channels.map((c) => [c.channel_id, channelAvatarUrl(c.channel_id)])
+  )
+
   return (
     <section className="breakout">
+      <RecentFeed
+        bundle={recent}
+        avatars={avatars}
+        selfChannelId={meta.self_channel_id}
+        floor={2.5}
+        defaultCap={2}
+      />
+
       <div className="section-kicker">
         <span className="kicker">WHAT THE NICHE IS MAKING</span>
         <span className="rule" />
