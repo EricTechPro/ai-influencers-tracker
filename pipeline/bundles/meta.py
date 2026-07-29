@@ -19,6 +19,11 @@ def build(ctx) -> dict:
     window = ctx.thresholds["growth"]["default_window_days"]
     statuses = [read.channel_series(r["channel_id"]) for r in ctx.roster]
     newest = [next((p for p in reversed(s) if p["status"] == "ok"), None) for s in statuses]
+    # days_present counts our own sweep files and nothing else, which is the right answer to "is
+    # the daily sweep running" and the wrong one to "how much history is on the board". The header
+    # asked the first and printed it as the second: "1 of 90 days" beside 90-day growth rates
+    # measured over a year of vidIQ backfill. Both facts stay; they get separate names.
+    history = sorted({row["date"] for series in statuses for row in series})
     return {
         "version": VERSION,
         "generated_at": ctx.generated_at,
@@ -26,9 +31,10 @@ def build(ctx) -> dict:
         "build_step": BUILD_STEP,
         "coverage_rate": topics.coverage_rate(ctx.videos, assignments),
         "self_channel_id": ctx.self_channel_id,
-        "snapshot_health": {"first_date": present[0] if present else None,
+        "snapshot_health": {"first_date": history[0] if history else None,
                             "days_present": len(present),
-                            "days_missing": len(snapshot.missing_dates(ctx.today, window))},
+                            "days_missing": len(snapshot.missing_dates(ctx.today, window)),
+                            "history_days": len(history)},
         "video_snapshot_health": {"videos_tracked": len(ctx.videos),
                                   "days_present": len(present)},
         "comment_health": {"channels_with_comments": ctx.extra.get("channels_with_comments", 0),

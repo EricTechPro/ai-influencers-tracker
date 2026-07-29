@@ -300,3 +300,41 @@ def test_a_missing_subscriber_count_day_still_counts_as_missing():
     # The row for the 26th exists and carries no subscriber_count, so the window has a hole in
     # it rather than a missing day.
     assert growth.delta(s, "subscriber_count", 3, TODAY)["state"] == "blocked"
+
+
+# --- the anchor: which day a window ends on ---------------------------------------------------
+
+def test_a_full_window_ending_yesterday_measures_rather_than_reporting_building():
+    """The sweep runs once a day, so from midnight until it lands the newest snapshot is
+    yesterday's. Anchoring every window to the calendar's today made that one absent day the
+    newest of all six windows at once: the whole roster read `building, 89 of 90` off 366 days of
+    stored history. The window still spans exactly the days it asks for; it ends at the last day
+    that was actually measured."""
+    dates = util.last_n_dates(TODAY - dt.timedelta(days=1), 3)
+    s = series([(d, 100 * (i + 1)) for i, d in enumerate(dates)])
+    assert growth.delta(s, "view_count", 3, TODAY) == {
+        "state": "ok", "value": 200, "from": dates[0], "to": dates[-1]}
+
+
+def test_the_anchor_never_shortens_the_window():
+    """Anchoring is not a tolerance. Two days of history answer a 3-day window with `building`
+    no matter which day they end on, because a number computed over fewer days than requested is
+    the one thing spec 6 forbids."""
+    dates = util.last_n_dates(TODAY - dt.timedelta(days=1), 2)
+    s = series([(d, 100) for d in dates])
+    assert growth.delta(s, "view_count", 3, TODAY) == {
+        "state": "building", "have": 2, "need": 3, "value": None}
+
+
+def test_a_series_that_stopped_long_ago_is_building_not_a_stale_number():
+    """A channel whose snapshots stopped months back holds a complete 3-day run somewhere in its
+    past. Reporting it would date-stamp old growth as current. Past the lag the anchor stays on
+    today and the shortfall is stated."""
+    dates = util.last_n_dates(TODAY - dt.timedelta(days=30), 3)
+    s = series([(d, 100 * (i + 1)) for i, d in enumerate(dates)])
+    assert growth.delta(s, "view_count", 3, TODAY)["state"] == "building"
+
+
+def test_the_lag_the_anchor_may_fall_behind_comes_from_config():
+    from pipeline import config
+    assert config.thresholds()["growth"]["anchor_max_lag_days"] == growth.ANCHOR_MAX_LAG_DAYS

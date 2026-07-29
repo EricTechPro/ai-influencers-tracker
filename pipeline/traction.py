@@ -11,11 +11,12 @@ from . import growth
 
 
 def for_video(series: list[dict], total_views: int | None, today: dt.date,
-              thresholds: dict) -> dict:
+              thresholds: dict, anchor_max_lag_days: int = growth.ANCHOR_MAX_LAG_DAYS) -> dict:
+    lag = anchor_max_lag_days
     gained = {
-        "24h": growth.delta_24h(series, "view_count", today),
-        "7d": growth.delta(series, "view_count", 7, today),
-        "30d": growth.delta(series, "view_count", 30, today),
+        "24h": growth.delta_24h(series, "view_count", today, lag),
+        "7d": growth.delta(series, "view_count", 7, today, lag),
+        "30d": growth.delta(series, "view_count", 30, today, lag),
     }
     week = gained["7d"]
     share = None

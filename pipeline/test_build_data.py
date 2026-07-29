@@ -292,6 +292,28 @@ def test_meta_reports_coverage_health_and_the_target(ait_root):
     assert meta["build_step"] == 8
 
 
+def test_snapshot_health_counts_bought_history_as_history(ait_root):
+    """days_present counts our own sweep files, and the header read it as "1 of 90 days" while
+    the board measured 90-day growth off 366 days of vidIQ backfill. Both numbers are true and
+    they answer different questions, so history_days is its own field: how many distinct days the
+    board can actually measure over, whoever paid for them."""
+    seed_snapshots(days=8)
+    util.write_json(config.raw_dir() / "backfill" / "UCcole.json", {
+        "channel_id": "UCcole",
+        "series": [{"date": util.date_str(TODAY - dt.timedelta(days=n)), "status": "ok",
+                    "view_count": 1000 - n, "subscriber_count": 100 - n,
+                    "subscriber_bucket": 1, "video_count": 1, "source": "vidiq_backfill"}
+                   for n in range(40, 8, -1)]})
+    seed_topic_corpus(ait_root)
+    build_data.build(today=TODAY)
+    health = util.read_json(config.db_dir() / "meta.json")["snapshot_health"]
+    assert health["days_present"] == 8            # our sweep, unchanged
+    # 8 swept (days 0-7) plus 32 bought (days 9-40): distinct dates held, not the span between
+    # the ends, so the one-day hole at day 8 is not counted as history we have.
+    assert health["history_days"] == 40
+    assert health["first_date"] == util.date_str(TODAY - dt.timedelta(days=40))
+
+
 def test_all_the_bundles_are_written(ait_root):
     seed_snapshots(days=8)
     seed_topic_corpus(ait_root)

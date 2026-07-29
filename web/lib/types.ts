@@ -328,7 +328,14 @@ export interface Meta {
   partial_run: boolean
   self_channel_id: string
   channels: { total: number; ok: number; absent: number }
-  snapshot_health: { days_present: number; days_missing: number; first_date: string | null }
+  snapshot_health: {
+    /** days our own daily sweep recorded: "is the sweep running" */
+    days_present: number
+    days_missing: number
+    /** distinct days the board can measure over, swept or bought: "how much history" */
+    history_days: number
+    first_date: string | null
+  }
   video_snapshot_health: { days_present: number; videos_tracked: number }
   comment_health: { ingested: number; classified: number; channels_with_comments: number }
   coverage_rate: number | null

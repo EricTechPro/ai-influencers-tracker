@@ -50,6 +50,7 @@ describe("meta.json", () => {
     expect(typeof meta.self_channel_id).toBe("string")
     expect(typeof meta.channels.total).toBe("number")
     expect(typeof meta.snapshot_health.days_present).toBe("number")
+    expect(typeof meta.snapshot_health.history_days).toBe("number")
     expect(typeof meta.comment_health.ingested).toBe("number")
     expect(typeof meta.comment_health.classified).toBe("number")
     expect(typeof meta.target.window_days).toBe("number")

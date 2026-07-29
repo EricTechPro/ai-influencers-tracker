@@ -70,10 +70,11 @@ def build(ctx) -> dict:
         tail_status = series[-1]["status"] if series else "insufficient_data"
         channel_videos = [v for v in ctx.videos if v["channel_id"] == channel_id]
 
-        view_delta = {"24h": growth.delta_24h(series, "view_count", ctx.today)}
+        lag = growth_thresholds["anchor_max_lag_days"]
+        view_delta = {"24h": growth.delta_24h(series, "view_count", ctx.today, lag)}
         subscriber_delta, growth_rate, per_1k = {}, {}, {}
         for window in _windows(ctx):
-            view_delta[f"{window}d"] = growth.delta(series, "view_count", window, ctx.today)
+            view_delta[f"{window}d"] = growth.delta(series, "view_count", window, ctx.today, lag)
             subscriber_delta[f"{window}d"] = growth.subscriber_delta(
                 series, window, ctx.today, growth_thresholds)
             growth_rate[f"{window}d"] = growth.subscriber_growth_rate(

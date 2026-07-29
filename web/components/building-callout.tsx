@@ -21,9 +21,15 @@ export function BuildingCallout({ state }: { state: PanelBuildingState }) {
       <b>
         building, {have} of {need} days
       </b>
+      {/* This used to end "run the vidIQ backfill (360 credits) and this fills
+          in immediately", which was advice to buy history the repo already
+          held: the shortfall was one absent day at the near end, not a missing
+          year at the far one. Naming the gap is the honest version, and only
+          the far-end case is worth spending on. */}
       <p className="note" style={{ marginTop: 6, marginBottom: 0 }}>
-        Growth needs a window of snapshots. You have {have} {have === 1 ? "day" : "days"}. Run the
-        vidIQ backfill (360 credits) to buy 365 days of history and this fills in immediately.
+        A {need}-day window needs {need} consecutive daily snapshots and {have}{" "}
+        {have === 1 ? "day is" : "days are"} on hand. The daily sweep adds one a day; if the gap is
+        older history rather than recent days, the vidIQ backfill buys 365 days for 360 credits.
       </p>
     </div>
   )

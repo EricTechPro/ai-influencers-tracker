@@ -25,6 +25,10 @@ VIEW_DROP_TOLERANCE = 0.05
 # Consecutive self-consistent days after a break before the series is treated as re-based rather
 # than as one long corruption. Mirrors thresholds.growth.rebase_min_days.
 REBASE_MIN_DAYS = 14
+
+# How far behind today the newest usable day may sit and still anchor a window.
+# Mirrors thresholds.growth.anchor_max_lag_days.
+ANCHOR_MAX_LAG_DAYS = 3
 UNMEASURED = ("building", "insufficient_data", "no_baseline", "unavailable")
 
 
@@ -137,12 +141,33 @@ def filter_monotonic(series: list[dict], keys: tuple[str, ...] = MONOTONIC_KEYS,
     return out
 
 
-def delta(series: list[dict], metric: str, window_days: int, today: dt.date) -> dict:
+def _anchor(usable: dict[str, dict], today: dt.date, max_lag_days: int) -> dt.date:
+    """The day a window ends on: the newest day actually measured, if it is recent enough.
+
+    The sweep runs once a day, so between midnight and the run the newest snapshot is yesterday's.
+    Ending every window at the calendar's today made that single absent day the newest day of all
+    six windows at once, and the whole roster reported `building, 89 of 90 days` while holding 366
+    days of stored history. The fix is not a tolerance on the count -- the window still spans
+    exactly the days it asks for -- it is that "the last 90 days" is measured from the last day
+    there is a measurement for.
+
+    Past `max_lag_days` the anchor stays on today. A channel whose snapshots stopped in April holds
+    a complete 90-day run somewhere in its past, and reporting that run would date-stamp old growth
+    as current. Beyond the lag the honest answer is the shortfall, not a stale number.
+    """
+    newest = dt.date.fromisoformat(max(usable))
+    return newest if (today - newest).days <= max_lag_days else today
+
+
+def delta(series: list[dict], metric: str, window_days: int, today: dt.date,
+          anchor_max_lag_days: int = ANCHOR_MAX_LAG_DAYS) -> dict:
     """newest - oldest over exactly window_days consecutive dates, or building, or insufficient.
 
     Spec §6: no branch may return a number computed over fewer days than requested. A window of
     N dates spans N-1 days of growth, which understates rather than overstates. That is the
     stated rule, and understating is the safe direction.
+
+    The window ends at the newest usable day rather than at `today`; see `_anchor`.
     """
     by_date = load_series(series)
     # status only ever reflects a MONOTONIC_KEYS violation, so it only gates those metrics.
@@ -156,7 +181,7 @@ def delta(series: list[dict], metric: str, window_days: int, today: dt.date) -> 
         usable = {d: r for d, r in by_date.items() if r.get(metric) is not None}
     if not usable:
         return {"state": "insufficient_data", "value": None}
-    required = util.last_n_dates(today, window_days)
+    required = util.last_n_dates(_anchor(usable, today, anchor_max_lag_days), window_days)
     present = [d for d in required if d in usable]
     if len(present) < window_days:
         # Two different reasons a window comes up short, and only one of them is worth waiting
@@ -173,13 +198,15 @@ def delta(series: list[dict], metric: str, window_days: int, today: dt.date) -> 
             "from": oldest, "to": newest}
 
 
-def delta_24h(series: list[dict], metric: str, today: dt.date) -> dict:
+def delta_24h(series: list[dict], metric: str, today: dt.date,
+              anchor_max_lag_days: int = ANCHOR_MAX_LAG_DAYS) -> dict:
     """A 24h delta needs two points. window_days=1 would compare a point to itself."""
-    return delta(series, metric, 2, today)
+    return delta(series, metric, 2, today, anchor_max_lag_days)
 
 
-def views_gained(series: list[dict], window_days: int, today: dt.date) -> dict:
-    return delta(series, "view_count", window_days, today)
+def views_gained(series: list[dict], window_days: int, today: dt.date,
+                 anchor_max_lag_days: int = ANCHOR_MAX_LAG_DAYS) -> dict:
+    return delta(series, "view_count", window_days, today, anchor_max_lag_days)
 
 
 def measurement_floor(subscriber_count: int | None, growth_thresholds: dict) -> int | None:
@@ -193,7 +220,8 @@ def measurement_floor(subscriber_count: int | None, growth_thresholds: dict) -> 
 def subscriber_delta(series: list[dict], window_days: int, today: dt.date,
                      growth_thresholds: dict) -> dict:
     """ok | bounded | building | insufficient_data. Bounded carries upper and never a value."""
-    cell = delta(series, "subscriber_count", window_days, today)
+    cell = delta(series, "subscriber_count", window_days, today,
+                 growth_thresholds.get("anchor_max_lag_days", ANCHOR_MAX_LAG_DAYS))
     if cell["state"] != "ok":
         return cell
     by_date = load_series(series)

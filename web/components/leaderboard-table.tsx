@@ -5,7 +5,7 @@ import { useCallback, useMemo, useState } from "react"
 import { peekStats, type SlimChannel } from "@/lib/growth"
 import { tiered, type SortValue } from "@/lib/sort"
 import type { RankMode, WindowKey } from "@/lib/types"
-import { RANK_MODES, WINDOWS } from "@/lib/types"
+import { RANK_MODES } from "@/lib/types"
 import {
   bucketText,
   compactSignedAuto,
@@ -17,6 +17,7 @@ import {
 import { AvatarPeek } from "./avatar"
 import { SortableHeader, useTableSort, type SortColumn } from "./sortable-table"
 import { Chip, Derived } from "./trust"
+import { WindowTabs } from "./window-tabs"
 
 type Key = "rank" | "channel" | "subs" | "dsubs" | "growth" | "dviews" | "per1k" | "vids"
 
@@ -142,20 +143,7 @@ export function LeaderboardTable({
             </button>
           ))}
         </div>
-        <span className="note">window</span>
-        <div className="tabs" role="group" aria-label="window">
-          {WINDOWS.map((w) => (
-            <button
-              key={w}
-              type="button"
-              className={w === win ? "on" : undefined}
-              aria-pressed={w === win}
-              onClick={() => setWin(w)}
-            >
-              {w}
-            </button>
-          ))}
-        </div>
+        <WindowTabs value={win} onChange={setWin} />
         <select
           value={niche}
           onChange={(e) => setNiche(e.target.value)}
@@ -194,7 +182,7 @@ export function LeaderboardTable({
           viewport has. Scrolling sideways beats wrapping every row to two
           lines, and matches how the other dense tables behave. */}
       <div className="tblwrap">
-        <table className="tbl tbl-sticky tbl-hover" style={{ minWidth: "62rem" }}>
+        <table className="tbl tbl-sticky tbl-hover tbl-zebra" style={{ minWidth: "62rem" }}>
           <SortableHeader columns={columns} sortKey={sortKey} sortDir={sortDir} onSort={toggle} />
           <tbody>
             {sorted.map((c) => (
