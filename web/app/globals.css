@@ -323,6 +323,20 @@ img.avatar { object-fit: cover; background: var(--secondary); }
 .gained { font-size: 13px; color: var(--muted-foreground); margin-top: 5px; }
 .gained .v { color: var(--foreground); font-weight: 600; font-variant-numeric: tabular-nums; }
 
+/* Signed like a ticker. This colours measured quantities only — a state such as "building"
+   never gets it, because not-yet-measured is not a loss. */
+.gcard .n.up, .gained .v.up { color: var(--v-make); }
+.gcard .n.down, .gained .v.down { color: var(--v-crowded); }
+
+/* Before and after: the two counts the delta is the distance between. This replaced the "±100"
+   that used to sit here — both endpoints already carry that rounding, and two real counts say
+   more than the tolerance on them. The tolerance is still in the delta's hover formula. */
+.ba {
+  display: block; margin-top: 2px;
+  font-size: 11px; color: var(--muted-foreground); font-variant-numeric: tabular-nums;
+}
+.ba .arrow { color: var(--v-make); font-weight: 700; padding: 0 1px; }
+
 /* A state where a number would go. Never hero-sized: at hero weight a phrase
    like "building, 89 of 90 days" reads as a broken value rather than as the
    honest answer that the measurement is not in yet. */
@@ -624,10 +638,28 @@ select.chip:hover { border-color: var(--muted-foreground); }
 }
 .vchan { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--muted-foreground); min-width: 0; }
 .vmeta { font-size: 10px; color: var(--muted-foreground); }
+/* Our multiplier, banded on the same 3 / 5 / 10 boundaries as the feed's vidIQ badge so the two
+   read alike. It stays an outline chip while vidIQ's stays filled: same scale, different
+   provenance, and a Derived number must not wear a vendor number's badge.
+   The ramp climbs blue -> teal -> green -> green-filled. Red and purple are deliberately not on
+   it: red means "crowded" everywhere else on this board and purple is reserved for Inference,
+   so either one here would say something the number does not mean. */
 .vmult {
-  color: var(--v-make); font-weight: 600;
-  border: 1px solid color-mix(in srgb, var(--v-make) 35%, transparent);
+  color: var(--primary); font-weight: 600;
+  border: 1px solid color-mix(in srgb, var(--primary) 35%, transparent);
   border-radius: 3px; padding: 0 4px;
+}
+.vmult.m3 {
+  color: var(--v-unserved);
+  border-color: color-mix(in srgb, var(--v-unserved) 45%, transparent);
+}
+.vmult.m5 {
+  color: var(--v-make);
+  border-color: color-mix(in srgb, var(--v-make) 45%, transparent);
+}
+.vmult.m10 {
+  color: #fff; font-weight: 700;
+  background: var(--v-make); border-color: var(--v-make);
 }
 .vgrow { color: var(--primary); }
 

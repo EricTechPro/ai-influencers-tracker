@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { bucketText, capDeltaText, capPctText, deltaText, heroScale } from "@/lib/trust"
+import { bucketText, capDeltaText, capPctText, deltaText, fmtInt, heroScale } from "@/lib/trust"
 import type { CardModel } from "@/lib/growth"
 import { AvatarPeek, type PeekStat } from "./avatar"
 import { Chip, Derived } from "./trust"
@@ -25,9 +25,24 @@ export function GrowthCard({ card, window, stats }: {
   const rateFormula = `subscriber delta ÷ subscribers at window start, ${window}${
     rate.exact ? ` · exactly ${rate.exact}` : ""
   }`
+  // The bucket used to render on the card face as "±100". It moved in here when the endpoints
+  // arrived: "2,680 → 21,700" already carries the same rounding and says far more, so the face
+  // shows the two counts and the disclosure stays one hover away rather than being dropped.
   const gainedFormula = `subscriber_count newest minus oldest in window${
     gained.exact ? ` · exactly ${gained.exact}` : ""
-  }`
+  } · YouTube rounds each count to 3 significant figures, so both ends carry ${bucketText(
+    card.bucket
+  )}`
+
+  // Before and after, the two numbers the delta is the distance between. They are the same
+  // endpoints the sparkline labels, and lib/growth's own test pins last-minus-first to the delta.
+  const before = card.spark.length >= 2 ? card.spark[0] : null
+  const after = card.spark.length >= 2 ? card.spark[card.spark.length - 1] : null
+
+  // Signed like a ticker: green up, red down. This is a measured quantity, so the colour is
+  // reporting its sign. States never get it — "building" is not a loss.
+  const dir = (cell: typeof g) =>
+    cell.value === null || cell.value === undefined ? "" : cell.value < 0 ? " down" : " up"
 
   return (
     <Link href={`/channels/${card.channel_id}`} className={classes.join(" ")}>
@@ -71,7 +86,7 @@ export function GrowthCard({ card, window, stats }: {
         <div className="hero">
           {measurable ? (
             <span
-              className="n"
+              className={`n${dir(g)}`}
               style={{ fontSize: `calc(1.9rem * ${heroScale(rate.text)})` }}
               title={rate.exact ?? undefined}
             >
@@ -89,10 +104,15 @@ export function GrowthCard({ card, window, stats }: {
       {measurable && (
         <>
           <div className="gained">
-            <span className="v" title={gained.exact ?? undefined}>
+            <span className={`v${dir(card.delta)}`} title={gained.exact ?? undefined}>
               <Derived formula={gainedFormula}>{gained.text}</Derived>
             </span>{" "}
-            subs <span className="muted">{bucketText(card.bucket)}</span>
+            subs
+            {before !== null && after !== null && (
+              <span className="ba">
+                {fmtInt(before)} <span className="arrow">→</span> {fmtInt(after)}
+              </span>
+            )}
           </div>
           <div className="statline">
             {card.subsPer1k.state === "ok" ? (

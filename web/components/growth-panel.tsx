@@ -36,7 +36,8 @@ export function GrowthPanel({
   const pool = niche === "all" ? channels : channels.filter((c) => c.niche === niche)
   const building = panelBuilding(pool, win)
   const ranked = rankedChannels(pool, mode, win)
-  const top5 = ranked.slice(0, 5)
+  // Six, not five: the grid is three across, so five leaves an orphan on row two.
+  const top6 = ranked.slice(0, 6)
   const self = ranked.find((c) => c.is_self)
   const selfRank = self?.rank[mode][win] ?? null
 
@@ -83,12 +84,12 @@ export function GrowthPanel({
       </div>
       {building ? (
         <BuildingCallout state={building} />
-      ) : top5.length === 0 ? (
+      ) : top6.length === 0 ? (
         <div className="empty">no channels in this niche</div>
       ) : (
         <>
           <div className="cardgrid">
-            {top5.map((c) => (
+            {top6.map((c) => (
               <GrowthCard
                 key={c.channel_id}
                 card={cardModel(
