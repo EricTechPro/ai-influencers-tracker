@@ -1,7 +1,9 @@
 """Outlier fetching. Every test uses a fake transport; none ever spends a credit."""
 from __future__ import annotations
 
-from pipeline import outliers
+import pytest
+
+from pipeline import outliers, vidiq
 
 
 def test_batches_splits_at_the_vendor_limit():
@@ -65,3 +67,77 @@ def test_normalise_never_recomputes_or_rounds_the_score():
 def test_normalise_keeps_a_missing_score_as_none_not_zero():
     payload = {k: v for k, v in LIVE_ROW.items() if k != "breakoutScore"}
     assert outliers.normalise(payload)["breakout_score"] is None
+
+
+class FakeClient:
+    """Stands in for VidIQ. Records calls and replays scripted replies, one per batch."""
+
+    def __init__(self, replies):
+        self.replies = list(replies)
+        self.calls = []
+
+    def call(self, tool, arguments):
+        self.calls.append((tool, arguments))
+        reply = self.replies.pop(0)
+        if isinstance(reply, Exception):
+            raise reply
+        return reply
+
+
+def _guard():
+    return vidiq.CostGuard(balance=1000, reserve=0, ceiling=1000)
+
+
+def test_fetch_makes_one_call_per_batch_and_merges_the_videos():
+    ids = [f"UC{i:03d}" for i in range(48)]
+    client = FakeClient([{"videos": [LIVE_ROW]}, {"videos": [LIVE_ROW]}])
+    result = outliers.fetch(client, _guard(), ids)
+
+    assert len(client.calls) == 2
+    assert result["coverage"] == {
+        "channels_requested": 48,
+        "batches_ok": 2,
+        "batches_failed": 0,
+        "missing_channel_ids": [],
+    }
+    assert result["credits"] == 10
+    assert len(result["videos"]) == 1
+
+
+def test_fetch_sends_the_arguments_vidiq_expects():
+    client = FakeClient([{"videos": []}])
+    outliers.fetch(client, _guard(), ["UC001"], content_type="short", window="thisWeek")
+    tool, args = client.calls[0]
+    assert tool == "vidiq_outliers"
+    assert args == {
+        "channelIds": ["UC001"],
+        "contentType": "short",
+        "publishedWithin": "thisWeek",
+        "limit": 100,
+        "sort": "breakoutScore",
+    }
+
+
+def test_a_failed_batch_is_reported_missing_not_silently_dropped():
+    ids = [f"UC{i:03d}" for i in range(48)]
+    client = FakeClient([{"videos": [LIVE_ROW]}, vidiq.VidiqError("boom")])
+    result = outliers.fetch(client, _guard(), ids)
+
+    assert result["coverage"]["batches_ok"] == 1
+    assert result["coverage"]["batches_failed"] == 1
+    assert result["coverage"]["missing_channel_ids"] == ids[24:]
+    assert len(result["videos"]) == 1
+
+
+def test_fetch_stops_when_the_cost_guard_refuses():
+    guard = vidiq.CostGuard(balance=1000, reserve=0, ceiling=5)
+    client = FakeClient([{"videos": []}, {"videos": []}])
+    with pytest.raises(vidiq.CostGuardError):
+        outliers.fetch(client, guard, [f"UC{i:03d}" for i in range(48)])
+
+
+def test_fetch_dedupes_a_video_returned_by_two_batches():
+    client = FakeClient([{"videos": [LIVE_ROW]}, {"videos": [LIVE_ROW]}])
+    result = outliers.fetch(client, _guard(), [f"UC{i:03d}" for i in range(48)])
+    assert len({v["video_id"] for v in result["videos"]}) == 1
+    assert len(result["videos"]) == 1

@@ -7,7 +7,7 @@ the snapshot series exists. See docs/superpowers/specs/2026-07-28-topics-recent-
 """
 from __future__ import annotations
 
-from . import util
+from . import util, vidiq
 
 # vidIQ rejects a 72-id request and accepts a 24-id one. Verified live 2026-07-29. This is a
 # vendor constraint, not a tuning knob, which is why it is a constant and not in thresholds.json.
@@ -35,4 +35,53 @@ def normalise(row: dict) -> dict:
         "breakout_score": row.get("breakoutScore"),
         "vph": row.get("vph"),
         "engagement_rate": row.get("engagementRate"),
+    }
+
+
+def fetch(client, guard, channel_ids: list[str], content_type: str = "long",
+          window: str = "thisMonth", limit: int = 100) -> dict:
+    """Every batch vidIQ will accept, merged. A batch that fails is named, not absorbed.
+
+    Returning 48 channels' outliers as if they were 72 would read as "nothing broke out on the
+    other 24", which is a claim nobody made. coverage carries the truth to the page.
+    """
+    groups = batches(channel_ids)
+    by_id: dict[str, dict] = {}
+    ok = 0
+    missing: list[str] = []
+
+    for group in groups:
+        guard.check(OUTLIER_COST, f"vidiq_outliers x{len(group)} {content_type}")
+        try:
+            payload = client.call("vidiq_outliers", {
+                "channelIds": list(group),
+                "contentType": content_type,
+                "publishedWithin": window,
+                "limit": limit,
+                "sort": "breakoutScore",
+            })
+        except vidiq.VidiqError:
+            missing.extend(group)
+            continue
+        finally:
+            guard.record(OUTLIER_COST)
+        ok += 1
+        for raw in payload.get("videos") or []:
+            row = normalise(raw)
+            if row["video_id"]:
+                by_id.setdefault(row["video_id"], row)
+
+    videos = sorted(by_id.values(),
+                    key=lambda v: (-(v["breakout_score"] or 0), v["video_id"]))
+    return {
+        "videos": videos,
+        "coverage": {
+            "channels_requested": len(channel_ids),
+            "batches_ok": ok,
+            "batches_failed": len(groups) - ok,
+            "missing_channel_ids": missing,
+        },
+        "credits": OUTLIER_COST * len(groups),
+        "window": window,
+        "content_type": content_type,
     }
