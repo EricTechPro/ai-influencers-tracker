@@ -9,8 +9,73 @@ decides whether a row offers "promote" or "add to that topic".
 from __future__ import annotations
 
 import datetime as dt
+import pathlib
 
 from . import config, topics, util
+
+GROUP_KEYS = ("pattern_id", "label", "evidence")
+
+
+def candidates(today: dt.date | None = None) -> list[dict]:
+    """The cards the feed is showing, as the grouping pass sees them.
+
+    Deliberately reads _db/recent.json rather than the sweep in _synthesize/: the pass should
+    group what is on the page, so an id it hands back is always one the page can render.
+    """
+    bundle = util.read_json(config.db_dir() / "recent.json", default=None)
+    if not bundle:
+        return []
+    return [{"video_id": v.get("video_id"), "title": v.get("title"),
+             "channel_name": v.get("channel_name"), "type": v.get("type"),
+             "breakout_score": v.get("breakout_score")}
+            for v in bundle.get("videos") or []]
+
+
+def write_groups(groups: list[dict], today: dt.date | None = None) -> pathlib.Path:
+    """Validate a grouping pass and write it, or raise and write nothing.
+
+    The model picks the labels; these checks are the part that is not a judgement. Every rule here
+    exists because breaking it puts something on the page that cannot be traced back to a video
+    vidIQ actually returned — a hallucinated id rendering as a card, or a video silently taking
+    whichever of two groups was written last. A half-written pass is worse than no pass, because
+    build_data reads whatever is on disk as the real grouping, so nothing is written until every
+    group has passed.
+    """
+    known = {row["video_id"] for row in candidates()}
+    seen_patterns: set[str] = set()
+    owner: dict[str, str] = {}
+    clean: list[dict] = []
+
+    for group in groups:
+        pattern_id = str(group.get("pattern_id") or "").strip()
+        if not pattern_id:
+            raise ValueError("every group needs a pattern_id")
+        if pattern_id in seen_patterns:
+            raise ValueError(f"duplicate pattern_id {pattern_id!r}")
+        seen_patterns.add(pattern_id)
+
+        label = str(group.get("label") or "").strip()
+        if not label:
+            raise ValueError(f"group {pattern_id!r} has an empty label")
+
+        evidence = list(group.get("evidence") or [])
+        if not evidence:
+            raise ValueError(f"group {pattern_id!r} has no evidence")
+        for video_id in evidence:
+            if video_id not in known:
+                raise ValueError(f"{video_id!r} is not in the sweep, so no page can show it")
+            if video_id in owner:
+                raise ValueError(
+                    f"{video_id!r} is in two groups ({owner[video_id]!r} and {pattern_id!r}); "
+                    "a card carries one pattern_id, so this is refused rather than resolved")
+            owner[video_id] = pattern_id
+
+        clean.append({"pattern_id": pattern_id, "label": label, "evidence": evidence})
+
+    day = today or util.today()
+    path = config.synth_dir() / "patterns" / f"{util.date_str(day)}.json"
+    util.write_json(path, {"version": 1, "date": util.date_str(day), "groups": clean})
+    return path
 
 
 def read_groups(today: dt.date | None = None) -> list[dict]:
