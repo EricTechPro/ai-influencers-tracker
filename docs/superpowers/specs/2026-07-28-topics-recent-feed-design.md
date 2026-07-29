@@ -113,6 +113,26 @@ Same page, below the ranked feed.
   measurement. The multiplier on each card stays Derived and is unaffected.
 - Videos the pass does not group fall into a trailing "no pattern yet" row.
 
+**Every row resolves to one of three actions, and the row says which.** This is the part that makes
+the section useful rather than decorative: a pattern is not automatically a new topic.
+
+| state | when | action |
+|---|---|---|
+| `promote to a topic →` | clears the 3-creator floor and matches no existing leaf | author a new leaf in `config/topics.json` |
+| `add to that topic →` | the grouped titles match aliases on a leaf you already authored | file them under that leaf; the existing topic page shows it heating up |
+| `needs 3 creators` | a real group, but too few distinct channels | disabled. Watch it, do not author it |
+
+The floor is `min_n.consensus_min_creators`, already 3 in `config/thresholds.json`. It does not apply
+to the `add to that topic` case, because that topic cleared it when it was authored.
+
+The existing-leaf check is a deterministic alias match against `config/topics.json`, run after the
+grouping pass. It is Derived, not Inference: either the titles hit the leaf's aliases or they do not.
+Only the label and the membership of a group are inference.
+
+All three states appear in the real 7-day window, which is why they are in the mockup: Hermes Agent
+is below the floor at 2 creators, Opus 5 reviews clears it at 3, and the Skills group matches the
+existing `claude-code-skills-authoring` leaf.
+
 Grouping is computed once over the 30d set. Flipping the window filters the existing rows client
 side; it does not trigger a re-grouping.
 

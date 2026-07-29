@@ -87,6 +87,17 @@
   background: var(--card); border-radius: 4px; padding: 2px 10px; cursor: pointer; font-family: inherit;
 }
 .ppromote:hover { background: var(--primary); color: #fff; }
+/* three outcomes, three affordances: a new topic, a leaf that already exists,
+   or not enough creators to be either yet */
+.ppromote.padd { border-color: var(--v-unserved); color: var(--v-unserved); }
+.ppromote.padd:hover { background: var(--v-unserved); color: #fff; }
+.ppromote.pfloor { border-color: var(--border); color: var(--muted-foreground); cursor: not-allowed; }
+.ppromote.pfloor:hover { background: var(--card); color: var(--muted-foreground); }
+.plegend { display: flex; gap: 16px; flex-wrap: wrap; font-size: 10px; color: var(--muted-foreground);
+  border-top: 1px solid var(--border); margin-top: 6px; padding-top: 10px; }
+.plegend b { font-weight: 700; }
+.pleaf { font-size: 10px; color: var(--v-unserved); border: 1px solid color-mix(in srgb, var(--v-unserved) 35%, transparent);
+  border-radius: 3px; padding: 0 5px; }
 .pevidence {
   font-size: 10px; color: var(--muted-foreground); margin: 9px 0 0;
   border-left: 2px solid color-mix(in srgb, var(--inf) 40%, transparent); padding-left: 9px; line-height: 1.6;
@@ -295,7 +306,7 @@
             <span class="plabel">Hermes Agent crash courses</span>
             <span class="pinf">INFERENCE</span>
             <span class="pstat">2 videos · 2 creators · avg 11.1× · newest 5d</span>
-            <button class="ppromote" style="border-color:var(--border);color:var(--muted-foreground)">below floor</button>
+            <button class="ppromote pfloor" disabled>needs 3 creators</button>
           </div>
           <div class="pgrid">
             <a class="ycard" href="https://youtu.be/IbFaY3xFpZM" target="_blank" rel="noreferrer"><span class="ythumb"><img src="https://i.ytimg.com/vi/IbFaY3xFpZM/mqdefault.jpg" alt=""><span class="ymult">19.4×</span></span>
@@ -328,8 +339,9 @@
           <div class="phead">
             <span class="plabel">Skills as an engineering workflow</span>
             <span class="pinf">INFERENCE</span>
+            <span class="pleaf">matches claude-code-skills-authoring</span>
             <span class="pstat">2 videos · 2 creators · avg 2.8× · newest 5d</span>
-            <button class="ppromote" style="border-color:var(--border);color:var(--muted-foreground)">below floor</button>
+            <button class="ppromote padd">add to that topic →</button>
           </div>
           <div class="pgrid">
             <a class="ycard" href="https://youtu.be/W973FsTECa8" target="_blank" rel="noreferrer"><span class="ythumb"><img src="https://i.ytimg.com/vi/W973FsTECa8/mqdefault.jpg" alt=""><span class="ymult tier2">3.1×</span></span>
@@ -337,15 +349,21 @@
             <a class="ycard" href="https://youtu.be/jbiMx17fEK0" target="_blank" rel="noreferrer"><span class="ythumb"><img src="https://i.ytimg.com/vi/jbiMx17fEK0/mqdefault.jpg" alt=""><span class="ymult tier3">2.4×</span></span>
               <span class="ybody"><span class="ymeta"><span class="ytitle">Anthropic Just Changed How We Build Skills Forever</span><span class="ystat">Brock Mesarich · 72.4K</span></span></span></a>
           </div>
-          <p class="pevidence">grouped on these titles: “18 万星 Skills 项目的工程链三件套之三 to-tickets” · “Anthropic Just Changed How We Build Skills Forever”<br><code>claude-code-skills-authoring</code> already exists as a leaf, so this row would offer <b>add to existing topic</b> rather than a new one.</p>
+          <p class="pevidence">grouped on these titles: “18 万星 Skills 项目的工程链三件套之三 to-tickets” · “Anthropic Just Changed How We Build Skills Forever”<br><b>this one is not a new topic.</b> Both titles match aliases on the leaf you already authored, <code>claude-code-skills-authoring</code>, so the action is to file them there and let that topic page show it is heating up. The 3-creator floor does not apply, because the topic already cleared it.</p>
         </div>
 
         <div class="prow">
           <div class="phead">
             <span class="plabel">no pattern yet</span>
             <span class="pstat">5 videos · nothing the pass could group with confidence</span>
-            <button class="ppromote" style="border-color:var(--border);color:var(--muted-foreground)">show →</button>
+            <button class="ppromote pfloor">show →</button>
           </div>
+        </div>
+
+        <div class="plegend">
+          <span><b>promote to a topic →</b> clears the 3-creator floor and matches no existing leaf</span>
+          <span><b style="color:var(--v-unserved)">add to that topic →</b> matches a leaf you already authored</span>
+          <span><b>needs 3 creators</b> real, but too few channels to act on yet</span>
         </div>
 
       </div>
