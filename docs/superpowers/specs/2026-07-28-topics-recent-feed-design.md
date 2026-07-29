@@ -30,7 +30,43 @@ real topic page with history. One direction, and the pipeline still never writes
 
 ### Part 1: the breaking feed
 
-- Window toggle: 7d / 14d / 30d, default 7d. Client-side state, no refetch.
+Mockup: `docs/mockups/topics-recent.html` (served by `docs/mockups/serve.py`, port 3013), built
+from the real 7-day window on 2026-07-28.
+
+**Layout.** Social-invest chrome and tokens throughout, matching every other page: `.appnav`,
+`.section-kicker`, `.card`, the Google Sans Code type ramp, the existing colour variables. Inside
+that frame the video grid is deliberately YouTube's own geometry, because that is the layout the eye
+already reads at speed:
+
+- 4-up responsive grid (2-up under 60rem), 16px row gap.
+- 16:9 thumbnail, 8px radius, real `i.ytimg.com` thumbnails, no quota cost.
+- Duration pill bottom-right, on a dark backdrop, exactly where YouTube puts it.
+- **The multiplier badge takes the slot YouTube uses for LIVE / NEW**: bottom-left, filled, green.
+  Solid at >= 10x, mid-green 3-10x, grey below. It is the sort key, so it is the loudest thing on
+  the card.
+- Below the thumbnail: 34px round avatar on the LEFT of a title/channel/stats column. Title clamps
+  to 2 lines. This is YouTube's grid card, not the existing `.shelf-rail` card, which stacks.
+- Your own channel's rows carry a `· you` marker in primary blue.
+
+The existing `.vcard` in `globals.css` stays as it is for the taxonomy shelves. The feed gets a
+sibling class rather than a rewrite of the shared one.
+
+**Controls.** Three segmented toggles, all pure client-side filters over the same bundle:
+
+- window: 7d / 14d / 30d, default 7d
+- format: all / long / shorts
+- per channel: max 2 / show all, **default max 2**
+
+The per-channel cap is not a nicety. Ranking the real 7-day window purely by multiplier puts Samin
+Yasar in 6 of the top 14 slots: his shorts baseline is small, so nearly every short he posts scores
+8-11x. That is one channel flooding the feed, which is the exact failure of the subscriptions page
+this section exists to replace. Capping at 2 per channel is what makes the top 12 read as 9
+different creators.
+
+The format filter exists for the same reason in the other direction: a 5.2K-view short at 11.8x and
+a 32.8K-view long-form at 19.4x are not comparable decisions, and mixing them in one ranked list
+asks the eye to do a conversion it cannot do.
+
 - Cards sorted by `multiplier.value` descending.
 - Renders the existing `components/video-card.tsx` unchanged except for one thing: the card
   currently hides the multiplier badge below 2.0x (`const hot = ... >= 2`). In this feed the
@@ -119,10 +155,11 @@ render a card. Avatars keep resolving through the existing `channelAvatarUrl` pa
 
 ## Web
 
-- `web/lib/recent.ts`: pure filter and sort. Takes the bundle plus a window, returns ranked rows
-  and the no-baseline tail. No I/O.
-- `web/components/recent-feed.tsx`: client component, owns the window toggle state, renders
-  `VideoCard`.
+- `web/lib/recent.ts`: pure filter and sort. Takes the bundle plus `{window, format, perChannelCap}`
+  and returns ranked rows plus the no-baseline tail. No I/O.
+- `web/components/recent-feed.tsx`: client component, owns the three toggles' state.
+- `web/components/grid-video-card.tsx`: the YouTube-geometry card. A sibling to the existing
+  `video-card.tsx`, not a rewrite of it, so the taxonomy shelves below are untouched.
 - `web/lib/bundles.ts`: one new `loadRecent()` following the existing `load<T>()` pattern.
 - `web/lib/types.ts`: `RecentBundle`, `RecentRow`, `PatternRow`.
 - `web/app/topics/page.tsx`: mount the section above the existing root loop.
@@ -140,6 +177,9 @@ Python (`pipeline/bundles/test_recent.py`):
 
 TypeScript (`web/lib/recent.test.ts`, vitest):
 - filtering 30d down to 7d and 14d returns the expected subsets
+- the per-channel cap keeps the 2 highest-multiplier rows of a channel and drops the rest, and
+  lifting the cap restores them in order
+- the format filter partitions cleanly and never drops a row from both sides
 - the no-baseline tail is separated from the ranked list
 - an empty window renders as empty, not as an error
 

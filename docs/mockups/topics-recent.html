@@ -1,0 +1,373 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AIT mockups · /topics recent feed</title>
+<link rel="stylesheet" href="board.css">
+<style>
+/* ————— YouTube-faithful grid, wearing social-invest tokens —————
+   Card geometry is YouTube's: 16:9 thumb, duration pill bottom-right,
+   36px round avatar to the LEFT of a title/channel/meta column, 2-line
+   title clamp. Everything else (type, colour, borders, radii) is the
+   board's own tokens so it sits inside the app rather than beside it. */
+.ygrid { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 16px 14px; }
+@media (max-width: 60rem) { .ygrid { grid-template-columns: repeat(2, minmax(0,1fr)); } }
+
+.ycard { display: block; color: inherit; text-decoration: none; }
+.ycard:hover { text-decoration: none; }
+.ycard:hover .ytitle { color: var(--primary); }
+
+.ythumb {
+  position: relative; display: block; aspect-ratio: 16/9; overflow: hidden;
+  background: var(--muted); border: 1px solid var(--border); border-radius: 8px;
+}
+.ythumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.ycard:hover .ythumb img { transform: scale(1.03); transition: transform 200ms ease-out; }
+
+/* duration sits bottom-right exactly where YouTube puts it */
+.ylen {
+  position: absolute; right: 5px; bottom: 5px; padding: 0 4px; border-radius: 3px;
+  background: rgba(0,0,0,0.8); color: #fff; font-size: 10px; font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+/* the multiplier takes the slot YouTube uses for LIVE / NEW badges */
+.ymult {
+  position: absolute; left: 5px; bottom: 5px; padding: 1px 5px; border-radius: 3px;
+  background: var(--v-make); color: #fff; font-size: 11px; font-weight: 700;
+  font-variant-numeric: tabular-nums; letter-spacing: -0.01em;
+}
+.ymult.tier2 { background: #2f8f4e; }
+.ymult.tier3 { background: var(--muted-foreground); }
+.yshort {
+  position: absolute; left: 5px; top: 5px; padding: 0 4px; border-radius: 3px;
+  background: rgba(0,0,0,0.7); color: #fff; font-size: 9px; font-weight: 700; letter-spacing: 0.06em;
+}
+
+.ybody { display: flex; gap: 10px; padding: 9px 0 0; }
+.yav {
+  flex: none; width: 34px; height: 34px; border-radius: 999px; overflow: hidden;
+  background: var(--secondary); border: 1px solid var(--border);
+  display: grid; place-items: center; font-size: 11px; font-weight: 700; color: var(--muted-foreground);
+}
+.ymeta { min-width: 0; }
+.ytitle {
+  font-size: 12.5px; font-weight: 600; line-height: 1.32; margin: 0 0 3px;
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden;
+}
+.ychan { font-size: 11px; color: var(--muted-foreground); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ystat { font-size: 11px; color: var(--muted-foreground); font-variant-numeric: tabular-nums; }
+.yself { color: var(--primary); font-weight: 700; }
+
+/* ————— control bar ————— */
+.ctrls { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; margin: 0 0 14px; }
+.ctrl { display: flex; align-items: center; gap: 6px; }
+.ctrl > .lbl { font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted-foreground); }
+.seg { display: inline-flex; border: 1px solid var(--border); border-radius: 4px; overflow: hidden; background: var(--card); }
+.seg button {
+  font: inherit; font-size: 11px; padding: 3px 10px; border: 0; background: transparent;
+  color: var(--muted-foreground); cursor: pointer; border-right: 1px solid var(--border);
+}
+.seg button:last-child { border-right: 0; }
+.seg button.on { background: var(--primary); color: #fff; font-weight: 600; }
+
+/* ————— pattern rows ————— */
+.prow { border-top: 1px solid var(--border); padding: 14px 0 4px; }
+.prow:first-of-type { border-top: 0; }
+.phead { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin-bottom: 9px; }
+.plabel { font-size: 13px; font-weight: 700; }
+.pinf {
+  font-size: 9px; font-weight: 700; letter-spacing: 0.06em; color: var(--inf);
+  border: 1px solid color-mix(in srgb, var(--inf) 35%, transparent); border-radius: 3px; padding: 0 5px;
+}
+.pstat { font-size: 10px; color: var(--muted-foreground); font-variant-numeric: tabular-nums; }
+.ppromote {
+  margin-left: auto; font-size: 11px; border: 1px solid var(--primary); color: var(--primary);
+  background: var(--card); border-radius: 4px; padding: 2px 10px; cursor: pointer; font-family: inherit;
+}
+.ppromote:hover { background: var(--primary); color: #fff; }
+.pevidence {
+  font-size: 10px; color: var(--muted-foreground); margin: 9px 0 0;
+  border-left: 2px solid color-mix(in srgb, var(--inf) 40%, transparent); padding-left: 9px; line-height: 1.6;
+}
+.pgrid { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 14px; }
+@media (max-width: 60rem) { .pgrid { grid-template-columns: repeat(2, minmax(0,1fr)); } }
+
+.tail {
+  margin-top: 20px; border: 1px dashed var(--border); border-radius: 6px; padding: 11px 14px;
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap; background: var(--card);
+}
+.tail .t1 { font-size: 12px; font-weight: 600; }
+.tail .t2 { font-size: 10px; color: var(--muted-foreground); }
+.tail button {
+  margin-left: auto; font: inherit; font-size: 11px; border: 1px solid var(--border);
+  background: var(--secondary); border-radius: 4px; padding: 2px 12px; cursor: pointer;
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>/topics — the recent feed</h1>
+<p class="lede">
+  The section that replaces scrolling the subscriptions page. Social-invest chrome and tokens
+  throughout; the video grid itself is YouTube's geometry on purpose, because that is the layout
+  the eye already reads at speed. Every card below is a real row out of <code>_db/videos.json</code>
+  for the 7-day window on 2026-07-28, ranked by each channel's own multiplier. Nothing here is
+  invented.
+</p>
+
+<div class="pageframe" data-group="topics-recent" data-v="A">
+  <div class="framebar"><span class="dots"><i></i><i></i><i></i></span>
+    <span class="url">localhost:3002/topics</span>
+    <span class="vlabel">RECENT FEED</span>
+    <span class="vdesc">YouTube grid · social-invest chrome</span>
+  </div>
+  <div class="framebody">
+    <div class="appnav"><span class="logo">ai influencers</span>
+      <nav><a href="#">home</a><a href="#">leaderboard</a><a class="active" href="#">topics</a><a href="#">channels</a><a href="#">compare</a></nav>
+      <div class="right"><span>snapshot 2026-07-28</span><span class="livedot"></span></div>
+    </div>
+
+    <div class="page">
+
+      <!-- ══════════ 1. the breaking feed ══════════ -->
+      <div class="section-kicker">
+        <span class="kicker">WHAT WENT UP THIS WEEK</span>
+        <span class="rule"></span>
+        <span class="cap">214 scored of 302 · 7d</span>
+      </div>
+      <p class="note" style="margin:0 0 12px">
+        every video published in the window, ranked by views ÷ its own channel's median for its own
+        format · a small channel's breakout outranks a big channel's routine upload, which is the
+        whole point
+      </p>
+
+      <div class="ctrls">
+        <div class="ctrl"><span class="lbl">window</span>
+          <span class="seg"><button class="on">7d</button><button>14d</button><button>30d</button></span></div>
+        <div class="ctrl"><span class="lbl">format</span>
+          <span class="seg"><button class="on">all</button><button>long</button><button>shorts</button></span></div>
+        <div class="ctrl"><span class="lbl">per channel</span>
+          <span class="seg"><button class="on">max 2</button><button>show all</button></span></div>
+      </div>
+
+      <div class="ygrid">
+
+        <a class="ycard" href="https://youtu.be/6CkhaZbDesY" target="_blank" rel="noreferrer">
+          <span class="ythumb"><img src="https://i.ytimg.com/vi/6CkhaZbDesY/mqdefault.jpg" alt="">
+            <span class="yshort">SHORT</span><span class="ymult">21.0×</span><span class="ylen">1:02</span></span>
+          <span class="ybody"><span class="yav">CA</span><span class="ymeta">
+            <span class="ytitle">Your Sales Pipeline Is About to Get 10x Faster</span>
+            <span class="ychan">Charlie Automates</span><br>
+            <span class="ystat">107K views · 7d ago</span></span></span>
+        </a>
+
+        <a class="ycard" href="https://youtu.be/IbFaY3xFpZM" target="_blank" rel="noreferrer">
+          <span class="ythumb"><img src="https://i.ytimg.com/vi/IbFaY3xFpZM/mqdefault.jpg" alt="">
+            <span class="ymult">19.4×</span><span class="ylen">17:25</span></span>
+          <span class="ybody"><span class="yav">D</span><span class="ymeta">
+            <span class="ytitle">I Tested 100+ Hermes Agent Automations. These Are The Best</span>
+            <span class="ychan">Dubibubi</span><br>
+            <span class="ystat">32.8K views · 5d ago</span></span></span>
+        </a>
+
+        <a class="ycard" href="https://youtu.be/JQInc4V6SWg" target="_blank" rel="noreferrer">
+          <span class="ythumb"><img src="https://i.ytimg.com/vi/JQInc4V6SWg/mqdefault.jpg" alt="">
+            <span class="ymult">12.7×</span><span class="ylen">19:19</span></span>
+          <span class="ybody"><span class="yav">D</span><span class="ymeta">
+            <span class="ytitle">I Made Claude Opus 5 and Fable 5 Build the Same App (Raw Results)</span>
+            <span class="ychan">Dubibubi</span><br>
+            <span class="ystat">21.5K views · 3d ago</span></span></span>
+        </a>
+
+        <a class="ycard" href="https://youtu.be/RaD3G2qD8p4" target="_blank" rel="noreferrer">
+          <span class="ythumb"><img src="https://i.ytimg.com/vi/RaD3G2qD8p4/mqdefault.jpg" alt="">
+            <span class="yshort">SHORT</span><span class="ymult">11.8×</span><span class="ylen">1:15</span></span>
+          <span class="ybody"><span class="yav">SY</span><span class="ymeta">
+            <span class="ytitle">The best AI advice comes from multiple viewpoints, not a single response.</span>
+            <span class="ychan">Samin Yasar</span><br>
+            <span class="ystat">5.2K views · 3d ago</span></span></span>
+        </a>
+
+        <a class="ycard" href="https://youtu.be/Q9S6syJUCF8" target="_blank" rel="noreferrer">
+          <span class="ythumb"><img src="https://i.ytimg.com/vi/Q9S6syJUCF8/mqdefault.jpg" alt="">
+            <span class="yshort">SHORT</span><span class="ymult">11.4×</span><span class="ylen">0:49</span></span>
+          <span class="ybody"><span class="yav">SY</span><span class="ymeta">
+            <span class="ytitle">If you can't defend every claim AI generated, it's still a draft, not a deliverable.</span>
+            <span class="ychan">Samin Yasar</span><br>
+            <span class="ystat">5.0K views · 7d ago</span></span></span>
+        </a>
+
+        <a class="ycard" href="https://youtu.be/orGRrhyhtfc" target="_blank" rel="noreferrer">
+          <span class="ythumb"><img src="https://i.ytimg.com/vi/orGRrhyhtfc/mqdefault.jpg" alt="">
+            <span class="yshort">SHORT</span><span class="ymult tier2">6.6×</span><span class="ylen">0:47</span></span>
+          <span class="ybody"><span class="yav">DM</span><span class="ymeta">
+            <span class="ytitle">Should you SKIP, READ, or STUDY these books if you're a young entrepreneur</span>
+            <span class="ychan">Dan Martell</span><br>
+            <span class="ystat">250K views · 4d ago</span></span></span>
+        </a>
+
+        <a class="ycard" href="https://youtu.be/g89FJiNAlEs" target="_blank" rel="noreferrer">
+          <span class="ythumb"><img src="https://i.ytimg.com/vi/g89FJiNAlEs/mqdefault.jpg" alt="">
+            <span class="ymult tier2">4.6×</span><span class="ylen">15:08</span></span>
+          <span class="ybody"><span class="yav">ET</span><span class="ymeta">
+            <span class="ytitle">4 Free Repos That Cut Claude Code Token Usage</span>
+            <span class="ychan yself">Eric Tech · you</span><br>
+            <span class="ystat">7.5K views · 7d ago</span></span></span>
+        </a>
+
+        <a class="ycard" href="https://youtu.be/dUHpFuUIyi0" target="_blank" rel="noreferrer">
+          <span class="ythumb"><img src="https://i.ytimg.com/vi/dUHpFuUIyi0/mqdefault.jpg" alt="">
+            <span class="yshort">SHORT</span><span class="ymult tier2">4.3×</span><span class="ylen">0:41</span></span>
+          <span class="ybody"><span class="yav">JR</span><span class="ymeta">
+            <span class="ytitle">The FREE GitHub skill that deletes every AI tell.</span>
+            <span class="ychan">Jack Roberts</span><br>
+            <span class="ystat">37.3K views · 2d ago</span></span></span>
+        </a>
+
+        <a class="ycard" href="https://youtu.be/tPl4oRb9LLs" target="_blank" rel="noreferrer">
+          <span class="ythumb"><img src="https://i.ytimg.com/vi/tPl4oRb9LLs/mqdefault.jpg" alt="">
+            <span class="yshort">SHORT</span><span class="ymult tier2">4.2×</span><span class="ylen">0:32</span></span>
+          <span class="ybody"><span class="yav">JR</span><span class="ymeta">
+            <span class="ytitle">Run Claude Code and Cursor for FREE</span>
+            <span class="ychan">Jack Roberts</span><br>
+            <span class="ystat">36.2K views · 7d ago</span></span></span>
+        </a>
+
+        <a class="ycard" href="https://youtu.be/tOThVwny0jE" target="_blank" rel="noreferrer">
+          <span class="ythumb"><img src="https://i.ytimg.com/vi/tOThVwny0jE/mqdefault.jpg" alt="">
+            <span class="yshort">SHORT</span><span class="ymult tier2">3.9×</span><span class="ylen">0:54</span></span>
+          <span class="ybody"><span class="yav">DR</span><span class="ymeta">
+            <span class="ytitle">This Free GitHub Repo Gives Claude Internet Access</span>
+            <span class="ychan">Duncan Rogoff | Learn Claude Code</span><br>
+            <span class="ystat">18.1K views · 7d ago</span></span></span>
+        </a>
+
+        <a class="ycard" href="https://youtu.be/rD20wJkPUB4" target="_blank" rel="noreferrer">
+          <span class="ythumb"><img src="https://i.ytimg.com/vi/rD20wJkPUB4/mqdefault.jpg" alt="">
+            <span class="ymult tier2">3.9×</span><span class="ylen">13:20</span></span>
+          <span class="ybody"><span class="yav">CW</span><span class="ymeta">
+            <span class="ytitle">Kimi K3 explained in 13min..</span>
+            <span class="ychan">Caleb Writes Code</span><br>
+            <span class="ystat">147K views · 7d ago</span></span></span>
+        </a>
+
+        <a class="ycard" href="https://youtu.be/7FU98O0JLHs" target="_blank" rel="noreferrer">
+          <span class="ythumb"><img src="https://i.ytimg.com/vi/7FU98O0JLHs/mqdefault.jpg" alt="">
+            <span class="ymult tier3">3.4×</span><span class="ylen">23:00</span></span>
+          <span class="ybody"><span class="yav">CA</span><span class="ymeta">
+            <span class="ytitle">Turn Claude Into A Design GENIUS In 3 Simple Steps</span>
+            <span class="ychan">Chase AI</span><br>
+            <span class="ystat">145K views · 5d ago</span></span></span>
+        </a>
+
+      </div>
+
+      <div class="tail">
+        <span class="t1">88 more in this window have no baseline yet</span>
+        <span class="t2">their channel has under 5 mature uploads of that format, so there is nothing
+          to divide by. Unmeasured, never sorted as a zero.</span>
+        <button>show them</button>
+      </div>
+
+      <!-- ══════════ 2. pattern rows ══════════ -->
+      <div class="section-kicker">
+        <span class="kicker">PATTERNS IN THE TOP 40</span>
+        <span class="rule"></span>
+        <span class="cap">inference · 30d set</span>
+      </div>
+      <p class="note" style="margin:0 0 14px">
+        the same cards, regrouped by what they are actually about · every label is a judgement, not a
+        measurement, so each row shows the titles it was read from · a row that survives a week is a
+        topic worth authoring
+      </p>
+      <p class="note" style="margin:-6px 0 14px;color:var(--inf)">
+        ⓘ the grouping pass has not been built yet, so the two rows below were formed by hand from
+        the real 7-day titles to show the shape. The labels are illustrative; the videos, multipliers
+        and creator counts under them are not.
+      </p>
+
+      <div class="card pad">
+
+        <div class="prow">
+          <div class="phead">
+            <span class="plabel">Free repos and skills that cut Claude Code cost</span>
+            <span class="pinf">INFERENCE</span>
+            <span class="pstat">4 videos · 3 creators · avg 4.3× · newest 2d</span>
+            <button class="ppromote">promote to a topic →</button>
+          </div>
+          <div class="pgrid">
+            <a class="ycard" href="#"><span class="ythumb"><img src="https://i.ytimg.com/vi/g89FJiNAlEs/mqdefault.jpg" alt=""><span class="ymult tier2">4.6×</span></span>
+              <span class="ybody"><span class="ymeta"><span class="ytitle">4 Free Repos That Cut Claude Code Token Usage</span><span class="ystat yself">Eric Tech · you · 7.5K</span></span></span></a>
+            <a class="ycard" href="#"><span class="ythumb"><img src="https://i.ytimg.com/vi/dUHpFuUIyi0/mqdefault.jpg" alt=""><span class="ymult tier2">4.3×</span></span>
+              <span class="ybody"><span class="ymeta"><span class="ytitle">The FREE GitHub skill that deletes every AI tell.</span><span class="ystat">Jack Roberts · 37.3K</span></span></span></a>
+            <a class="ycard" href="#"><span class="ythumb"><img src="https://i.ytimg.com/vi/tPl4oRb9LLs/mqdefault.jpg" alt=""><span class="ymult tier2">4.2×</span></span>
+              <span class="ybody"><span class="ymeta"><span class="ytitle">Run Claude Code and Cursor for FREE</span><span class="ystat">Jack Roberts · 36.2K</span></span></span></a>
+            <a class="ycard" href="#"><span class="ythumb"><img src="https://i.ytimg.com/vi/tOThVwny0jE/mqdefault.jpg" alt=""><span class="ymult tier2">3.9×</span></span>
+              <span class="ybody"><span class="ymeta"><span class="ytitle">This Free GitHub Repo Gives Claude Internet Access</span><span class="ystat">Duncan Rogoff · 18.1K</span></span></span></a>
+          </div>
+          <p class="pevidence">grouped on these titles: “4 Free Repos That Cut Claude Code Token
+            Usage” · “The FREE GitHub skill that deletes every AI tell.” · “Run Claude Code and
+            Cursor for FREE” · “This Free GitHub Repo Gives Claude Internet Access”
+            <br><b>you are already in this one</b> — your own video sits mid-row, so this pattern is
+            confirmation rather than an opening.</p>
+        </div>
+
+        <div class="prow">
+          <div class="phead">
+            <span class="plabel">New-model explainers</span>
+            <span class="pinf">INFERENCE</span>
+            <span class="pstat">2 videos · 2 creators · avg 8.3× · newest 3d</span>
+            <button class="ppromote" style="border-color:var(--border);color:var(--muted-foreground)">below floor</button>
+          </div>
+          <div class="pgrid">
+            <a class="ycard" href="#"><span class="ythumb"><img src="https://i.ytimg.com/vi/JQInc4V6SWg/mqdefault.jpg" alt=""><span class="ymult">12.7×</span></span>
+              <span class="ybody"><span class="ymeta"><span class="ytitle">I Made Claude Opus 5 and Fable 5 Build the Same App (Raw Results)</span><span class="ystat">Dubibubi · 21.5K</span></span></span></a>
+            <a class="ycard" href="#"><span class="ythumb"><img src="https://i.ytimg.com/vi/rD20wJkPUB4/mqdefault.jpg" alt=""><span class="ymult tier2">3.9×</span></span>
+              <span class="ybody"><span class="ymeta"><span class="ytitle">Kimi K3 explained in 13min..</span><span class="ystat">Caleb Writes Code · 147K</span></span></span></a>
+          </div>
+          <p class="pevidence">grouped on these titles: “I Made Claude Opus 5 and Fable 5 Build the
+            Same App (Raw Results)” · “Kimi K3 explained in 13min..”
+            <br><b>2 creators, below the consensus floor of 3</b> — shown, but it cannot be promoted
+            yet. This is what a pattern looks like while it is still forming.</p>
+        </div>
+
+        <div class="prow">
+          <div class="phead">
+            <span class="plabel">no pattern yet</span>
+            <span class="pstat">11 videos · nothing the pass could group with confidence</span>
+            <button class="ppromote" style="border-color:var(--border);color:var(--muted-foreground)">show →</button>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ══════════ 3. evergreen, deliberately empty ══════════ -->
+      <div class="section-kicker">
+        <span class="kicker">STILL CLIMBING</span>
+        <span class="rule"></span>
+        <span class="cap">unmeasured</span>
+      </div>
+      <div class="card pad">
+        <p class="note" style="margin:0">
+          <b>Not available yet, and not zero.</b> Ranking older videos by daily growth needs a
+          view-count series. We hold 1 day of snapshots and are missing 89. The moment the daily
+          sweep has run twice this section fills itself in, using fields already present in
+          <code>videos.json</code> and no new plumbing.
+        </p>
+      </div>
+
+      <!-- the existing taxonomy shelves continue below, unchanged -->
+      <div class="section-kicker">
+        <span class="kicker">WHAT THE NICHE IS MAKING</span>
+        <span class="rule"></span>
+        <span class="cap">24 topics · 11,657 videos</span>
+      </div>
+      <p class="note" style="margin:0">↓ the existing topic shelves, untouched by this work</p>
+
+    </div>
+  </div>
+</div>
+
+</div>
+</body>
+</html>
