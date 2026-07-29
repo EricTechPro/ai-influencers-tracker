@@ -559,3 +559,111 @@ days of history against a 365-day window). The second is the only kind that cale
 exposed: a `view_count` flag was hiding a usable `subscriber_count`, so the card's line disagreed
 with the delta printed above it by 4,120 subscribers on Pat Simmons. `growth.test.ts` now asserts
 last-minus-first equals the delta for every channel and window in the real bundles.
+
+## 0011 — A window ends on the last day that was measured, not on today
+
+### Context
+
+`delta` built its window as `util.last_n_dates(today, window_days)` and required every one of those
+dates to be present. The sweep runs once a day, so between midnight and the run the newest snapshot
+on disk is yesterday's — and yesterday's absence made *today* the missing day of all six windows at
+once.
+
+On 2026-07-29 the board held **366 days** of history per channel (`_raw/backfill`, 2025-07-28 to
+2026-07-28) and reported this:
+
+- 70 of 72 channels: `building, 89 of 90 days` on 90d, `building, 6 of 7` on 7d, and the same
+  off-by-one on 14d, 30d, 180d and 365d.
+- `rank by growth` had no growth rates to rank, so the leaderboard silently fell back to
+  subscriber count and read as a size chart.
+- The home panel showed one callout instead of any channel, advising a **360-credit vidIQ backfill
+  to buy 365 days of history the repo already had**.
+
+Three surfaces, one absent day.
+
+### Decision
+
+The window ends at `_anchor()`: the newest day the channel has a usable reading for, provided it is
+within `thresholds.growth.anchor_max_lag_days` (3) of today. Otherwise the anchor stays on today.
+
+This is **not** a tolerance on the count. The window still spans exactly the days it asks for and
+spec §6 is untouched — 89 days never answer a 90-day question. What changed is where "the last 90
+days" is measured from: the last day there is a measurement for. A 90-day window ending yesterday
+is a full 90-day window; it is as-of yesterday, and `from`/`to` on the cell say so.
+
+The lag bound is what keeps that honest. A channel whose snapshots stopped in April holds a
+complete 90-day run somewhere in its past, and anchoring to it would date-stamp April's growth as
+current. Past the lag the shortfall is stated instead, which is the correct answer there.
+
+Effect on the live build: 90d subscriber deltas went 2 ok / 70 building → **66 ok, 4 bounded, 2
+building**, the two remaining being the channels that genuinely hold 60 and 76 days.
+
+`snapshot_health.history_days` was added in the same pass. `days_present` counts our own sweep
+files, which is the right answer to "is the sweep running" and was being rendered in the header as
+"1 of 90 days" — the answer to "how much history is on the board", where it is wrong by two orders
+of magnitude. Both facts stay, under separate names.
+
+Rejected alternatives:
+
+- **Accept a window that is one day short.** The obvious fix, and it is the one rule spec §6 names:
+  a number computed over fewer days than requested is not the number that was requested. It also
+  scales badly — accepting 89 of 90 invites accepting 85, and nothing marks where it stops.
+- **Wait for the sweep.** The launchd agent is staged, not installed, so every window on the board
+  was unmeasurable until someone installed it. Even installed, the board would go blind every night
+  between midnight and 09:00.
+- **Anchor to the newest day across the whole roster.** One channel going quiet would then hold
+  every other channel's window back a day, and a roster-wide anchor cannot express that one channel
+  is stale while the rest are current.
+
+## 0012 — The breakout score on the feed is vidIQ's, not ours
+
+### Context
+
+`/topics` needed a "what went up this week" feed, and the sort key is the question: how far past
+normal did a video run. `pipeline/multiplier.py` already computes one — a video's views over the
+median of its channel's last `multiplier.baseline_n` mature uploads — and it is what the taxonomy
+shelves rank by today.
+
+Checked against vidIQ's `breakoutScore` on every video the two sources share, ours disagreed by
+roughly **2x**, consistently high. Two causes, both structural:
+
+- **A median is the wrong centre for a skewed catalogue.** Eric Tech's own median is 1,648 views
+  against a mean of 6,628. Most channels in this niche have the same shape: a long tail of quiet
+  uploads and a few large ones. Dividing by the median of a tail-heavy distribution flatters every
+  video that is merely average.
+- **We cannot normalise by age and vidIQ can.** A 6-day-old video and a 300-day-old video are not
+  comparable on raw views, and the correction needs a per-channel view curve — which needs the
+  snapshot series, which had one day of history when this was written and needs about ninety.
+
+### Decision
+
+The feed shows **vidIQ's `breakoutScore`, carried through untouched, labelled `vendor`**. It is
+never recomputed, never rounded, and the card's tooltip names vidIQ rather than printing a
+derivation, because we did not compute it and cannot show its working.
+
+`vendor` is a fourth word beside Oracle / Derived / Inference, and it is the honest one: an exact
+number, but someone else's, and unauditable by us. Rendering it as Derived would promise a formula
+that does not exist on our side; rendering it as Inference would understate a real measurement.
+
+`pipeline/multiplier.py` is unchanged and still ranks the taxonomy shelves. Two ranking rules in
+one app is a cost, but the shelves answer "which video on this topic is worth watching" over the
+whole corpus, where a within-channel median is fine, and the feed answers "what broke out this
+week", where age normalisation is the whole game.
+
+### Rejected alternatives
+
+- **Switch our baseline to a trimmed mean.** It closes most of the 2x gap and is a two-line change.
+  It does nothing about age, which is the dimension that actually decides whether a 6-day-old video
+  is a breakout, so the number would agree better and still answer a different question.
+- **Show both numbers.** Two figures for one question, and the reader has no basis to prefer
+  either. The failure mode this repo exists to avoid is a page that looks precise and is not.
+- **Wait ninety days and compute it ourselves.** Defensible, and the snapshot clock is now running
+  (decision 0010's rebase work plus the launchd install). It is not a reason to ship nothing for a
+  quarter, and if our own number ever matches, this decision is cheap to revisit.
+
+### Scope
+
+`pipeline/outliers.py`, `pipeline/bundles/recent.py` (`TRUST["breakout_score"] == "vendor"`),
+`web/components/grid-video-card.tsx`, `thresholds.outliers`. The sweep costs 30 credits
+(2 formats x 3 batches x `OUTLIER_COST` 5) and lands in `_synthesize/outliers/<date>.json` because
+it is metered; `_db/recent.json` is the free copy the web reads.

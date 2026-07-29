@@ -545,6 +545,49 @@ is what lets one `ChainMap` component render both:
 `cites[].evidence` is **mandatory**. An edge with no verbatim evidence does not render. This is the
 direct port of social-invest's chain-map rule, written after string-matched prose produced ~50% junk.
 
+### `recent.json`
+
+The `/topics` feed. Its own bundle rather than a slice of `videos.json`, which is 16.7 MB and is
+never shipped to the browser whole; this one carries card fields only, for one month of outliers,
+so the window / format / per-channel toggles are client-side filters over a payload already in
+memory.
+
+```jsonc
+{
+  "version": 1,
+  "generated_at": "2026-07-29T00:00:00Z",
+  "source": "vidiq",
+  "fetched_at": "2026-07-29",          // null when no sweep has run: a state, not zero outliers
+  "window": "thisMonth",
+  "coverage": { "channels_requested": 72, "batches_ok": 6,
+                "batches_failed": 0, "missing_channel_ids": [] },
+  "videos": [{
+    "video_id": "IbFaY3xFpZM", "title": "...", "published_at": "2026-07-23T23:08:15Z",
+    "view_count": 36869, "duration_s": 1045, "type": "long",
+    "channel_id": "UC4Sg...", "channel_name": "Dubibubi",
+    "breakout_score": 9.59,            // vidIQ's, carried through untouched. null = not returned
+    "pattern_id": null                 // stamped by the grouping pass when one has run
+  }],
+  "patterns": [{ "pattern_id": "p1", "label": "...", "evidence": ["v1", "v2"],
+                 "creator_count": 3, "existing_leaf": "claude-code-mcp-setup",
+                 "action": "add_to_leaf" }],
+  "trust": { "breakout_score": "vendor", "pattern": "inference", "existing_leaf": "derived" }
+}
+```
+
+**Inputs.** `_synthesize/outliers/<date>.json`, written by `pipeline/outliers.py` (metered: 30
+credits, 2 formats x 3 batches of 24 x 5), and `_synthesize/patterns/<date>.json`, written by a
+skill that does the LLM grouping — `pipeline/` imports stdlib and never calls a model. Both are
+optional: missing outliers give an empty feed that says so, missing patterns give empty rows that
+say so.
+
+**`vendor` is a fourth trust tier**, beside Oracle / Derived / Inference: an exact number that is
+someone else's and that we cannot audit. `breakout_score` is never recomputed or rounded, and the
+card names vidIQ rather than printing a derivation. Decision 0012 has the why.
+
+`coverage.batches_failed > 0` renders as a warning on the page. Returning 48 channels' outliers as
+if they were 72 would read as "nothing broke out on the other 24", which is a claim nobody made.
+
 ### `meta.json`
 
 ```jsonc

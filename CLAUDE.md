@@ -12,12 +12,20 @@ ruff check pipeline test_anchors.py scripts        # style, line-length 100
 python3 -m pipeline.snapshot --dry-run             # what the daily sweep would cost, writes nothing
 python3 -m pipeline.snapshot                       # the real sweep; launchd runs it at 09:00 once installed
 python3 -m pipeline.build_data                      # rebuild _db/ from _raw/ and _synthesize/
+python3 -m pipeline.outliers                       # what the vidIQ outlier sweep would cost, writes nothing
+python3 -m pipeline.outliers --no-dry-run          # the real sweep, 30 credits, writes _synthesize/outliers/
 ```
 
 Keys live in the repo-root `.env`. `GITHUB_TOKEN` is present; the GitHub sweep runs authenticated
-rather than at the anonymous rate limit. The launchd agent (`scripts/ait-snapshot.plist`) is staged
-but not yet installed into `~/Library/LaunchAgents/`; `scripts/install_ait_snapshot_launchd.sh` does
-that by hand.
+rather than at the anonymous rate limit. The launchd agent (`scripts/ait-snapshot.plist`) is
+**installed and loaded** as `ca.erictech.ait-snapshot`, so the sweep runs itself at 09:00;
+`launchctl list | grep ait` confirms it and `scripts/install_ait_snapshot_launchd.sh` reinstalls it.
+
+`/topics` opens with the **recent feed**: vidIQ's breakout score over the roster, one sweep per
+day into `_synthesize/outliers/<date>.json`, read by `_db/recent.json`. The score is `vendor`
+tier — vidIQ's number, never recomputed (decision 0012). Pattern rows underneath read
+`_synthesize/patterns/<date>.json`, which no skill writes yet, so they render an honest empty
+state.
 
 **Next is step 12** (`docs/spec.md` §10): comment classification, then the reply queue. **Step 13
 is a hard gate**: no extraction work begins until a 20-video manual spike measures artifact capture
