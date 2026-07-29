@@ -215,15 +215,16 @@ def keyword_sweep(leaf_topics: list, client: VidIQ, guard: CostGuard,
     volumes: dict[str, dict] = {}
     for topic in leaf_topics:
         guard.check(KEYWORD_COST, f"keyword {topic.id}")
+        keyword = topic.search_keyword or topic.label
         payload = client.call("vidiq_keyword_research",
-                              {"keyword": topic.label, "includeRelated": False})
+                              {"keyword": keyword, "includeRelated": False})
         guard.record(KEYWORD_COST)
         # Live shape nests it under seedKeyword (singular estimatedMonthlySearch); the flat
         # estimatedMonthlySearches key is kept as a fallback in case an older shape returns.
         volume = (payload.get("seedKeyword") or {}).get("estimatedMonthlySearch")
         if volume is None:
             volume = payload.get("estimatedMonthlySearches")
-        volumes[topic.id] = {"keyword": topic.label,
+        volumes[topic.id] = {"keyword": keyword,
                              "volume": int(volume) if volume is not None else None,
                              "state": "ok" if volume is not None else "unavailable"}
     util.write_json(config.raw_dir() / "keywords" / f"{util.date_str(today)}.json",

@@ -200,3 +200,28 @@ def test_a_video_matching_only_on_description_still_records_the_assignment():
     assert [r["topic_id"] for r in rows] == ["n8n"]
     assert rows[0]["matched_on"] == ["description"]
     assert topics.is_member(rows[0], 0.45) is False
+
+
+def test_a_leaf_carries_the_phrase_people_actually_search(ait_root, write_config):
+    """The keyword sweep asked vidIQ about the topic's full label, and nobody types "Wiring MCP
+    servers into Claude Code" into YouTube. 16 of 22 topics came back 0 searches/mo — real
+    answers to the wrong question. search_keyword is the phrase to ask about instead."""
+    write_config("topics.json", {"version": 1, "topics": [
+        {"id": "parent", "label": "Parent", "children": [
+            {"id": "leaf", "label": "Wiring MCP servers into Claude Code", "shape": "tutorial",
+             "search_keyword": "claude code mcp", "aliases": ["mcp"]},
+        ]},
+    ]})
+    index = topics.load()
+    assert index["leaf"].search_keyword == "claude code mcp"
+
+
+def test_a_leaf_without_one_falls_back_to_its_label(ait_root, write_config):
+    """Optional on purpose: a topic whose label is already what people type needs no second
+    field, and a missing one must not silently sweep an empty string."""
+    write_config("topics.json", {"version": 1, "topics": [
+        {"id": "parent", "label": "Parent", "children": [
+            {"id": "leaf", "label": "RAG pipelines", "shape": "tutorial", "aliases": ["rag"]},
+        ]},
+    ]})
+    assert topics.load()["leaf"].search_keyword == "RAG pipelines"

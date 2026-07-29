@@ -14,7 +14,6 @@
     "    review topics carry no artifacts, so they skip the step 13 capture gate.",
     "24 leaves. Eric: cut, rename, merge, and fix the shape tags."
   ],
-
   "topics": [
     {
       "id": "claude-code",
@@ -24,54 +23,103 @@
           "id": "claude-code-skills-authoring",
           "label": "Writing Claude Code skills",
           "shape": "tutorial",
-          "aliases": ["claude skills", "agent skills", "skill authoring", "custom skill",
-                      "skills 2.0", "build a skill", "SKILL.md"]
+          "aliases": [
+            "claude skills",
+            "agent skills",
+            "skill authoring",
+            "custom skill",
+            "skills 2.0",
+            "build a skill",
+            "SKILL.md"
+          ],
+          "search_keyword": "claude code skills"
         },
         {
           "id": "claude-code-subagents",
           "label": "Subagents and agent teams",
           "shape": "tutorial",
-          "aliases": ["subagent", "sub-agent", "agent team", "ai council",
-                      "engineering team", "parallel agents"]
+          "aliases": [
+            "subagent",
+            "sub-agent",
+            "agent team",
+            "ai council",
+            "engineering team",
+            "parallel agents"
+          ],
+          "search_keyword": "claude code subagents"
         },
         {
           "id": "claude-code-memory",
           "label": "Claude Code memory systems",
           "shape": "tutorial",
-          "aliases": ["claude memory", "memory system", "short-term memory", "autodream",
-                      "self-evolving memory", "persistent memory", "CLAUDE.md"]
+          "aliases": [
+            "claude memory",
+            "memory system",
+            "short-term memory",
+            "autodream",
+            "self-evolving memory",
+            "persistent memory",
+            "CLAUDE.md"
+          ],
+          "search_keyword": "claude code memory"
         },
         {
           "id": "claude-code-mcp-setup",
           "label": "Wiring MCP servers into Claude Code",
           "shape": "tutorial",
-          "aliases": ["mcp", "model context protocol", "mcp server", ".mcp.json",
-                      "claude mcp add", "mcp setup"]
+          "aliases": [
+            "mcp",
+            "model context protocol",
+            "mcp server",
+            ".mcp.json",
+            "claude mcp add",
+            "mcp setup"
+          ],
+          "search_keyword": "claude code mcp"
         },
         {
           "id": "claude-code-plugins",
           "label": "Claude Code plugins and marketplaces",
           "shape": "tutorial",
-          "aliases": ["claude code plugin", "plugin marketplace", "cowork plugin",
-                      "top 10 plugins", "connectors"]
+          "aliases": [
+            "claude code plugin",
+            "plugin marketplace",
+            "cowork plugin",
+            "top 10 plugins",
+            "connectors"
+          ],
+          "search_keyword": "claude code plugins"
         },
         {
           "id": "claude-code-context-engineering",
           "label": "Context engineering and window management",
           "shape": "tutorial",
-          "aliases": ["context engineering", "context window", "more context",
-                      "context rot", "compaction", "1m context"]
+          "aliases": [
+            "context engineering",
+            "context window",
+            "more context",
+            "context rot",
+            "compaction",
+            "1m context"
+          ],
+          "search_keyword": "context engineering"
         },
         {
           "id": "claude-code-hooks-config",
           "label": "Hooks, settings and permissions",
           "shape": "tutorial",
-          "aliases": ["claude code hooks", "settings.json", "permissions", "sandbox",
-                      "hook script", "pretooluse"]
+          "aliases": [
+            "claude code hooks",
+            "settings.json",
+            "permissions",
+            "sandbox",
+            "hook script",
+            "pretooluse"
+          ],
+          "search_keyword": "claude code hooks"
         }
       ]
     },
-
     {
       "id": "ai-coding-tools",
       "label": "AI coding tools",
@@ -80,37 +128,73 @@
           "id": "cli-agent-comparison",
           "label": "Claude Code vs Codex vs Gemini CLI",
           "shape": "review",
-          "aliases": ["claude code vs", "codex vs", "gemini cli vs", "cli compared",
-                      "which ai cli", "head to head", "30 days with"]
+          "aliases": [
+            "claude code vs",
+            "codex vs",
+            "gemini cli vs",
+            "cli compared",
+            "which ai cli",
+            "head to head",
+            "30 days with"
+          ],
+          "search_keyword": "claude code vs codex"
         },
         {
           "id": "codex-workflows",
           "label": "Building with OpenAI Codex",
           "shape": "tutorial",
-          "aliases": ["codex", "openai codex", "codex cli", "codex workflow", "symphony"]
+          "aliases": [
+            "codex",
+            "openai codex",
+            "codex cli",
+            "codex workflow",
+            "symphony"
+          ],
+          "search_keyword": "openai codex"
         },
         {
           "id": "cursor-and-ide-agents",
           "label": "Cursor and in-IDE agents",
           "shape": "tutorial",
-          "aliases": ["cursor", "windsurf", "antigravity", "ide agent", "copilot workspace"]
+          "aliases": [
+            "cursor",
+            "windsurf",
+            "antigravity",
+            "ide agent",
+            "copilot workspace"
+          ],
+          "search_keyword": "cursor ai"
         },
         {
           "id": "spec-driven-development",
           "label": "Spec-driven development",
           "shape": "tutorial",
-          "aliases": ["spec driven", "spec-driven", "openspec", "agent os", "plan mode",
-                      "specification first", "/goal"]
+          "aliases": [
+            "spec driven",
+            "spec-driven",
+            "openspec",
+            "agent os",
+            "plan mode",
+            "specification first",
+            "/goal"
+          ],
+          "search_keyword": "spec driven development"
         },
         {
           "id": "vibe-coding-practice",
           "label": "Vibe coding, and its limits",
           "shape": "review",
-          "aliases": ["vibe coding", "vibe coder", "anti vibe", "vibe code", "no code app"]
+          "aliases": [
+            "vibe coding",
+            "vibe coder",
+            "anti vibe",
+            "vibe code",
+            "no code app"
+          ],
+          "search_keyword": "vibe coding"
         }
       ]
     },
-
     {
       "id": "agents",
       "label": "AI agents and automation",
@@ -119,32 +203,61 @@
           "id": "n8n-agent-workflows",
           "label": "n8n agent workflows",
           "shape": "tutorial",
-          "aliases": ["n8n", "n8n agent", "n8n workflow", "make.com", "zapier", "automation workflow"]
+          "aliases": [
+            "n8n",
+            "n8n agent",
+            "n8n workflow",
+            "make.com",
+            "zapier",
+            "automation workflow"
+          ],
+          "search_keyword": "n8n ai agent"
         },
         {
           "id": "multi-agent-orchestration",
           "label": "Multi-agent orchestration",
           "shape": "tutorial",
-          "aliases": ["multi agent", "multi-agent", "agent swarm", "orchestrator",
-                      "agent workflow", "hermes agent", "openclaw"]
+          "aliases": [
+            "multi agent",
+            "multi-agent",
+            "agent swarm",
+            "orchestrator",
+            "agent workflow",
+            "hermes agent",
+            "openclaw"
+          ],
+          "search_keyword": "multi agent ai"
         },
         {
           "id": "agent-evaluation-testing",
           "label": "Testing and evaluating agents",
           "shape": "tutorial",
-          "aliases": ["agent eval", "evals", "testing agents", "agent reliability",
-                      "benchmark my agent", "guardrails"]
+          "aliases": [
+            "agent eval",
+            "evals",
+            "testing agents",
+            "agent reliability",
+            "benchmark my agent",
+            "guardrails"
+          ],
+          "search_keyword": "ai agent evals"
         },
         {
           "id": "voice-and-multimodal-agents",
           "label": "Voice and multimodal agents",
           "shape": "tutorial",
-          "aliases": ["voice agent", "voice ai", "realtime api", "computer use",
-                      "browser agent", "vision agent"]
+          "aliases": [
+            "voice agent",
+            "voice ai",
+            "realtime api",
+            "computer use",
+            "browser agent",
+            "vision agent"
+          ],
+          "search_keyword": "ai voice agent"
         }
       ]
     },
-
     {
       "id": "knowledge-systems",
       "label": "Knowledge and retrieval",
@@ -153,26 +266,49 @@
           "id": "rag-pipelines",
           "label": "RAG pipelines",
           "shape": "tutorial",
-          "aliases": ["rag", "graphrag", "retrieval augmented", "vector database",
-                      "chromadb", "embeddings", "chunking"]
+          "aliases": [
+            "rag",
+            "graphrag",
+            "retrieval augmented",
+            "vector database",
+            "chromadb",
+            "embeddings",
+            "chunking"
+          ],
+          "search_keyword": "rag"
         },
         {
           "id": "self-improving-knowledge-base",
           "label": "Self-improving knowledge bases",
           "shape": "tutorial",
-          "aliases": ["knowledge base", "second brain", "self-improving", "self improving",
-                      "llm wiki", "karpathy wiki", "obsidian"]
+          "aliases": [
+            "knowledge base",
+            "second brain",
+            "self-improving",
+            "self improving",
+            "llm wiki",
+            "karpathy wiki",
+            "obsidian"
+          ],
+          "search_keyword": "second brain ai"
         },
         {
           "id": "local-llm-stacks",
           "label": "Running models locally",
           "shape": "tutorial",
-          "aliases": ["local llm", "ollama", "lm studio", "run locally", "offline ai",
-                      "self-hosted", "llama.cpp"]
+          "aliases": [
+            "local llm",
+            "ollama",
+            "lm studio",
+            "run locally",
+            "offline ai",
+            "self-hosted",
+            "llama.cpp"
+          ],
+          "search_keyword": "run llm locally"
         }
       ]
     },
-
     {
       "id": "models",
       "label": "Models",
@@ -181,26 +317,54 @@
           "id": "frontier-model-launches",
           "label": "Frontier model launches",
           "shape": "review",
-          "aliases": ["fable 5", "opus 4.7", "gpt 5.4", "gpt 5.5", "gemini 3",
-                      "new model", "just dropped", "first look", "hands on"]
+          "aliases": [
+            "fable 5",
+            "opus 4.7",
+            "gpt 5.4",
+            "gpt 5.5",
+            "gemini 3",
+            "new model",
+            "just dropped",
+            "first look",
+            "hands on"
+          ],
+          "search_keyword": "new ai model"
         },
         {
           "id": "open-model-launches",
           "label": "Open-weight model launches",
           "shape": "review",
-          "aliases": ["open source model", "open-weight", "glm", "qwen", "kimi",
-                      "deepseek", "mistral", "nex-n2", "beats gpt"]
+          "aliases": [
+            "open source model",
+            "open-weight",
+            "glm",
+            "qwen",
+            "kimi",
+            "deepseek",
+            "mistral",
+            "nex-n2",
+            "beats gpt"
+          ],
+          "search_keyword": "open source llm"
         },
         {
           "id": "model-cost-optimization",
           "label": "Cutting model cost",
           "shape": "tutorial",
-          "aliases": ["cheaper", "cost", "usage limits", "token cost", "save money",
-                      "rate limit", "pricing", "80% cheaper"]
+          "aliases": [
+            "cheaper",
+            "cost",
+            "usage limits",
+            "token cost",
+            "save money",
+            "rate limit",
+            "pricing",
+            "80% cheaper"
+          ],
+          "search_keyword": "reduce ai api cost"
         }
       ]
     },
-
     {
       "id": "business",
       "label": "Building a business with AI",
@@ -209,22 +373,47 @@
           "id": "ai-saas-building",
           "label": "Shipping an AI SaaS",
           "shape": "tutorial",
-          "aliases": ["ai saas", "build a saas", "micro saas", "ship a product",
-                      "supabase", "stripe", "next.js app", "deploy"]
+          "aliases": [
+            "ai saas",
+            "build a saas",
+            "micro saas",
+            "ship a product",
+            "supabase",
+            "stripe",
+            "next.js app",
+            "deploy"
+          ],
+          "search_keyword": "build ai saas"
         },
         {
           "id": "ai-automation-agency",
           "label": "Running an AI automation agency",
           "shape": "tutorial",
-          "aliases": ["automation agency", "aaa", "client work", "agency offer",
-                      "lead generation", "cold outreach", "sell automation"]
+          "aliases": [
+            "automation agency",
+            "aaa",
+            "client work",
+            "agency offer",
+            "lead generation",
+            "cold outreach",
+            "sell automation"
+          ],
+          "search_keyword": "ai automation agency"
         },
         {
           "id": "ai-monetization-strategy",
           "label": "What actually makes money with AI",
           "shape": "review",
-          "aliases": ["make money with ai", "monetize", "business model", "millionaires",
-                      "startup ideas", "productize", "$10,000"]
+          "aliases": [
+            "make money with ai",
+            "monetize",
+            "business model",
+            "millionaires",
+            "startup ideas",
+            "productize",
+            "$10,000"
+          ],
+          "search_keyword": "make money with ai"
         }
       ]
     }

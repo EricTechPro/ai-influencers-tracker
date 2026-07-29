@@ -36,6 +36,11 @@ class Topic:
     parent_id: str | None
     children_ids: tuple[str, ...]
     depth: int
+    # What to ask vidIQ about. Empty means "use the label", which is what the sweep used to send
+    # unconditionally: it asked "Wiring MCP servers into Claude Code" and got 0 searches/mo, a
+    # real answer to a question nobody types. Authored per leaf only where the label is not
+    # already the phrase people search. Last, with a default, so the field is additive.
+    search_keyword: str = ""
 
 
 def _check_shape(node_id: str, has_children: bool, shape: str | None) -> None:
@@ -73,6 +78,7 @@ def load(tree: dict | None = None) -> dict[str, Topic]:
             parent_id=parent_id,
             children_ids=tuple(c["id"] for c in children),
             depth=depth,
+            search_keyword=node.get("search_keyword") or node.get("label") or node_id,
         )
         for child in children:
             walk(child, node_id, depth + 1)
