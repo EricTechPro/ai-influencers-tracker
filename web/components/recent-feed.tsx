@@ -5,6 +5,7 @@ import { selectRecent, type FormatKey, type RecentWindow } from "@/lib/recent"
 import type { RecentBundle } from "@/lib/types"
 import { fmtInt } from "@/lib/trust"
 import { GridVideoCard } from "./grid-video-card"
+import { PatternRows } from "./pattern-rows"
 
 const WINDOWS: RecentWindow[] = [7, 14, 30]
 const FORMATS: { key: FormatKey; label: string }[] = [
@@ -164,6 +165,18 @@ export function RecentFeed({
               ))}
             </div>
           )}
+
+          <div className="section-kicker">
+            <span className="kicker">PATTERNS</span>
+            <span className="rule" />
+            <span className="cap">inference · over vidIQ&apos;s {bundle.videos.length}</span>
+          </div>
+          <PatternRows
+            patterns={bundle.patterns}
+            videos={bundle.videos}
+            avatars={avatars}
+            selfChannelId={selfChannelId}
+          />
         </>
       )}
     </section>
