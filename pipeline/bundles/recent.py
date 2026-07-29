@@ -7,7 +7,7 @@ already in memory.
 """
 from __future__ import annotations
 
-from .. import config, outliers, util
+from .. import config, outliers, patterns, util
 
 VERSION = 1
 TRUST = {"breakout_score": "vendor", "pattern": "inference", "existing_leaf": "derived"}
@@ -38,6 +38,17 @@ def build(ctx) -> dict:
             }
 
     videos.sort(key=lambda v: (-(v["breakout_score"] or 0), v["video_id"]))
+
+    # The grouping is an LLM pass that runs outside pipeline/; this only reads what it wrote and
+    # stamps each card with the group it belongs to, so the feed can highlight a pattern's videos.
+    videos_by_id = {v["video_id"]: v for v in videos}
+    min_creators = ctx.thresholds["min_n"]["consensus_min_creators"]
+    rows = [patterns.resolve(g, videos_by_id, ctx.topic_index, min_creators)
+            for g in patterns.read_groups()]
+    for row in rows:
+        for video_id in row["evidence"]:
+            videos_by_id[video_id]["pattern_id"] = row["pattern_id"]
+
     return {
         "version": VERSION,
         "generated_at": ctx.generated_at,
@@ -46,7 +57,7 @@ def build(ctx) -> dict:
         "window": sweep.get("window") if sweep else None,
         "coverage": coverage,
         "videos": videos,
-        "patterns": [],
+        "patterns": rows,
         "trust": dict(TRUST),
     }
 
