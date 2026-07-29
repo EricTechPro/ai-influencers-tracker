@@ -1,1 +1,10 @@
-from . import channels, comments, meta, opportunities, snapshots, topic_pages, videos  # noqa: F401
+from . import (  # noqa: F401
+    channels,
+    comments,
+    meta,
+    opportunities,
+    recent,
+    snapshots,
+    topic_pages,
+    videos,
+)

@@ -7,7 +7,7 @@ import pathlib
 import pytest
 
 FIXTURE_THRESHOLDS = {
-    "version": 3,
+    "version": 4,
     "supply": {"window_days": 90, "open_max_videos": 2,
                "crowded_min_videos": 5, "crowded_min_creators": 3},
     "demand": {"high_min_keyword_volume": 5000, "high_min_repo_velocity": 100.0,
@@ -22,6 +22,7 @@ FIXTURE_THRESHOLDS = {
                          "corp_org_penalty": 0.4}},
     "growth": {"windows_hours": [24], "windows_days": [7, 14, 30, 90, 180, 365],
                "subscriber_floor_buckets": 5, "view_drop_tolerance": 0.05, "rebase_min_days": 14,
+               "anchor_max_lag_days": 3,
                "default_rank_mode": "growth",
                "default_window_days": 90,
                "rank_weights": {"subscriber_growth": 50, "subscriber_count": 20,
@@ -29,6 +30,7 @@ FIXTURE_THRESHOLDS = {
     "traction": {"still_growing_min_views_7d": 500, "still_growing_min_share_7d": 0.02,
                  "recent_daily_n": 50, "tail_sweep_days": 7},
     "multiplier": {"baseline_n": 20, "baseline_min_videos": 5, "maturity_days": 14},
+    "outliers": {"per_channel_cap": 2, "display_floor": 2.5},
     "comments": {"roots_per_video": 100, "replies_per_root": 5, "top_n_per_channel": 50,
                  "page_size": 5, "classify_min_likes": 5, "classify_min_replies": 2,
                  "classify_max_per_run": 2000},
@@ -86,10 +88,17 @@ def ait_root(tmp_path, monkeypatch):
          "hunches": []}))
     (cfg / "excluded_repos.json").write_text(json.dumps({"version": 1, "excluded": []}))
     monkeypatch.setenv("AIT_ROOT", str(root))
-    from pipeline import config
+    from pipeline import config, read
+    # read's row caches are keyed by nothing and only build_data.build() clears them, so a test
+    # that ran build() in a previous temp root leaves them holding that root's rows. The next
+    # test to call read.channel_series() directly then reads a directory that no longer exists
+    # and sees an empty snapshot set, which looks exactly like "this channel was never swept".
+    # Handing out a clean root means clearing everything keyed to the old one.
     config.reset_caches()
+    read.reset_caches()
     yield root
     config.reset_caches()
+    read.reset_caches()
 
 
 @pytest.fixture

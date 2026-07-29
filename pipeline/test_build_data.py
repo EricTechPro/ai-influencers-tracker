@@ -283,7 +283,7 @@ def test_meta_reports_coverage_health_and_the_target(ait_root):
     seed_topic_corpus(ait_root)
     build_data.build(today=TODAY)
     meta = util.read_json(config.db_dir() / "meta.json")
-    assert meta["version"] == 3 and meta["thresholds_version"] == 3
+    assert meta["version"] == 3 and meta["thresholds_version"] == 4
     assert meta["self_channel_id"] == "UCself"
     assert meta["channels"] == {"total": 3, "ok": 3, "absent": 0}
     assert 0 <= meta["coverage_rate"] <= 1
@@ -292,12 +292,12 @@ def test_meta_reports_coverage_health_and_the_target(ait_root):
     assert meta["build_step"] == 8
 
 
-def test_all_nine_bundles_are_written(ait_root):
+def test_all_the_bundles_are_written(ait_root):
     seed_snapshots(days=8)
     seed_topic_corpus(ait_root)
     build_data.build(today=TODAY)
     assert sorted(p.name for p in config.db_dir().glob("*.json")) == [
-        "channels.json", "meta.json", "opportunities.json",
+        "channels.json", "meta.json", "opportunities.json", "recent.json",
         "snapshots.json", "topic_pages.json", "video_snapshots.json", "videos.json"]
     assert not (config.db_dir() / "comments.json").exists()
     assert (config.db_dir() / "comments" / "channel" / "UCcole.json").exists()

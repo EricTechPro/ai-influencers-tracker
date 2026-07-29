@@ -1,5 +1,5 @@
 {
-  "version": 3,
+  "version": 4,
   "_comment": "Every adjective the pipeline uses resolves to a number here. These are starting guesses, which is exactly why they live in config. Every emitted band carries `fired`, the list of comparisons that produced it, so a page can show its work. Hand-edited: the pipeline never writes here. NO VIDEO IS EVER DROPPED. traction.recent_daily_n gets a daily snapshot; every older video is swept every traction.tail_sweep_days, so a video that goes viral two years later is caught within a week and rejoins daily tracking. Every point carries the date it was pulled.",
   "supply": {
     "window_days": 90,
@@ -52,6 +52,8 @@
     "subscriber_floor_buckets": 5,
     "view_drop_tolerance": 0.05,
     "rebase_min_days": 14,
+    "anchor_max_lag_days": 3,
+    "_anchor_max_lag_days_comment": "How far behind today the newest snapshotted day may sit and still anchor a window. The sweep runs once a day, so from midnight until it lands the newest day held is yesterday's; anchoring windows to the calendar's today made that one absent day the newest day of all six windows at once, and all 72 channels read 'building, 89 of 90 days' off 366 days of stored history. Past this lag the anchor stays on today, so a channel whose snapshots stopped in April states its shortfall rather than date-stamping April's growth as current. Changing it changes which channels can report a number at all, which is why it lives here.",
     "_view_drop_tolerance_comment": "How far view_count may fall in a day before the reading is called corrupt, as a fraction of the last good value. YouTube removes views it judges invalid, so a healthy channel ticks down a fraction of a percent (observed: 22,009 -> 21,991). A bad read falls off a cliff (observed: 192,901 -> 36,338, and a vidIQ series that went 21,103 -> 606). 0.05 admits the first and still rejects the second. Changing it changes which view deltas are measurable at all, which is why it lives here.",
     "_rebase_min_days_comment": "Consecutive self-consistent days after a break before the series is read as re-based rather than as one long corruption. Holding the pre-break high-water mark forever cost Anthropic 238 days of flawless rising views over a single December drop. 14 outlasts a bad-data burst (Robin Ebers is 3 days deep and still refused) without demanding that a channel climb back over a number that was itself suspect.",
     "default_rank_mode": "growth",
@@ -72,6 +74,11 @@
     "baseline_n": 20,
     "baseline_min_videos": 5,
     "maturity_days": 14
+  },
+  "outliers": {
+    "per_channel_cap": 2,
+    "display_floor": 2.5,
+    "_comment": "per_channel_cap is how many of one channel's outliers reach the grid before the rest fall to the tail. On the live 2026-07-29 week AI Engineer alone held 6 of the 28 outliers, posting a conference back-catalogue, so uncapped the first screen is one channel. display_floor is the breakout score under which a row goes to the tail rather than the grid. Both change what the feed shows you, which is why they live here."
   },
   "comments": {
     "roots_per_video": 100,

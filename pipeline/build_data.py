@@ -46,7 +46,8 @@ def make_context(today: dt.date) -> Context:
     }
     traction_by_video = {
         v["video_id"]: traction.for_video(v["series"], v["view_count"], today,
-                                          thresholds["traction"])
+                                          thresholds["traction"],
+                                          thresholds["growth"]["anchor_max_lag_days"])
         for v in videos
     }
 
@@ -105,6 +106,7 @@ def build(today: dt.date | None = None) -> dict:
 
     bundles.opportunities.write(ctx)
     bundles.topic_pages.write(ctx)
+    bundles.recent.write(ctx)
     bundles.meta.write(ctx)
     return {"date": util.date_str(today), "channels": len(ctx.roster),
             "videos": len(ctx.videos), "bundles": sorted(p.name for p in
