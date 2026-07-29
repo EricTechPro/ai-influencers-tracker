@@ -1,9 +1,12 @@
 """Outlier fetching. Every test uses a fake transport; none ever spends a credit."""
 from __future__ import annotations
 
+import datetime as dt
+import json
+
 import pytest
 
-from pipeline import outliers, vidiq
+from pipeline import config, outliers, util, vidiq
 
 
 def test_batches_splits_at_the_vendor_limit():
@@ -141,3 +144,39 @@ def test_fetch_dedupes_a_video_returned_by_two_batches():
     result = outliers.fetch(client, _guard(), [f"UC{i:03d}" for i in range(48)])
     assert len({v["video_id"] for v in result["videos"]}) == 1
     assert len(result["videos"]) == 1
+
+
+def test_sweep_dry_run_spends_nothing_and_writes_nothing(ait_root, capsys):
+    client = FakeClient([])
+    result = outliers.sweep(config.roster(), client, _guard(), dt.date(2026, 7, 29))
+
+    assert result["dry_run"] is True
+    assert result["spent"] == 0
+    assert client.calls == []
+    assert not (ait_root / "_synthesize" / "outliers").exists()
+    assert "credits" in capsys.readouterr().out
+
+
+def test_sweep_writes_both_formats_into_one_dated_file(ait_root):
+    # 3 roster channels -> 1 batch per format -> 2 calls
+    client = FakeClient([{"videos": [LIVE_ROW]}, {"videos": []}])
+    result = outliers.sweep(config.roster(), client, _guard(), dt.date(2026, 7, 29),
+                            dry_run=False)
+
+    path = ait_root / "_synthesize" / "outliers" / "2026-07-29.json"
+    assert path.exists()
+    written = json.loads(path.read_text())
+    assert written["date"] == "2026-07-29"
+    assert [f["content_type"] for f in written["formats"]] == ["long", "short"]
+    assert written["formats"][0]["videos"][0]["video_id"] == "IbFaY3xFpZM"
+    assert result["spent"] == 10
+
+
+def test_latest_returns_none_when_no_sweep_has_run(ait_root):
+    assert outliers.latest() is None
+
+
+def test_latest_returns_the_newest_file(ait_root):
+    for date in ("2026-07-27", "2026-07-29", "2026-07-28"):
+        util.write_json(config.synth_dir() / "outliers" / f"{date}.json", {"date": date})
+    assert outliers.latest()["date"] == "2026-07-29"

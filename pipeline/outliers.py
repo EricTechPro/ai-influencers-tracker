@@ -7,12 +7,16 @@ the snapshot series exists. See docs/superpowers/specs/2026-07-28-topics-recent-
 """
 from __future__ import annotations
 
-from . import util, vidiq
+import argparse
+import datetime as dt
+
+from . import config, util, vidiq
 
 # vidIQ rejects a 72-id request and accepts a 24-id one. Verified live 2026-07-29. This is a
 # vendor constraint, not a tuning knob, which is why it is a constant and not in thresholds.json.
 BATCH_SIZE = 24
 OUTLIER_COST = 5
+FORMATS = ("long", "short")
 
 
 def batches(channel_ids: list[str], size: int = BATCH_SIZE) -> list[list[str]]:
@@ -85,3 +89,51 @@ def fetch(client, guard, channel_ids: list[str], content_type: str = "long",
         "window": window,
         "content_type": content_type,
     }
+
+
+def sweep(roster: list[dict], client, guard, today: dt.date,
+          window: str = "thisMonth", dry_run: bool = True) -> dict:
+    """One dated file holding both formats. thisMonth is fetched once; the 7d and 14d views on
+    the page are filtered from it client-side, so the window toggle costs nothing."""
+    channel_ids = [row["channel_id"] for row in roster]
+    per_format = OUTLIER_COST * len(batches(channel_ids))
+    print(guard.preview([(f"vidiq_outliers {fmt} x{len(batches(channel_ids))}", per_format)
+                         for fmt in FORMATS]))
+    if dry_run:
+        return {"formats": len(FORMATS), "credits": per_format * len(FORMATS),
+                "spent": 0, "dry_run": True}
+
+    formats = [fetch(client, guard, channel_ids, content_type=fmt, window=window)
+               for fmt in FORMATS]
+    util.write_json(config.synth_dir() / "outliers" / f"{util.date_str(today)}.json",
+                    {"date": util.date_str(today), "window": window, "formats": formats})
+    return {"formats": len(formats), "credits": per_format * len(FORMATS),
+            "spent": guard.spent, "dry_run": False}
+
+
+def latest(today: dt.date | None = None) -> dict | None:
+    """The newest sweep on disk, or None. None is a state: no sweep has run yet."""
+    directory = config.synth_dir() / "outliers"
+    if not directory.is_dir():
+        return None
+    files = sorted(directory.glob("*.json"))
+    if not files:
+        return None
+    return util.read_json(files[-1])
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description="fetch vidIQ breakout scores for the roster")
+    parser.add_argument("--no-dry-run", action="store_true", help="actually spend credits")
+    args = parser.parse_args()
+    client = vidiq.client_from_env()
+    guard = vidiq.CostGuard(vidiq.balance(client).get("totalCredits", 0))
+    summary = sweep(config.roster(), client, guard, util.today(),
+                    dry_run=not args.no_dry_run)
+    for key, value in summary.items():
+        print(f"{key}: {value}")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
