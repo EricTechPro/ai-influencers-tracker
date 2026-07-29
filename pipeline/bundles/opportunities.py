@@ -49,7 +49,15 @@ def build(ctx) -> dict:
             "supply_gap": len(in_window), "staleness": newest_days}, thresholds)
 
         rows.append({
-            "topic_id": leaf.id, "shape": leaf.shape,
+            "topic_id": leaf.id, "label": leaf.label, "shape": leaf.shape,
+            # The exact videos the competition count counted, best first. Printing the number
+            # beside the videos it was computed from is what makes "8 videos · 7 creators"
+            # checkable instead of taken on faith.
+            "video_ids": [v["video_id"] for v in sorted(
+                in_window,
+                key=lambda v: (-((v.get("multiplier") or {}).get("value") or 0),
+                               -(v.get("view_count") or 0), v["video_id"]))],
+            "keyword": volume_row.get("keyword"),
             "demand": banded["demand"], "supply": banded["supply"],
             "verdict": banded["verdict"], "hunch": leaf.id in hunches,
             "own_coverage": ctx.own_coverage.get(leaf.id),

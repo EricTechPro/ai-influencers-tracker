@@ -10,6 +10,9 @@ import { OpportunityTable } from "./opportunity-table"
 function row(overrides: Partial<OpportunityRow>): OpportunityRow {
   return {
     topic_id: "test-topic",
+    label: "Test topic",
+    video_ids: [],
+    keyword: null,
     verdict: "SKIP",
     shape: null,
     hunch: false,

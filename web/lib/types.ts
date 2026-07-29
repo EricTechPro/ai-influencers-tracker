@@ -111,6 +111,11 @@ export interface RepoEvidence {
 
 export interface OpportunityRow {
   topic_id: string
+  label: string
+  /** the videos the supply count counted, best first; the rail renders these */
+  video_ids: string[]
+  /** the phrase vidIQ was actually asked about, so a 0 is checkable */
+  keyword: string | null
   verdict: Verdict
   shape: "tutorial" | "review" | null
   hunch: boolean

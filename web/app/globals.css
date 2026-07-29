@@ -788,3 +788,23 @@ select.chip:hover { border-color: var(--muted-foreground); }
   display: flex; gap: 16px; flex-wrap: wrap; font-size: 10px; color: var(--muted-foreground);
   border-top: 1px solid var(--border); margin-top: 6px; padding-top: 10px;
 }
+
+/* What to make next, as shelves. The numbers that used to be table columns sit in the header
+   above the videos they were computed from. */
+.oshelf { margin: 0 0 1.6rem; padding-bottom: 1.1rem; border-bottom: 1px solid var(--border); }
+.oshelf:last-child { border-bottom: 0; }
+.ohead { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.otitle { font-size: 15px; font-weight: 700; color: var(--primary); }
+.oscore { margin-left: auto; font-size: 15px; font-weight: 700; }
+.ostats {
+  display: flex; gap: 16px; flex-wrap: wrap; margin: 5px 0 2px;
+  font-size: 11px; color: var(--muted-foreground);
+}
+.ostats b { color: var(--foreground); }
+.okw { font-style: italic; }
+.owhy { color: var(--v-make); }
+.owhy b { color: var(--v-make); font-weight: 600; }
+.ctrls select {
+  font: inherit; font-size: 11px; padding: 2px 6px;
+  border: 1px solid var(--border); border-radius: 4px; background: var(--card);
+}

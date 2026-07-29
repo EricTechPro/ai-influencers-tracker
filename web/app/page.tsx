@@ -10,9 +10,12 @@ import {
 } from "@/lib/bundles"
 import { slimChannel, sparkAll } from "@/lib/growth"
 import { oppRowModels } from "@/lib/opportunity"
+import { topVideoCards } from "@/lib/topic"
 import { SCORE_FORMULA } from "@/lib/trust"
 import { GrowthPanel } from "@/components/growth-panel"
-import { OpportunityTable } from "@/components/opportunity-table"
+import { OpportunityShelves } from "@/components/opportunity-shelves"
+
+const CARDS_PER_TOPIC = 8
 
 export default function HomePage() {
   const meta = loadMeta()
@@ -28,12 +31,23 @@ export default function HomePage() {
   const sparks = Object.fromEntries(
     slim.map((c) => [c.channel_id, sparkAll(snapshots, c.channel_id)])
   )
+  const opps = loadOpportunities().rows
   const models = oppRowModels(
-    loadOpportunities().rows,
+    opps,
     loadTopicPages().topics,
     channels,
     videosById,
     channelAvatarUrl
+  )
+  // The rail per topic, resolved on the server: the ids come from the same in_window list the
+  // supply count was measured over, so the thumbnails and the number cannot disagree.
+  const idsByTopic = new Map(opps.map((r) => [r.topic_id, r.video_ids]))
+  const cardsByTopic = Object.fromEntries(
+    opps.map((r) => [
+      r.topic_id,
+      topVideoCards(videosById(idsByTopic.get(r.topic_id) ?? []), channels, channelAvatarUrl,
+                    CARDS_PER_TOPIC),
+    ])
   )
 
   return (
@@ -62,13 +76,13 @@ export default function HomePage() {
           <span className="cap num">{SCORE_FORMULA}</span>
         </div>
         <p className="note">
-          <b>search volume</b> is vidIQ searches/mo for the topic&apos;s keyword ·{" "}
-          <b>competition</b> is videos published on it in the last 90d across all tracked creators ·
-          the dashed notch on each bar is the threshold that decides the band ·{" "}
-          <b>why now</b> names the fastest-moving repo behind the demand · click a row for the
-          full derivation
+          each topic opened as the videos it is actually made of · <b>search volume</b> is vidIQ
+          searches/mo for the keyword printed beside it · the rail is every video published on the
+          topic in the last 90d, the same set the count is measured over, best first on each
+          channel&apos;s own multiplier · <b>why now</b> names the fastest-moving repo behind the
+          demand
         </p>
-        <OpportunityTable models={models} />
+        <OpportunityShelves models={models} cardsByTopic={cardsByTopic} />
       </section>
     </div>
   )

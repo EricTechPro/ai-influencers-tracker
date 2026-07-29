@@ -13,6 +13,9 @@ import type { OpportunityRow } from "./types"
 function oppRow(over: Partial<OpportunityRow>): OpportunityRow {
   return {
     topic_id: "t1",
+    label: "Test topic",
+    video_ids: [],
+    keyword: null,
     verdict: "SKIP",
     shape: "tutorial",
     hunch: false,
