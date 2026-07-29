@@ -113,9 +113,9 @@
     "min_multiplier": 2.0
   },
   "momentum": {
-    "climbing_min_ratio": 1.0,
-    "spent_max_ratio": 0.5,
+    "climbing_min_daily_share": 0.02,
+    "flat_max_daily_share": 0.005,
     "min_age_hours": 48,
-    "_comment": "A video's views-per-hour now against what it has averaged over its whole life. At or above 1.0 it is still accelerating and is worth copying; under 0.5 it took its views in a burst and has been flat since, which looks identical to a breakout on view count alone and is the opposite signal. min_age_hours keeps day-one uploads out: everything outruns its own average for the first day, so judging earlier would put the badge on every fresh video. All three change which videos the board tells you to make, which is why they live here."
+    "_comment": "How much of its own total a video is still adding each day, from vidIQ's vph over 24 hours against the views it already has. At or above 2%/day it is still being found and is worth copying; under 0.5%/day nobody is watching it any more, which looks identical to a breakout on view count alone. 2% mirrors traction.still_growing_min_share_7d, which asks the same question of our own snapshots over a week. min_age_hours keeps day-one uploads out: a video's first day is all burst. Deliberately not vph against the lifetime average - every view curve is concave, so that called 124 of 169 outliers dead including one adding 3.6% of itself daily with a rising curve. All three change which videos the board tells you to make."
   }
 }

@@ -817,10 +817,14 @@ select.chip:hover { border-color: var(--muted-foreground); }
 .ymult.t3 { background: #6b5ce0; }
 .ymult.t2 { background: #7c7f96; }
 
-/* Momentum. Only the two verdicts render: steady and unmeasured say nothing worth a badge. */
+/* Momentum, beside the channel name rather than stamped on the thumbnail: it is a fact about
+   the video's trajectory, not part of the artwork. Every state says its own word — a video we
+   cannot judge must not be left looking like a flat one. */
 .ymom {
-  position: absolute; right: 5px; top: 5px; padding: 0 5px; border-radius: 3px;
-  font-size: 9px; font-weight: 700; letter-spacing: 0.04em; color: #fff;
+  display: inline-block; padding: 0 4px; border-radius: 3px; vertical-align: 1px;
+  font-size: 9px; font-weight: 700; letter-spacing: 0.03em; cursor: help;
 }
-.ymom.climbing { background: var(--v-make); }
-.ymom.spent { background: var(--v-crowded); }
+.ymom.climbing { background: color-mix(in srgb, var(--v-make) 14%, transparent); color: #12803c; }
+.ymom.steady { background: var(--secondary); color: var(--muted-foreground); }
+.ymom.flat { background: color-mix(in srgb, var(--v-crowded) 12%, transparent); color: #c0343a; }
+.ymom.unmeasured { background: transparent; color: var(--muted-foreground); font-weight: 500; }

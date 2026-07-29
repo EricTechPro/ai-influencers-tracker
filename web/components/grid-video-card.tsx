@@ -7,9 +7,15 @@ import { Avatar } from "./avatar"
  *  colours and stops competing with this board's verdict palette. */
 const SCORE_CLASS = ["t2", "t3", "t5", ""] as const
 
-/** Still climbing, flat, or spent. The one thing view count cannot tell you: a video that took
- *  all its views on day one looks identical to a real breakout until you compare it to itself. */
-const MOMENTUM_LABEL = { climbing: "climbing", spent: "spent", steady: "", unmeasured: "" } as const
+/** Every state says its own word, in plain English. The one thing view count cannot tell you is
+ *  whether a video is still getting views, and "unmeasured" is a state too — a video we cannot
+ *  speak about must not be left looking like a flat one. */
+const MOMENTUM_LABEL = {
+  climbing: "climbing",
+  steady: "steady",
+  flat: "flat",
+  unmeasured: "no data",
+} as const
 
 /**
  * One video in the recent feed, wearing YouTube's grid geometry.
@@ -55,18 +61,6 @@ export function GridVideoCard({
           </span>
         )}
         {len && <span className="ylen">{len}</span>}
-        {MOMENTUM_LABEL[v.momentum.state] && (
-          <span
-            className={`ymom ${v.momentum.state}`}
-            title={
-              v.momentum.ratio === null
-                ? undefined
-                : `${v.momentum.vph}/h now against ${v.momentum.lifetime_vph}/h averaged over its life — ${v.momentum.ratio}x. Under 0.5x it took its views in a burst and has been flat since.`
-            }
-          >
-            {MOMENTUM_LABEL[v.momentum.state]}
-          </span>
-        )}
       </span>
       <span className="ybody">
         <Avatar src={avatarUrl} name={v.channel_name} size={34} />
@@ -76,7 +70,17 @@ export function GridVideoCard({
           </span>
           <span className={isSelf ? "ychan yself" : "ychan"}>
             {v.channel_name}
-            {isSelf ? " · you" : ""}
+            {isSelf ? " · you" : ""}{" "}
+            <span
+              className={`ymom ${v.momentum.state}`}
+              title={
+                v.momentum.daily_share === null
+                  ? "no views-per-hour returned for this video, so it cannot be judged"
+                  : `about ${v.momentum.per_day?.toLocaleString()} views a day, ${(v.momentum.daily_share * 100).toFixed(1)}% of the ${v.view_count?.toLocaleString()} it already has. Climbing is 2%/day or more, flat is under 0.5%.`
+              }
+            >
+              {MOMENTUM_LABEL[v.momentum.state]}
+            </span>
           </span>
           <span className="ystat">
             {v.view_count === null ? "views --" : `${fmtInt(v.view_count)} views`} ·{" "}

@@ -367,9 +367,10 @@ export interface RecentRow {
   vph: number | null
   /** whether the video is still accelerating against its own lifetime average */
   momentum: {
-    state: "climbing" | "steady" | "spent" | "unmeasured"
-    ratio: number | null
-    lifetime_vph: number | null
+    state: "climbing" | "steady" | "flat" | "unmeasured"
+    /** views added per day as a share of the views it already has */
+    daily_share: number | null
+    per_day: number | null
     vph: number | null
   }
   pattern_id: string | null

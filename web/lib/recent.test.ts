@@ -15,7 +15,7 @@ function row(over: Partial<RecentRow> & { video_id: string }): RecentRow {
     channel_name: "A",
     breakout_score: 5,
     vph: 10,
-    momentum: { state: "steady" as const, ratio: 0.7, lifetime_vph: 14, vph: 10 },
+    momentum: { state: "steady" as const, daily_share: 0.01, per_day: 240, vph: 10 },
     pattern_id: null,
     ...over,
   }
