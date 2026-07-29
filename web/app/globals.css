@@ -469,8 +469,16 @@ details.sect[open] > summary .kicker::before { content: "\25BE  "; }
   box-shadow: inset 0 -1px 0 var(--border);
 }
 
+/* Zebra: on a table this wide the eye loses its row between the name on the
+   left and the number on the right. The banding is deliberately fainter than
+   the hover tint so the row under the cursor still reads as the selected one. */
+.tbl-zebra tbody tr:nth-child(even) td {
+  background: color-mix(in srgb, var(--accent) 40%, transparent);
+}
+
 /* Read-hover: tints the row you are scanning across. No pointer, because these
-   rows do not navigate. Only .rowlink, which expands or links, claims one. */
+   rows do not navigate. Only .rowlink, which expands or links, claims one.
+   Listed after the zebra rule so it wins on even rows too. */
 .tbl-hover tbody tr:hover td { background: color-mix(in srgb, var(--accent) 55%, transparent); }
 
 /* Tab order reaches rows, sort headers, category tabs and the comment toggles.
@@ -622,3 +630,62 @@ select.chip:hover { border-color: var(--muted-foreground); }
   border-radius: 3px; padding: 0 4px;
 }
 .vgrow { color: var(--primary); }
+
+/* ————— The recent feed: YouTube's grid geometry, this app's tokens —————
+   Deliberately not .vcard. The shelves stack title-then-channel because they
+   are 15rem rails; a 4-up grid reads faster with the face beside the title,
+   which is what YouTube does and what the eye is already trained on. */
+.ygrid { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 16px 14px; }
+@media (max-width: 60rem) { .ygrid { grid-template-columns: repeat(2, minmax(0,1fr)); } }
+
+.ycard { display: block; color: inherit; text-decoration: none; }
+.ycard:hover { text-decoration: none; }
+.ycard:hover .ytitle { color: var(--primary); }
+
+.ythumb {
+  position: relative; display: block; aspect-ratio: 16/9; overflow: hidden;
+  background: var(--muted); border: 1px solid var(--border); border-radius: 8px;
+}
+.ythumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+@media (prefers-reduced-motion: no-preference) {
+  .ythumb img { transition: transform 200ms ease-out; }
+  .ycard:hover .ythumb img { transform: scale(1.03); }
+}
+.ylen {
+  position: absolute; right: 5px; bottom: 5px; padding: 0 4px; border-radius: 3px;
+  background: rgba(0,0,0,0.8); color: #fff; font-size: 10px; font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+/* the breakout score takes the slot YouTube uses for LIVE / NEW: it is the sort key */
+.ymult {
+  position: absolute; left: 5px; bottom: 5px; padding: 1px 5px; border-radius: 3px;
+  background: var(--v-make); color: #fff; font-size: 11px; font-weight: 700;
+  font-variant-numeric: tabular-nums; letter-spacing: -0.01em;
+}
+.ymult.t5 { background: #1f8a4c; }
+.ymult.t3 { background: #3f8f5f; }
+.ymult.t2 { background: #6b7f74; }
+.yshort {
+  position: absolute; left: 5px; top: 5px; padding: 0 4px; border-radius: 3px;
+  background: rgba(0,0,0,0.7); color: #fff; font-size: 9px; font-weight: 700;
+  letter-spacing: 0.06em;
+}
+.ybody { display: flex; gap: 10px; padding: 9px 0 0; }
+.ymeta { min-width: 0; }
+.ytitle {
+  font-size: 12.5px; font-weight: 600; line-height: 1.32; margin: 0 0 3px;
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden;
+}
+/* block, not inline: the mockup broke these two lines with a <br>, and the component
+   stacks them structurally instead. .ychan additionally needs a block box for its
+   ellipsis to have anything to clip against. */
+.ychan {
+  display: block;
+  font-size: 11px; color: var(--muted-foreground);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.ystat {
+  display: block;
+  font-size: 11px; color: var(--muted-foreground); font-variant-numeric: tabular-nums;
+}
+.yself { color: var(--primary); font-weight: 700; }
