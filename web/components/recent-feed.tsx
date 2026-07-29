@@ -8,6 +8,14 @@ import { GridVideoCard } from "./grid-video-card"
 import { PatternRows } from "./pattern-rows"
 
 const WINDOWS: RecentWindow[] = [7, 14, 30]
+
+/** The heading is the window. Saying "this week" over a 30-day list is a small lie that costs
+ *  nothing to avoid, and the number is the one thing the reader is filtering on. */
+const HEADING: Record<RecentWindow, string> = {
+  7: "WHAT WENT UP THIS WEEK",
+  14: "WHAT WENT UP IN 14 DAYS",
+  30: "WHAT WENT UP IN 30 DAYS",
+}
 const FORMATS: { key: FormatKey; label: string }[] = [
   { key: "videos", label: "videos" },
   { key: "shorts", label: "shorts" },
@@ -57,7 +65,7 @@ export function RecentFeed({
   return (
     <section>
       <div className="section-kicker">
-        <span className="kicker">WHAT WENT UP THIS WEEK</span>
+        <span className="kicker">{HEADING[window]}</span>
         <span className="rule" />
         <span className="cap">
           {fmtInt(ranked.length)} shown · {fmtInt(bundle.videos.length)} outliers ·{" "}
@@ -73,9 +81,8 @@ export function RecentFeed({
       ) : (
         <>
           <p className="note">
-            vidIQ&apos;s breakout score: how far a video ran past what its channel normally does at
-            this age. vidIQ returns only videos it judges outliers, so this is a shortlist, not the
-            full upload feed.
+            vidIQ&apos;s breakout score · <b>climbing</b> is still outrunning its own lifetime
+            views/hour, <b>spent</b> took its views in a burst and went flat
           </p>
 
           {failed > 0 && (

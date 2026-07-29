@@ -2,9 +2,14 @@ import { agoText, durationText, fmtInt, tierIndex } from "@/lib/trust"
 import type { RecentRow } from "@/lib/types"
 import { Avatar } from "./avatar"
 
-/** Louder the further past normal it ran. Bands only, never a recomputation. The filled
- *  top band carries no modifier class, so index 3 maps to "". */
+/** Louder the further past normal it ran. Bands only, never a recomputation. The ramp is
+ *  vidIQ's own: their outlier UI runs blue into purple, so a vendor number wears vendor
+ *  colours and stops competing with this board's verdict palette. */
 const SCORE_CLASS = ["t2", "t3", "t5", ""] as const
+
+/** Still climbing, flat, or spent. The one thing view count cannot tell you: a video that took
+ *  all its views on day one looks identical to a real breakout until you compare it to itself. */
+const MOMENTUM_LABEL = { climbing: "climbing", spent: "spent", steady: "", unmeasured: "" } as const
 
 /**
  * One video in the recent feed, wearing YouTube's grid geometry.
@@ -50,6 +55,18 @@ export function GridVideoCard({
           </span>
         )}
         {len && <span className="ylen">{len}</span>}
+        {MOMENTUM_LABEL[v.momentum.state] && (
+          <span
+            className={`ymom ${v.momentum.state}`}
+            title={
+              v.momentum.ratio === null
+                ? undefined
+                : `${v.momentum.vph}/h now against ${v.momentum.lifetime_vph}/h averaged over its life — ${v.momentum.ratio}x. Under 0.5x it took its views in a burst and has been flat since.`
+            }
+          >
+            {MOMENTUM_LABEL[v.momentum.state]}
+          </span>
+        )}
       </span>
       <span className="ybody">
         <Avatar src={avatarUrl} name={v.channel_name} size={34} />

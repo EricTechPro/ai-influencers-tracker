@@ -363,6 +363,15 @@ export interface RecentRow {
   /** vidIQ's own breakout score. A vendor number: we never recompute or round it,
    *  and null means vidIQ did not return one, not that the video underperformed. */
   breakout_score: number | null
+  /** vidIQ's views-per-hour right now. A vendor number. */
+  vph: number | null
+  /** whether the video is still accelerating against its own lifetime average */
+  momentum: {
+    state: "climbing" | "steady" | "spent" | "unmeasured"
+    ratio: number | null
+    lifetime_vph: number | null
+    vph: number | null
+  }
   pattern_id: string | null
 }
 

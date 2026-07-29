@@ -7,13 +7,14 @@ already in memory.
 """
 from __future__ import annotations
 
-from .. import config, exclusions, outliers, patterns, util
+from .. import config, exclusions, momentum, outliers, patterns, util
 
 VERSION = 1
-TRUST = {"breakout_score": "vendor", "pattern": "inference", "existing_leaf": "derived"}
+TRUST = {"breakout_score": "vendor", "vph": "vendor", "momentum": "derived",
+         "pattern": "inference", "existing_leaf": "derived"}
 
 CARD_KEYS = ("video_id", "title", "published_at", "view_count", "duration_s", "type",
-             "channel_id", "channel_name", "breakout_score")
+             "channel_id", "channel_name", "breakout_score", "vph")
 
 
 def build(ctx) -> dict:
@@ -32,7 +33,11 @@ def build(ctx) -> dict:
     # thing /topics shows, so a muted channel or an off-the-board title landing here would be
     # the loudest possible place for the rule to be forgotten.
     rules = exclusions.load()
-    videos = [{**{k: row.get(k) for k in CARD_KEYS}, "pattern_id": None}
+    now = util.parse_ts(ctx.generated_at)
+    thresholds = ctx.thresholds["momentum"]
+    videos = [{**{k: row.get(k) for k in CARD_KEYS}, "pattern_id": None,
+               "momentum": momentum.for_video(row.get("vph"), row.get("view_count"),
+                                              row.get("published_at"), now, thresholds)}
               for block in blocks
               for row in block.get("videos") or []
               if not rules.excludes_video(row)]

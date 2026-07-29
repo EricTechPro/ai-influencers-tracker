@@ -111,5 +111,11 @@
   },
   "tier3_qualification": {
     "min_multiplier": 2.0
+  },
+  "momentum": {
+    "climbing_min_ratio": 1.0,
+    "spent_max_ratio": 0.5,
+    "min_age_hours": 48,
+    "_comment": "A video's views-per-hour now against what it has averaged over its whole life. At or above 1.0 it is still accelerating and is worth copying; under 0.5 it took its views in a burst and has been flat since, which looks identical to a breakout on view count alone and is the opposite signal. min_age_hours keeps day-one uploads out: everything outruns its own average for the first day, so judging earlier would put the badge on every fresh video. All three change which videos the board tells you to make, which is why they live here."
   }
 }

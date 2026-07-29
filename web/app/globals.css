@@ -809,3 +809,18 @@ select.chip:hover { border-color: var(--muted-foreground); }
   border: 1px solid var(--border); border-radius: 4px; background: var(--card);
 }
 .sparkdate { color: var(--muted-foreground); }
+
+/* The breakout badge in vidIQ's own ramp: their outlier UI runs blue into purple, so a vendor
+   number wears vendor colours instead of borrowing this board's verdict green. */
+.ymult { background: #2f6fed; }
+.ymult.t5 { background: #4f5ae8; }
+.ymult.t3 { background: #6b5ce0; }
+.ymult.t2 { background: #7c7f96; }
+
+/* Momentum. Only the two verdicts render: steady and unmeasured say nothing worth a badge. */
+.ymom {
+  position: absolute; right: 5px; top: 5px; padding: 0 5px; border-radius: 3px;
+  font-size: 9px; font-weight: 700; letter-spacing: 0.04em; color: #fff;
+}
+.ymom.climbing { background: var(--v-make); }
+.ymom.spent { background: var(--v-crowded); }
