@@ -1,0 +1,158 @@
+# The recent feed on `/topics`
+
+Date: 2026-07-28
+Status: approved, not implemented
+
+## The problem
+
+`/topics` answers "what has this niche made", organised by the 24 leaves in `config/topics.json`.
+It does not answer "what went up this week", which is the question Eric actually opens YouTube to
+answer.
+
+His manual ritual today: open the subscriptions page sorted by newest, scroll, eyeball each video
+against its channel's normal performance, keep the ones that clearly overshot, then notice that
+three of them are about the same thing and conclude that thing is trending.
+
+Every input to that ritual already exists in `_db/videos.json`. `multiplier.value` is a video's
+views over its own channel's median for its own format, which is exactly the "did this overshoot"
+judgment he makes by eye, computed exactly and for free. The dashboard just never surfaces it as a
+time-windowed feed.
+
+## Where it goes
+
+A new section on `/topics`, above the existing taxonomy shelves. Not a new route.
+
+`/topics` stays the taxonomy Eric has committed to. The feed sits above it as the intake: a pattern
+that proves itself in the feed gets hand-promoted into `config/topics.json` and from then on has a
+real topic page with history. One direction, and the pipeline still never writes into config.
+
+## What ships, in order
+
+### Part 1: the breaking feed
+
+- Window toggle: 7d / 14d / 30d, default 7d. Client-side state, no refetch.
+- Cards sorted by `multiplier.value` descending.
+- Renders the existing `components/video-card.tsx` unchanged except for one thing: the card
+  currently hides the multiplier badge below 2.0x (`const hot = ... >= 2`). In this feed the
+  multiplier is the sort key, so the badge always renders. The `hot` threshold stays as-is for
+  every other surface; the feed passes a prop.
+- Videos whose multiplier is `no_baseline` go in a collapsed tail below the ranked cards, labelled
+  as having no baseline yet. They are never silently dropped and never sorted as if they were zero.
+
+Measured against today's `_db/`:
+
+| window | videos | `multiplier.state == "ok"` | of those, >= 2.0x |
+|---|---|---|---|
+| 7d | 302 | 214 | 39 |
+| 14d | 606 | 410 | 79 |
+| 30d | 1,270 | 827 | 157 |
+
+39 cards is one useful morning. 827 at 30d is still small enough to ship in a bundle.
+
+### Part 2: pattern rows
+
+Same page, below the ranked feed.
+
+- Each row is one pattern label plus the cards that share it, matching Eric's sketch: Pattern A
+  holds videos 1-3, Pattern B holds videos 4-5.
+- Patterns are named by an LLM pass over the titles of the 30d qualifying set. The hand-authored
+  leaves cannot do this job: "Claude Code" is a single leaf and would swallow both "Claude 5" and
+  "somebody's `/doctor` command", which are the two examples Eric gave of what he wants separated.
+- Output is written to `_synthesize/patterns.json` (it cost money to compute, so it belongs there,
+  not in `_db/`) and read into the `_db/` bundle by `build_data.py`.
+- Rendered as **Inference**, beside the titles that formed the group. Never styled as a
+  measurement. The multiplier on each card stays Derived and is unaffected.
+- Videos the pass does not group fall into a trailing "no pattern yet" row.
+
+Grouping is computed once over the 30d set. Flipping the window filters the existing rows client
+side; it does not trigger a re-grouping.
+
+### Part 3: evergreen, deferred with a reason
+
+Eric also wants the other direction: older videos that keep climbing, ranked by daily growth rate.
+
+That is not computable today. `_db/meta.json` reports `days_present: 1`, `days_missing: 89`, and
+`_raw/video_snapshots/` holds exactly one file (`2026-07-28.json`). So `traction.still_growing` is
+`null` on all 11,657 videos and `views_gained["7d"]` is `insufficient_data` on all of them. Not low.
+Unmeasured.
+
+The code to compute it is already written and tested (`pipeline/traction.py`, `pipeline/growth.py`,
+`pipeline/snapshot.py`). What is missing is history, and the reason there is no history is that
+`scripts/ait-snapshot.plist` was never installed into `~/Library/LaunchAgents/` (verified: no
+matching file present).
+
+So this work installs it via `scripts/install_ait_snapshot_launchd.sh` as its first task, which
+starts the clock. First deltas land the next morning; a usable 7d rate exists a week later. At that
+point evergreen becomes a third section reading `traction` fields that are already in
+`videos.json`, needing no new plumbing.
+
+Nothing in Parts 1 and 2 depends on this.
+
+## Data
+
+New bundle `_db/recent.json`, written by a new `pipeline/bundles/recent.py`, registered in
+`build_data.build()` alongside the existing bundle writers.
+
+Why its own bundle rather than slicing `videos.json` in the web layer: `videos.json` is 16.7 MB and
+`web/lib/bundles.ts` deliberately never ships it wholesale, only id slices. The feed needs a
+whole-set client-side sort across three windows, so it needs its own slim payload. Carrying only
+the card fields for the 30d set keeps it small.
+
+Shape, following the existing bundle conventions (`VERSION`, a `TRUST` map, sorted keys, written
+whole):
+
+```
+{
+  "generated_at": ..., "version": 1, "window_days": 30,
+  "videos": [
+    { video_id, title, published_at, view_count, duration_s, type,
+      channel_id, channel_name, multiplier: {value, state, baseline, baseline_n},
+      pattern_id | null }
+  ],
+  "patterns": [ { pattern_id, label, evidence: [video_id, ...], trust: "inference" } ],
+  "trust": { "multiplier": "derived", "pattern": "inference" }
+}
+```
+
+`channel_name` is denormalised into the row so the feed does not have to load `channels.json` to
+render a card. Avatars keep resolving through the existing `channelAvatarUrl` path.
+
+## Web
+
+- `web/lib/recent.ts`: pure filter and sort. Takes the bundle plus a window, returns ranked rows
+  and the no-baseline tail. No I/O.
+- `web/components/recent-feed.tsx`: client component, owns the window toggle state, renders
+  `VideoCard`.
+- `web/lib/bundles.ts`: one new `loadRecent()` following the existing `load<T>()` pattern.
+- `web/lib/types.ts`: `RecentBundle`, `RecentRow`, `PatternRow`.
+- `web/app/topics/page.tsx`: mount the section above the existing root loop.
+
+## Testing
+
+Test-first, per the repo rule for anything that can render a wrong number.
+
+Python (`pipeline/bundles/test_recent.py`):
+- window boundary is inclusive at exactly N days and excludes N+1
+- `no_baseline` rows are present in the bundle and carry their state, never a zero value
+- sort is by multiplier descending, with a stable tiebreak
+- a video with `view_count: null` never appears as ranked
+- rebuild is byte-identical (the existing idempotency guarantee)
+
+TypeScript (`web/lib/recent.test.ts`, vitest):
+- filtering 30d down to 7d and 14d returns the expected subsets
+- the no-baseline tail is separated from the ranked list
+- an empty window renders as empty, not as an error
+
+## Out of scope
+
+- Any change to how `multiplier` itself is computed.
+- Any change to the existing taxonomy shelves on `/topics`.
+- Automatic promotion of a pattern into `config/topics.json`. That stays a human edit, by rule.
+- Server-side sorting, pagination, or a saved-view feature. 827 rows does not need any of it.
+
+## Open risk
+
+The pattern pass is the only part that can produce something confidently wrong. Mitigation is the
+trust tier: every pattern label renders with the titles that produced it, so a bad grouping is
+visible as a bad grouping rather than passing as a finding. If the labels turn out to be mush in
+practice, Part 1 still stands on its own and Part 2 can be cut without touching it.
