@@ -13,10 +13,58 @@ His manual ritual today: open the subscriptions page sorted by newest, scroll, e
 against its channel's normal performance, keep the ones that clearly overshot, then notice that
 three of them are about the same thing and conclude that thing is trending.
 
-Every input to that ritual already exists in `_db/videos.json`. `multiplier.value` is a video's
-views over its own channel's median for its own format, which is exactly the "did this overshoot"
-judgment he makes by eye, computed exactly and for free. The dashboard just never surfaces it as a
-time-windowed feed.
+## The score: vidIQ's, not ours
+
+**Decided 2026-07-29: the badge shows vidIQ's `breakoutScore`. Our computed multiplier does not
+appear on this page.**
+
+We had a multiplier already (`pipeline/multiplier.py`: views over the median of the channel's last
+20 mature same-format uploads). Checked against vidIQ on videos we both cover, it is wrong in two
+distinguishable ways:
+
+| video | ours | vidIQ |
+|---|---|---|
+| I Tested 100+ Hermes Agent Automations | 19.4 | 9.59 |
+| OpenCode Full Tutorial (own channel) | 26.1 | 15.13 |
+| 4 Free Repos That Cut Token Usage (own) | 4.6 | 2.28 |
+| Hermes Agent Works Better (own) | 1.2 | 2.75 |
+
+- **The median baseline is too low on a skewed catalogue.** Eric Tech's last 20 mature long uploads
+  have a median of 1,648 views against a mean of 6,628, a 4.0x gap. Dubibubi's is 9.7x. Dividing by
+  that median inflates every score.
+- **vidIQ normalises by video age and we do not.** Their implied divisor moves per video (686 to
+  4,316 across one channel), so a 7-day-old video is judged against what that channel does *at 7
+  days*. Ours compares a 3-day-old video's total views to mature lifetime views. That is the last
+  row above, where we read colder rather than hotter.
+
+The second is not a tuning constant, it is a missing dimension, and fixing it needs the view-count
+history that does not exist yet. vidIQ has already solved it. More importantly, Eric's eye is
+calibrated to vidIQ's numbers: a dashboard that says 19.4x where vidIQ says 9.6x costs trust it
+cannot earn back.
+
+`pipeline/multiplier.py` stays where it is and keeps serving the taxonomy shelves. It is simply not
+what this page shows.
+
+### What that costs and how it is fetched
+
+`vidiq_outliers` takes a `channelIds` array. **72 IDs in one call fails; 24 succeeds**, so the
+roster is fetched in 3 batches. 5 credits per call.
+
+- 3 calls x long + 3 calls x shorts = **30 credits per refresh**
+- `publishedWithin: "thisMonth"` is fetched once and the 7d and 14d views are filtered from it
+  client-side, so the window toggle costs nothing extra
+- 30 credits/day against a 2,000-credit cycle is ~900/cycle, and `si-refresh` shares that pool
+
+### What changes because of it
+
+- **vidIQ returns only videos it judges outliers.** This week that was 28 long-form across all 72
+  channels, not the 159 they uploaded. The feed is a shortlist, not a full upload list, and the
+  "no baseline yet" tail is replaced by "16 more outliers below 2.5x".
+- The window toggle maps to vidIQ's buckets: `thisWeek` / `thisMonth` / `threeMonths`.
+- vidIQ's view counts run fresher than ours (36,869 vs our 32,757 on the same video), so the card
+  shows vidIQ's.
+- The score is **Oracle from a vendor**, not Derived by us. It carries a `source: "vidiq"` field and
+  the page names the source, because we cannot show the working for a number we did not compute.
 
 ## Where it goes
 

@@ -36,8 +36,9 @@
   background: var(--v-make); color: #fff; font-size: 11px; font-weight: 700;
   font-variant-numeric: tabular-nums; letter-spacing: -0.01em;
 }
-.ymult.tier2 { background: #2f8f4e; }
-.ymult.tier3 { background: var(--muted-foreground); }
+.ymult.t5 { background: #1f8a4c; }
+.ymult.t3 { background: #3f8f5f; }
+.ymult.t2 { background: #6b7f74; }
 .yshort {
   position: absolute; left: 5px; top: 5px; padding: 0 4px; border-radius: 3px;
   background: rgba(0,0,0,0.7); color: #fff; font-size: 9px; font-weight: 700; letter-spacing: 0.06em;
@@ -128,9 +129,10 @@
 <p class="lede">
   The section that replaces scrolling the subscriptions page. Social-invest chrome and tokens
   throughout; the video grid itself is YouTube's geometry on purpose, because that is the layout
-  the eye already reads at speed. Every card below is a real row out of <code>_db/videos.json</code>
-  for the 7-day window on 2026-07-28, ranked by each channel's own multiplier. Nothing here is
-  invented.
+  the eye already reads at speed. The number on every thumbnail is <b>vidIQ's own breakout
+  score</b>, pulled live for all 72 roster channels (3 calls, 15 credits) — the same figure Eric
+  already reads in vidIQ, so the dashboard and the tool he checks it against agree. Nothing here
+  is invented.
 </p>
 
 <div class="pageframe" data-group="topics-recent" data-v="A">
@@ -151,12 +153,12 @@
       <div class="section-kicker">
         <span class="kicker">WHAT WENT UP THIS WEEK</span>
         <span class="rule"></span>
-        <span class="cap">112 scored of 159 · 7d · long-form</span>
+        <span class="cap">28 outliers · 72 channels · 7d · long-form</span>
       </div>
       <p class="note" style="margin:0 0 12px">
-        every video published in the window, ranked by views ÷ its own channel's median for its own
-        format · a small channel's breakout outranks a big channel's routine upload, which is the
-        whole point
+        vidIQ's breakout score, the same number you already read in their UI · how far a video ran
+        past what that channel normally does at this age · vidIQ returns only videos it judges
+        outliers, so this is a shortlist, not the full upload feed
       </p>
 
       <div class="ctrls">
@@ -170,120 +172,120 @@
 
       <div class="ygrid">
 
+        <a class="ycard" href="https://youtu.be/Sir59K8ZDPU" target="_blank" rel="noreferrer">
+          <span class="ythumb"><img src="https://i.ytimg.com/vi/Sir59K8ZDPU/mqdefault.jpg" alt="">
+            <span class="ymult ">17.93×</span><span class="ylen">21:18</span></span>
+          <span class="ybody"><span class="yav"><img src="avatars/UCLKPca3kwwd-B59HNr-_lvA.jpg" alt="" loading="lazy"><i>AE</i></span><span class="ymeta">
+            <span class="ytitle">Why Agentic Systems Need Ontologies — Frank Coyle, UC Berkeley</span>
+            <span class="ychan">AI Engineer</span><br>
+            <span class="ystat">145.4K views · 5d ago</span></span></span>
+        </a>
+
         <a class="ycard" href="https://youtu.be/IbFaY3xFpZM" target="_blank" rel="noreferrer">
           <span class="ythumb"><img src="https://i.ytimg.com/vi/IbFaY3xFpZM/mqdefault.jpg" alt="">
-            <span class="ymult">19.4×</span><span class="ylen">17:25</span></span>
+            <span class="ymult t5">9.59×</span><span class="ylen">17:25</span></span>
           <span class="ybody"><span class="yav"><img src="avatars/UC4SgqYQmdTCKXUoer2U-lcg.jpg" alt="" loading="lazy"><i>D</i></span><span class="ymeta">
             <span class="ytitle">I Tested 100+ Hermes Agent Automations. These Are The Best</span>
             <span class="ychan">Dubibubi</span><br>
-            <span class="ystat">32.8K views · 5d ago</span></span></span>
+            <span class="ystat">36.9K views · 5d ago</span></span></span>
         </a>
 
-        <a class="ycard" href="https://youtu.be/JQInc4V6SWg" target="_blank" rel="noreferrer">
-          <span class="ythumb"><img src="https://i.ytimg.com/vi/JQInc4V6SWg/mqdefault.jpg" alt="">
-            <span class="ymult">12.7×</span><span class="ylen">19:19</span></span>
-          <span class="ybody"><span class="yav"><img src="avatars/UC4SgqYQmdTCKXUoer2U-lcg.jpg" alt="" loading="lazy"><i>D</i></span><span class="ymeta">
-            <span class="ytitle">I Made Claude Opus 5 and Fable 5 Build the Same App (Raw Results)</span>
-            <span class="ychan">Dubibubi</span><br>
-            <span class="ystat">21.5K views · 3d ago</span></span></span>
-        </a>
-
-        <a class="ycard" href="https://youtu.be/g89FJiNAlEs" target="_blank" rel="noreferrer">
-          <span class="ythumb"><img src="https://i.ytimg.com/vi/g89FJiNAlEs/mqdefault.jpg" alt="">
-            <span class="ymult tier2">4.6×</span><span class="ylen">15:08</span></span>
-          <span class="ybody"><span class="yav"><img src="avatars/UCOXRjenlq9PmlTqd_JhAbMQ.jpg" alt="" loading="lazy"><i>ET</i></span><span class="ymeta">
-            <span class="ytitle">4 Free Repos That Cut Claude Code Token Usage</span>
-            <span class="ychan yself">Eric Tech · you</span><br>
-            <span class="ystat">7.5K views · 7d ago</span></span></span>
-        </a>
-
-        <a class="ycard" href="https://youtu.be/rD20wJkPUB4" target="_blank" rel="noreferrer">
-          <span class="ythumb"><img src="https://i.ytimg.com/vi/rD20wJkPUB4/mqdefault.jpg" alt="">
-            <span class="ymult tier2">3.9×</span><span class="ylen">13:20</span></span>
-          <span class="ybody"><span class="yav"><img src="avatars/UCuU9jE4MHHEIyYMbDfUPSew.jpg" alt="" loading="lazy"><i>CW</i></span><span class="ymeta">
-            <span class="ytitle">Kimi K3 explained in 13min..</span>
-            <span class="ychan">Caleb Writes Code</span><br>
-            <span class="ystat">147K views · 7d ago</span></span></span>
-        </a>
-
-        <a class="ycard" href="https://youtu.be/7FU98O0JLHs" target="_blank" rel="noreferrer">
-          <span class="ythumb"><img src="https://i.ytimg.com/vi/7FU98O0JLHs/mqdefault.jpg" alt="">
-            <span class="ymult tier2">3.4×</span><span class="ylen">23:00</span></span>
-          <span class="ybody"><span class="yav"><img src="avatars/UCoy6cTJ7Tg0dqS-DI-_REsA.jpg" alt="" loading="lazy"><i>CA</i></span><span class="ymeta">
-            <span class="ytitle">Turn Claude Into A Design GENIUS In 3 Simple Steps</span>
-            <span class="ychan">Chase AI</span><br>
-            <span class="ystat">145K views · 5d ago</span></span></span>
-        </a>
-
-        <a class="ycard" href="https://youtu.be/FrAAxWbxSyE" target="_blank" rel="noreferrer">
-          <span class="ythumb"><img src="https://i.ytimg.com/vi/FrAAxWbxSyE/mqdefault.jpg" alt="">
-            <span class="ymult tier2">3.4×</span><span class="ylen">8:23</span></span>
-          <span class="ybody"><span class="yav"><img src="avatars/UCAVDRj14A9W2Zix1Y5EUm7Q.jpg" alt="" loading="lazy"><i>01</i></span><span class="ymeta">
-            <span class="ytitle">Context Engineering 的全新规则：Claude 5 时代，Claude Code 删掉了 80% 系统提示词</span>
-            <span class="ychan">01Coder</span><br>
-            <span class="ystat">4.6K views · 2d ago</span></span></span>
-        </a>
-
-        <a class="ycard" href="https://youtu.be/W973FsTECa8" target="_blank" rel="noreferrer">
-          <span class="ythumb"><img src="https://i.ytimg.com/vi/W973FsTECa8/mqdefault.jpg" alt="">
-            <span class="ymult tier2">3.1×</span><span class="ylen">10:10</span></span>
-          <span class="ybody"><span class="yav"><img src="avatars/UCAVDRj14A9W2Zix1Y5EUm7Q.jpg" alt="" loading="lazy"><i>01</i></span><span class="ymeta">
-            <span class="ytitle">18 万星 Skills 项目的工程链三件套之三 to-tickets</span>
-            <span class="ychan">01Coder</span><br>
-            <span class="ystat">4.3K views · 5d ago</span></span></span>
-        </a>
-
-        <a class="ycard" href="https://youtu.be/z_7J_iKuSzU" target="_blank" rel="noreferrer">
-          <span class="ythumb"><img src="https://i.ytimg.com/vi/z_7J_iKuSzU/mqdefault.jpg" alt="">
-            <span class="ymult tier2">3.1×</span><span class="ylen">27:44</span></span>
-          <span class="ybody"><span class="yav"><img src="avatars/UCY8ZKVxXj0FgIvSfeiSDclg.jpg" alt="" loading="lazy"><i>PS</i></span><span class="ymeta">
-            <span class="ytitle">Opus 5: No-Hype Full Review &amp; Testing</span>
-            <span class="ychan">Pat Simmons</span><br>
-            <span class="ystat">64.8K views · 3d ago</span></span></span>
+        <a class="ycard" href="https://youtu.be/xIt_mTQp6mY" target="_blank" rel="noreferrer">
+          <span class="ythumb"><img src="https://i.ytimg.com/vi/xIt_mTQp6mY/mqdefault.jpg" alt="">
+            <span class="ymult t5">5.83×</span><span class="ylen">17:57</span></span>
+          <span class="ybody"><span class="yav"><img src="avatars/UCLKPca3kwwd-B59HNr-_lvA.jpg" alt="" loading="lazy"><i>AE</i></span><span class="ymeta">
+            <span class="ytitle">Loop Engineering from First Principles — Kyle Mistele, HumanLayer</span>
+            <span class="ychan">AI Engineer</span><br>
+            <span class="ystat">10.4K views · 3d ago</span></span></span>
         </a>
 
         <a class="ycard" href="https://youtu.be/4kMep3c96kI" target="_blank" rel="noreferrer">
           <span class="ythumb"><img src="https://i.ytimg.com/vi/4kMep3c96kI/mqdefault.jpg" alt="">
-            <span class="ymult tier3">2.9×</span><span class="ylen">22:41</span></span>
+            <span class="ymult t5">5.15×</span><span class="ylen">22:41</span></span>
           <span class="ybody"><span class="yav"><img src="avatars/UC2eDm1RP5DAs0nadj4sr-0w.jpg" alt="" loading="lazy"><i>KR</i></span><span class="ymeta">
             <span class="ytitle">I Tried Laguna S 2.1 So You Don't Have To...</span>
             <span class="ychan">Kacper Rutkiewicz | AI Made Simple</span><br>
             <span class="ystat">5.2K views · 5d ago</span></span></span>
         </a>
 
-        <a class="ycard" href="https://youtu.be/4sAmpcSOVEw" target="_blank" rel="noreferrer">
-          <span class="ythumb"><img src="https://i.ytimg.com/vi/4sAmpcSOVEw/mqdefault.jpg" alt="">
-            <span class="ymult tier3">2.7×</span><span class="ylen">22:19</span></span>
-          <span class="ybody"><span class="yav"><img src="avatars/UCvM5YYWwfLwpcQgbRr68JLQ.jpg" alt="" loading="lazy"><i>AT</i></span><span class="ymeta">
-            <span class="ytitle">Hermes Agent - Ultimate Crash Course for Beginners (AI Agent)</span>
-            <span class="ychan">Adrian Twarog</span><br>
-            <span class="ystat">22.6K views · 7d ago</span></span></span>
+        <a class="ycard" href="https://youtu.be/7FU98O0JLHs" target="_blank" rel="noreferrer">
+          <span class="ythumb"><img src="https://i.ytimg.com/vi/7FU98O0JLHs/mqdefault.jpg" alt="">
+            <span class="ymult t3">4.23×</span><span class="ylen">23:00</span></span>
+          <span class="ybody"><span class="yav"><img src="avatars/UCoy6cTJ7Tg0dqS-DI-_REsA.jpg" alt="" loading="lazy"><i>CA</i></span><span class="ymeta">
+            <span class="ytitle">Turn Claude Into A Design GENIUS In 3 Simple Steps</span>
+            <span class="ychan">Chase AI</span><br>
+            <span class="ystat">157.9K views · 5d ago</span></span></span>
         </a>
 
         <a class="ycard" href="https://youtu.be/3OqZHYNKc9A" target="_blank" rel="noreferrer">
           <span class="ythumb"><img src="https://i.ytimg.com/vi/3OqZHYNKc9A/mqdefault.jpg" alt="">
-            <span class="ymult tier3">2.5×</span><span class="ylen">11:35</span></span>
+            <span class="ymult t3">3.23×</span><span class="ylen">11:35</span></span>
           <span class="ybody"><span class="yav"><img src="avatars/UCkVfrGwV-iG9bSsgCbrNPxQ.jpg" alt="" loading="lazy"><i>BS</i></span><span class="ymeta">
             <span class="ytitle">This Tiny Engine Runs Impossibly Big AI Models Locally! (colibrì)</span>
             <span class="ychan">Better Stack</span><br>
-            <span class="ystat">68.1K views · 3d ago</span></span></span>
+            <span class="ystat">87.5K views · 3d ago</span></span></span>
         </a>
 
-        <a class="ycard" href="https://youtu.be/jbiMx17fEK0" target="_blank" rel="noreferrer">
-          <span class="ythumb"><img src="https://i.ytimg.com/vi/jbiMx17fEK0/mqdefault.jpg" alt="">
-            <span class="ymult tier3">2.4×</span><span class="ylen">9:35</span></span>
+        <a class="ycard" href="https://youtu.be/CHEMPZ87FLw" target="_blank" rel="noreferrer">
+          <span class="ythumb"><img src="https://i.ytimg.com/vi/CHEMPZ87FLw/mqdefault.jpg" alt="">
+            <span class="ymult t2">2.80×</span><span class="ylen">12:24</span></span>
+          <span class="ybody"><span class="yav"><img src="avatars/UCkVfrGwV-iG9bSsgCbrNPxQ.jpg" alt="" loading="lazy"><i>BS</i></span><span class="ymeta">
+            <span class="ytitle">Jack Dorsey's New App Is Coming for Slack and GitHub (buzz)</span>
+            <span class="ychan">Better Stack</span><br>
+            <span class="ystat">77.1K views · 2d ago</span></span></span>
+        </a>
+
+        <a class="ycard" href="https://youtu.be/7j3uSBMFy9U" target="_blank" rel="noreferrer">
+          <span class="ythumb"><img src="https://i.ytimg.com/vi/7j3uSBMFy9U/mqdefault.jpg" alt="">
+            <span class="ymult t2">2.67×</span><span class="ylen">20:36</span></span>
           <span class="ybody"><span class="yav"><img src="avatars/UCjc1vfduI7BhVMXBLJLDjmA.jpg" alt="" loading="lazy"><i>BM</i></span><span class="ymeta">
-            <span class="ytitle">Anthropic Just Changed How We Build Skills Forever</span>
+            <span class="ytitle">ChatGPT Voice 2.0 + Codex is INSANE (endless possibilities)</span>
             <span class="ychan">Brock Mesarich | AI for Non Techies</span><br>
-            <span class="ystat">72.4K views · 7d ago</span></span></span>
+            <span class="ystat">58.3K views · 2d ago</span></span></span>
+        </a>
+
+        <a class="ycard" href="https://youtu.be/z_7J_iKuSzU" target="_blank" rel="noreferrer">
+          <span class="ythumb"><img src="https://i.ytimg.com/vi/z_7J_iKuSzU/mqdefault.jpg" alt="">
+            <span class="ymult t2">2.64×</span><span class="ylen">27:44</span></span>
+          <span class="ybody"><span class="yav"><img src="avatars/UCY8ZKVxXj0FgIvSfeiSDclg.jpg" alt="" loading="lazy"><i>PS</i></span><span class="ymeta">
+            <span class="ytitle">Opus 5: No-Hype Full Review &amp; Testing</span>
+            <span class="ychan">Pat Simmons</span><br>
+            <span class="ystat">65.9K views · 3d ago</span></span></span>
+        </a>
+
+        <a class="ycard" href="https://youtu.be/UBFHTHUs1wA" target="_blank" rel="noreferrer">
+          <span class="ythumb"><img src="https://i.ytimg.com/vi/UBFHTHUs1wA/mqdefault.jpg" alt="">
+            <span class="ymult t2">2.58×</span><span class="ylen">9:40</span></span>
+          <span class="ybody"><span class="yav"><img src="avatars/UC37JpWP5PxLSma2lh79HU9A.jpg" alt="" loading="lazy"><i>DR</i></span><span class="ymeta">
+            <span class="ytitle">Anthropic Engineers Just Fixed Claude Code and Nobody's Talking About it!</span>
+            <span class="ychan">Duncan Rogoff | Learn Claude Code</span><br>
+            <span class="ystat">45.3K views · 1d ago</span></span></span>
+        </a>
+
+        <a class="ycard" href="https://youtu.be/Txse8Ux69Qg" target="_blank" rel="noreferrer">
+          <span class="ythumb"><img src="https://i.ytimg.com/vi/Txse8Ux69Qg/mqdefault.jpg" alt="">
+            <span class="ymult t2">2.55×</span><span class="ylen">4:18</span></span>
+          <span class="ybody"><span class="yav"><img src="avatars/UCoy6cTJ7Tg0dqS-DI-_REsA.jpg" alt="" loading="lazy"><i>CA</i></span><span class="ymeta">
+            <span class="ytitle">Opus 5 Just Dropped and Its Numbers Are Legit INSANE</span>
+            <span class="ychan">Chase AI</span><br>
+            <span class="ystat">76.7K views · 4d ago</span></span></span>
+        </a>
+
+        <a class="ycard" href="https://youtu.be/yKu03nBC9yY" target="_blank" rel="noreferrer">
+          <span class="ythumb"><img src="https://i.ytimg.com/vi/yKu03nBC9yY/mqdefault.jpg" alt="">
+            <span class="ymult t2">2.55×</span><span class="ylen">9:59</span></span>
+          <span class="ybody"><span class="yav"><img src="avatars/UC37JpWP5PxLSma2lh79HU9A.jpg" alt="" loading="lazy"><i>DR</i></span><span class="ymeta">
+            <span class="ytitle">I Tested Claude Opus 5 Against Fable 5 Head-to-Head</span>
+            <span class="ychan">Duncan Rogoff | Learn Claude Code</span><br>
+            <span class="ystat">15.8K views · 4d ago</span></span></span>
         </a>
 
       </div>
 
       <div class="tail">
-        <span class="t1">47 more long-form videos in this window have no baseline yet</span>
-        <span class="t2">their channel has under 5 mature uploads of that format, so there is nothing
-          to divide by. Unmeasured, never sorted as a zero.</span>
+        <span class="t1">16 more outliers below 2.5×</span>
+        <span class="t2">vidIQ returned 28 across the roster this week; the 12 above are what survives
+          the max-2-per-channel cap. Videos it does not judge outliers are not returned at all.</span>
         <button>show them</button>
       </div>
 
@@ -291,7 +293,7 @@
       <div class="section-kicker">
         <span class="kicker">PATTERNS IN THE TOP 40</span>
         <span class="rule"></span>
-        <span class="cap">inference · 30d set</span>
+        <span class="cap">inference · over vidIQ's 28</span>
       </div>
       <p class="note" style="margin:0 0 14px">
         the same cards, regrouped by what they are actually about · every label is a judgement, not a
@@ -308,59 +310,66 @@
 
         <div class="prow">
           <div class="phead">
-            <span class="plabel">Hermes Agent crash courses</span>
+            <span class="plabel">Opus 5 vs Fable 5 head-to-heads</span>
             <span class="pinf">INFERENCE</span>
-            <span class="pstat">2 videos · 2 creators · avg 11.1× · newest 5d</span>
-            <button class="ppromote pfloor" disabled>needs 3 creators</button>
-          </div>
-          <div class="pgrid">
-            <a class="ycard" href="https://youtu.be/IbFaY3xFpZM" target="_blank" rel="noreferrer"><span class="ythumb"><img src="https://i.ytimg.com/vi/IbFaY3xFpZM/mqdefault.jpg" alt=""><span class="ymult">19.4×</span></span>
-              <span class="ybody"><span class="ymeta"><span class="ytitle">I Tested 100+ Hermes Agent Automations. These Are The Best</span><span class="ystat">Dubibubi · 32.8K</span></span></span></a>
-            <a class="ycard" href="https://youtu.be/4sAmpcSOVEw" target="_blank" rel="noreferrer"><span class="ythumb"><img src="https://i.ytimg.com/vi/4sAmpcSOVEw/mqdefault.jpg" alt=""><span class="ymult tier3">2.7×</span></span>
-              <span class="ybody"><span class="ymeta"><span class="ytitle">Hermes Agent - Ultimate Crash Course for Beginners (AI Agent)</span><span class="ystat">Adrian Twarog · 22.6K</span></span></span></a>
-          </div>
-          <p class="pevidence">grouped on these titles: “I Tested 100+ Hermes Agent Automations. These Are The Best” · “Hermes Agent - Ultimate Crash Course for Beginners (AI Agent)”<br><b>the strongest signal on the page and still below the floor.</b> 2 creators, and the floor is 3. A 19.4× alongside a 2.7× from a second channel inside one week is what a topic looks like the week before it is obvious. Watch it, do not author it yet.</p>
-        </div>
-
-        <div class="prow">
-          <div class="phead">
-            <span class="plabel">Opus 5 and Claude 5 hands-on reviews</span>
-            <span class="pinf">INFERENCE</span>
-            <span class="pstat">3 videos · 3 creators · avg 6.4× · newest 2d</span>
+            <span class="pstat">4 videos · 4 creators · avg 2.4× · newest 2d</span>
             <button class="ppromote">promote to a topic →</button>
           </div>
           <div class="pgrid">
-            <a class="ycard" href="https://youtu.be/JQInc4V6SWg" target="_blank" rel="noreferrer"><span class="ythumb"><img src="https://i.ytimg.com/vi/JQInc4V6SWg/mqdefault.jpg" alt=""><span class="ymult">12.7×</span></span>
-              <span class="ybody"><span class="ymeta"><span class="ytitle">I Made Claude Opus 5 and Fable 5 Build the Same App (Raw Results)</span><span class="ystat">Dubibubi · 21.5K</span></span></span></a>
-            <a class="ycard" href="https://youtu.be/FrAAxWbxSyE" target="_blank" rel="noreferrer"><span class="ythumb"><img src="https://i.ytimg.com/vi/FrAAxWbxSyE/mqdefault.jpg" alt=""><span class="ymult tier2">3.4×</span></span>
-              <span class="ybody"><span class="ymeta"><span class="ytitle">Context Engineering 的全新规则：Claude 5 时代，Claude Code 删掉了 80% 系统提示词</span><span class="ystat">01Coder · 4.6K</span></span></span></a>
-            <a class="ycard" href="https://youtu.be/z_7J_iKuSzU" target="_blank" rel="noreferrer"><span class="ythumb"><img src="https://i.ytimg.com/vi/z_7J_iKuSzU/mqdefault.jpg" alt=""><span class="ymult tier2">3.1×</span></span>
-              <span class="ybody"><span class="ymeta"><span class="ytitle">Opus 5: No-Hype Full Review &amp; Testing</span><span class="ystat">Pat Simmons · 64.8K</span></span></span></a>
+            <a class="ycard" href="https://youtu.be/z_7J_iKuSzU" target="_blank" rel="noreferrer"><span class="ythumb"><img src="https://i.ytimg.com/vi/z_7J_iKuSzU/mqdefault.jpg" alt=""><span class="ymult t2">2.64×</span></span>
+              <span class="ybody"><span class="ymeta"><span class="ytitle">Opus 5: No-Hype Full Review &amp; Testing</span><span class="ystat">Pat Simmons · 65.9K</span></span></span></a>
+            <a class="ycard" href="https://youtu.be/Txse8Ux69Qg" target="_blank" rel="noreferrer"><span class="ythumb"><img src="https://i.ytimg.com/vi/Txse8Ux69Qg/mqdefault.jpg" alt=""><span class="ymult t2">2.55×</span></span>
+              <span class="ybody"><span class="ymeta"><span class="ytitle">Opus 5 Just Dropped and Its Numbers Are Legit INSANE</span><span class="ystat">Chase AI · 76.7K</span></span></span></a>
+            <a class="ycard" href="https://youtu.be/yKu03nBC9yY" target="_blank" rel="noreferrer"><span class="ythumb"><img src="https://i.ytimg.com/vi/yKu03nBC9yY/mqdefault.jpg" alt=""><span class="ymult t2">2.55×</span></span>
+              <span class="ybody"><span class="ymeta"><span class="ytitle">I Tested Claude Opus 5 Against Fable 5 Head-to-Head</span><span class="ystat">Duncan Rogoff · 15.8K</span></span></span></a>
+            <a class="ycard" href="https://youtu.be/2J3uX8iRNng" target="_blank" rel="noreferrer"><span class="ythumb"><img src="https://i.ytimg.com/vi/2J3uX8iRNng/mqdefault.jpg" alt=""><span class="ymult t2">1.71×</span></span>
+              <span class="ybody"><span class="ymeta"><span class="ytitle">I Tested Opus 5 vs. Fable 5. What You Need to Know.</span><span class="ystat">Nate Herk · 83.3K</span></span></span></a>
           </div>
-          <p class="pevidence">grouped on these titles: “I Made Claude Opus 5 and Fable 5 Build the Same App (Raw Results)” · “Context Engineering 的全新规则：Claude 5 时代…” · “Opus 5: No-Hype Full Review &amp; Testing”<br><b>3 creators, clears the consensus floor.</b> Three channels independently reviewing the same release in one week, none of them you.</p>
+          <p class="pevidence">grouped on these titles: “Opus 5: No-Hype Full Review &amp; Testing” · “Opus 5 Just Dropped and Its Numbers Are Legit INSANE” · “I Tested Claude Opus 5 Against Fable 5 Head-to-Head” · “I Tested Opus 5 vs. Fable 5. What You Need to Know.”<br><b>4 creators, clears the floor.</b> Four channels shipped the same comparison inside one week and none of them is you.</p>
         </div>
 
         <div class="prow">
           <div class="phead">
-            <span class="plabel">Skills as an engineering workflow</span>
+            <span class="plabel">Local and open-weight model runners</span>
             <span class="pinf">INFERENCE</span>
-            <span class="pleaf">matches claude-code-skills-authoring</span>
-            <span class="pstat">2 videos · 2 creators · avg 2.8× · newest 5d</span>
-            <button class="ppromote padd">add to that topic →</button>
+            <span class="pstat">3 videos · 3 creators · avg 3.3× · newest 3d</span>
+            <button class="ppromote">promote to a topic →</button>
           </div>
           <div class="pgrid">
-            <a class="ycard" href="https://youtu.be/W973FsTECa8" target="_blank" rel="noreferrer"><span class="ythumb"><img src="https://i.ytimg.com/vi/W973FsTECa8/mqdefault.jpg" alt=""><span class="ymult tier2">3.1×</span></span>
-              <span class="ybody"><span class="ymeta"><span class="ytitle">18 万星 Skills 项目的工程链三件套之三 to-tickets</span><span class="ystat">01Coder · 4.3K</span></span></span></a>
-            <a class="ycard" href="https://youtu.be/jbiMx17fEK0" target="_blank" rel="noreferrer"><span class="ythumb"><img src="https://i.ytimg.com/vi/jbiMx17fEK0/mqdefault.jpg" alt=""><span class="ymult tier3">2.4×</span></span>
-              <span class="ybody"><span class="ymeta"><span class="ytitle">Anthropic Just Changed How We Build Skills Forever</span><span class="ystat">Brock Mesarich · 72.4K</span></span></span></a>
+            <a class="ycard" href="https://youtu.be/4kMep3c96kI" target="_blank" rel="noreferrer"><span class="ythumb"><img src="https://i.ytimg.com/vi/4kMep3c96kI/mqdefault.jpg" alt=""><span class="ymult t5">5.15×</span></span>
+              <span class="ybody"><span class="ymeta"><span class="ytitle">I Tried Laguna S 2.1 So You Don't Have To...</span><span class="ystat">Kacper Rutkiewicz · 5.2K</span></span></span></a>
+            <a class="ycard" href="https://youtu.be/3OqZHYNKc9A" target="_blank" rel="noreferrer"><span class="ythumb"><img src="https://i.ytimg.com/vi/3OqZHYNKc9A/mqdefault.jpg" alt=""><span class="ymult t3">3.23×</span></span>
+              <span class="ybody"><span class="ymeta"><span class="ytitle">This Tiny Engine Runs Impossibly Big AI Models Locally! (colibrì)</span><span class="ystat">Better Stack · 87.5K</span></span></span></a>
+            <a class="ycard" href="https://youtu.be/ERCdFgTXNY4" target="_blank" rel="noreferrer"><span class="ythumb"><img src="https://i.ytimg.com/vi/ERCdFgTXNY4/mqdefault.jpg" alt=""><span class="ymult t2">1.56×</span></span>
+              <span class="ybody"><span class="ymeta"><span class="ytitle">Laguna S 2.1 The BEST LOCAL Model? Open-Weight Model Beats GLM 5.2?</span><span class="ystat">WorldofAI · 46.1K</span></span></span></a>
           </div>
-          <p class="pevidence">grouped on these titles: “18 万星 Skills 项目的工程链三件套之三 to-tickets” · “Anthropic Just Changed How We Build Skills Forever”<br><b>this one is not a new topic.</b> Both titles match aliases on the leaf you already authored, <code>claude-code-skills-authoring</code>, so the action is to file them there and let that topic page show it is heating up. The 3-creator floor does not apply, because the topic already cleared it.</p>
+          <p class="pevidence">grouped on these titles: “I Tried Laguna S 2.1 So You Don't Have To...” · “This Tiny Engine Runs Impossibly Big AI Models Locally! (colibrì)” · “Laguna S 2.1 The BEST LOCAL Model?”<br><b>3 creators, clears the floor.</b> A 4,590-subscriber channel scoring 5.15× is the tell: this is reachable, not locked up by the big channels.</p>
+        </div>
+
+        <div class="prow">
+          <div class="phead">
+            <span class="plabel">Agent-architecture conference talks</span>
+            <span class="pinf">INFERENCE</span>
+            <span class="pstat">6 videos · 1 creator · avg 6.4× · newest 1d</span>
+            <button class="ppromote pfloor" disabled>needs 3 creators</button>
+          </div>
+          <div class="pgrid">
+            <a class="ycard" href="https://youtu.be/Sir59K8ZDPU" target="_blank" rel="noreferrer"><span class="ythumb"><img src="https://i.ytimg.com/vi/Sir59K8ZDPU/mqdefault.jpg" alt=""><span class="ymult ">17.93×</span></span>
+              <span class="ybody"><span class="ymeta"><span class="ytitle">Why Agentic Systems Need Ontologies — Frank Coyle, UC Berkeley</span><span class="ystat">AI Engineer · 145K</span></span></span></a>
+            <a class="ycard" href="https://youtu.be/xIt_mTQp6mY" target="_blank" rel="noreferrer"><span class="ythumb"><img src="https://i.ytimg.com/vi/xIt_mTQp6mY/mqdefault.jpg" alt=""><span class="ymult t5">5.83×</span></span>
+              <span class="ybody"><span class="ymeta"><span class="ytitle">Loop Engineering from First Principles — Kyle Mistele, HumanLayer</span><span class="ystat">AI Engineer · 10.4K</span></span></span></a>
+            <a class="ycard" href="https://youtu.be/VGN22pPpb-8" target="_blank" rel="noreferrer"><span class="ythumb"><img src="https://i.ytimg.com/vi/VGN22pPpb-8/mqdefault.jpg" alt=""><span class="ymult t3">4.73×</span></span>
+              <span class="ybody"><span class="ymeta"><span class="ytitle">Thinner Agents on a Smarter Substrate — Emil Eifrem, Neo4j</span><span class="ystat">AI Engineer · 17.3K</span></span></span></a>
+            <a class="ycard" href="https://youtu.be/31GUkCBD-Uc" target="_blank" rel="noreferrer"><span class="ythumb"><img src="https://i.ytimg.com/vi/31GUkCBD-Uc/mqdefault.jpg" alt=""><span class="ymult t3">4.57×</span></span>
+              <span class="ybody"><span class="ymeta"><span class="ytitle">Building Closed-Loop Evals for a Multimodal Agent at Scale — Uber</span><span class="ystat">AI Engineer · 14.4K</span></span></span></a>
+          </div>
+          <p class="pevidence">grouped on these titles: four of six AI Engineer conference talks, plus “Why We Killed Our Multi-Agent Pipeline” and “CrabRAG: Why Automated Assistants Need Graph Memory”<br><b>the highest score on the page and the clearest reject.</b> 17.93× is real, but all six are one channel posting a conference back-catalogue. One creator is not a trend, it is an upload schedule. This is exactly what the floor exists to catch.</p>
         </div>
 
         <div class="prow">
           <div class="phead">
             <span class="plabel">no pattern yet</span>
-            <span class="pstat">5 videos · nothing the pass could group with confidence</span>
+            <span class="pstat">9 videos · nothing the pass could group with confidence</span>
             <button class="ppromote pfloor">show →</button>
           </div>
         </div>
