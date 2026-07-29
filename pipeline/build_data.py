@@ -10,7 +10,7 @@ import dataclasses
 import datetime as dt
 from typing import Any
 
-from . import bundles, config, multiplier, read, topics, traction, util
+from . import bundles, config, exclusions, multiplier, read, topics, traction, util
 
 
 @dataclasses.dataclass
@@ -29,6 +29,12 @@ class Context:
     keyword_volumes: dict
     assignments_by_video: dict[str, list[dict]]
     own_coverage: dict[str, dict]
+    # Resolved once, here, because config/exclusions.json is a property of a video and of a
+    # topic — never of the leaf a bundle happens to be iterating. Every display bundle reads
+    # these two sets; videos.json keeps reading `videos`, because the corpus is the record of
+    # what the niche made and it does not change shape when Eric stops making something.
+    excluded_video_ids: frozenset[str] = frozenset()
+    excluded_topic_ids: frozenset[str] = frozenset()
     extra: dict[str, Any] = dataclasses.field(default_factory=dict)
 
 
@@ -75,6 +81,11 @@ def make_context(today: dt.date) -> Context:
         for leaf in topics.leaves(topic_index)
     }
 
+    rules = exclusions.load()
+    excluded_video_ids = frozenset(v["video_id"] for v in videos if rules.excludes_video(v))
+    excluded_topic_ids = frozenset(
+        t.id for t in topic_index.values() if rules.excludes_topic(t.id))
+
     return Context(
         today=today,
         # generated_at is the only non-deterministic field, and it is deliberately excluded
@@ -84,7 +95,8 @@ def make_context(today: dt.date) -> Context:
         topic_index=topic_index, videos=videos, baselines=baselines,
         traction=traction_by_video, comment_stats=read.comment_stats(), repos=read.repos(today),
         keyword_volumes=read.keyword_volumes(),
-        assignments_by_video=assignments_by_video, own_coverage=own_coverage)
+        assignments_by_video=assignments_by_video, own_coverage=own_coverage,
+        excluded_video_ids=excluded_video_ids, excluded_topic_ids=excluded_topic_ids)
 
 
 def build(today: dt.date | None = None) -> dict:

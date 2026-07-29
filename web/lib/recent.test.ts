@@ -32,6 +32,8 @@ function bundle(videos: RecentRow[]): RecentBundle {
       batches_failed: 0,
       missing_channel_ids: [],
     },
+    display_floor: 2.5,
+    per_channel_cap: 2,
     videos,
     patterns: [],
     trust: {},

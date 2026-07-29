@@ -244,3 +244,31 @@ export const VERDICT_RANK: Record<Verdict, number> = {
   SKIP: 1,
   INSUFFICIENT_DATA: 0,
 }
+
+
+/** h:mm:ss / m:ss. Zero or missing is not a duration, so it renders nothing rather than "0:00". */
+export function durationText(seconds: number | null): string | null {
+  if (seconds === null || seconds <= 0) return null
+  const h = Math.floor(seconds / 3600)
+  const m = Math.floor((seconds % 3600) / 60)
+  const s = Math.floor(seconds % 60)
+  const pad = (n: number) => String(n).padStart(2, "0")
+  return h > 0 ? `${h}:${pad(m)}:${pad(s)}` : `${m}:${pad(s)}`
+}
+
+/**
+ * The shared multiplier ladder: 0 below 3x, then 3x, 5x, 10x.
+ *
+ * Both badges band on it — vidIQ's breakout score on the feed and our own multiplier on the
+ * shelves — so the two read alike at a glance. They map the index to different class names on
+ * purpose: filled for the vendor number, outline for the Derived one. The boundaries used to be
+ * two hand-copied literal ladders kept in step by a comment in each file.
+ */
+export const TIER_BOUNDS = [3, 5, 10] as const
+
+export function tierIndex(value: number): 0 | 1 | 2 | 3 {
+  if (value >= TIER_BOUNDS[2]) return 3
+  if (value >= TIER_BOUNDS[1]) return 2
+  if (value >= TIER_BOUNDS[0]) return 1
+  return 0
+}

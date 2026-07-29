@@ -84,3 +84,30 @@ def test_rebuild_is_byte_identical(ait_root):
     first = (config.db_dir() / "recent.json").read_bytes()
     build_data.build(dt.date(2026, 7, 29))
     assert (config.db_dir() / "recent.json").read_bytes() == first
+
+
+def test_the_feed_obeys_the_exclusions_config(ait_root, write_config):
+    """The feed is the first thing /topics shows, and it was the one display surface that never
+    imported exclusions: the rule lived at each call site, so a new surface defaulted to wrong."""
+    write_config("exclusions.json", {"version": 1, "terms": ["openclaw"], "channels": ["UCdan"]})
+    _sweep(ait_root, [
+        ROW,
+        {**ROW, "video_id": "byterm", "title": "OpenClaw does everything"},
+        {**ROW, "video_id": "bychannel", "channel_id": "UCdan", "channel_name": "Dan"},
+    ])
+    build_data.build(dt.date(2026, 7, 29))
+
+    bundle = json.loads((config.db_dir() / "recent.json").read_text())
+    assert [v["video_id"] for v in bundle["videos"]] == ["IbFaY3xFpZM"]
+
+
+def test_the_grid_thresholds_reach_the_bundle(ait_root):
+    """web/ may only read _db/, so a threshold reaches the UI through the bundle or not at all.
+    These were literals in the page, which made the config block documentation for a decision it
+    did not control."""
+    _sweep(ait_root, [ROW])
+    build_data.build(dt.date(2026, 7, 29))
+
+    bundle = json.loads((config.db_dir() / "recent.json").read_text())
+    assert bundle["display_floor"] == 2.5
+    assert bundle["per_channel_cap"] == 2

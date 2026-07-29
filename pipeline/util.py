@@ -64,6 +64,37 @@ def read_json(path: pathlib.Path, default: Any = None) -> Any:
     return json.loads(path.read_text())
 
 
+def newest_json(directory: pathlib.Path, default: Any = None) -> Any:
+    """The newest dated *.json in a directory of them, or default.
+
+    Every metered sweep in this repo writes one file per day named YYYY-MM-DD.json, so newest is
+    the last name in sort order. Four places had written this out by hand; the one thing they must
+    agree on is that a missing directory and an empty one both mean "no sweep has run", which is a
+    state and never an error.
+    """
+    if not directory.is_dir():
+        return default
+    files = sorted(directory.glob("*.json"))
+    return read_json(files[-1]) if files else default
+
+
+def published_within(row: dict, today: dt.date, days: int) -> bool:
+    """Whether row["published_at"] falls inside the last `days` days, counting today as 0.
+
+    A missing or unparseable date is not inside the window: an unknown date is not a recent one.
+    The lower bound matters too — a video dated in the future is a bad reading, and letting it
+    through put the same video in-window on one surface and out on another.
+    """
+    published = row.get("published_at")
+    if not published:
+        return False
+    try:
+        age = days_between(parse_ts(published).date(), today)
+    except (ValueError, TypeError):
+        return False
+    return 0 <= age <= days
+
+
 def write_json(path: pathlib.Path, obj: Any) -> None:
     """Atomic, key-sorted, newline-terminated. Sorting is what makes rebuilds byte-identical."""
     path.parent.mkdir(parents=True, exist_ok=True)

@@ -7,7 +7,7 @@ already in memory.
 """
 from __future__ import annotations
 
-from .. import config, outliers, patterns, util
+from .. import config, exclusions, outliers, patterns, util
 
 VERSION = 1
 TRUST = {"breakout_score": "vendor", "pattern": "inference", "existing_leaf": "derived"}
@@ -18,26 +18,26 @@ CARD_KEYS = ("video_id", "title", "published_at", "view_count", "duration_s", "t
 
 def build(ctx) -> dict:
     sweep = outliers.latest()
-    videos: list[dict] = []
-    coverage = {"channels_requested": 0, "batches_ok": 0, "batches_failed": 0,
-                "missing_channel_ids": []}
+    blocks = (sweep.get("formats") or []) if sweep else []
+    covs = [b.get("coverage") or {} for b in blocks]
+    coverage = {
+        "channels_requested": max((c.get("channels_requested", 0) for c in covs), default=0),
+        "batches_ok": sum(c.get("batches_ok", 0) for c in covs),
+        "batches_failed": sum(c.get("batches_failed", 0) for c in covs),
+        "missing_channel_ids": sorted({i for c in covs
+                                       for i in c.get("missing_channel_ids") or []}),
+    }
 
-    if sweep:
-        for block in sweep.get("formats") or []:
-            for row in block.get("videos") or []:
-                videos.append({**{k: row.get(k) for k in CARD_KEYS}, "pattern_id": None})
-            found = block.get("coverage") or {}
-            coverage = {
-                "channels_requested": max(coverage["channels_requested"],
-                                          found.get("channels_requested", 0)),
-                "batches_ok": coverage["batches_ok"] + found.get("batches_ok", 0),
-                "batches_failed": coverage["batches_failed"] + found.get("batches_failed", 0),
-                "missing_channel_ids": sorted(
-                    set(coverage["missing_channel_ids"])
-                    | set(found.get("missing_channel_ids") or [])),
-            }
+    # The feed obeys config/exclusions.json like every other display surface. It is the first
+    # thing /topics shows, so a muted channel or an off-the-board title landing here would be
+    # the loudest possible place for the rule to be forgotten.
+    rules = exclusions.load()
+    videos = [{**{k: row.get(k) for k in CARD_KEYS}, "pattern_id": None}
+              for block in blocks
+              for row in block.get("videos") or []
+              if not rules.excludes_video(row)]
 
-    videos.sort(key=lambda v: (-(v["breakout_score"] or 0), v["video_id"]))
+    videos.sort(key=outliers.by_score)
 
     # The grouping is an LLM pass that runs outside pipeline/; this only reads what it wrote and
     # stamps each card with the group it belongs to, so the feed can highlight a pattern's videos.
@@ -56,6 +56,11 @@ def build(ctx) -> dict:
         "fetched_at": sweep.get("date") if sweep else None,
         "window": sweep.get("window") if sweep else None,
         "coverage": coverage,
+        # The two numbers that decide what the grid shows, carried to the UI the one honest way
+        # web/ can get at config: through _db/. Hardcoding them in the page made the threshold
+        # block documentation for a decision it did not control.
+        "display_floor": ctx.thresholds["outliers"]["display_floor"],
+        "per_channel_cap": ctx.thresholds["outliers"]["per_channel_cap"],
         "videos": videos,
         "patterns": rows,
         "trust": dict(TRUST),

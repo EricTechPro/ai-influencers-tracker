@@ -24,6 +24,16 @@ def batches(channel_ids: list[str], size: int = BATCH_SIZE) -> list[list[str]]:
     return [channel_ids[i:i + size] for i in range(0, len(channel_ids), size)]
 
 
+def by_score(video: dict) -> tuple:
+    """The one ranking for outliers: score descending, video_id breaking ties.
+
+    A null score sorts as 0 here rather than being dropped, because this is only an ordering —
+    the display floor is what decides whether a scoreless row reaches the grid. The video_id
+    tie-break is what makes a rebuild byte-identical.
+    """
+    return (-(video["breakout_score"] or 0), video["video_id"])
+
+
 def normalise(row: dict) -> dict:
     """One vidIQ row in _db/'s vocabulary. breakout_score is carried through untouched:
     it is a vendor number and rounding it would be editing someone else's measurement."""
@@ -75,8 +85,7 @@ def fetch(client, guard, channel_ids: list[str], content_type: str = "long",
             if row["video_id"]:
                 by_id.setdefault(row["video_id"], row)
 
-    videos = sorted(by_id.values(),
-                    key=lambda v: (-(v["breakout_score"] or 0), v["video_id"]))
+    videos = sorted(by_id.values(), key=by_score)
     return {
         "videos": videos,
         "coverage": {
@@ -111,15 +120,9 @@ def sweep(roster: list[dict], client, guard, today: dt.date,
             "spent": guard.spent, "dry_run": False}
 
 
-def latest(today: dt.date | None = None) -> dict | None:
+def latest() -> dict | None:
     """The newest sweep on disk, or None. None is a state: no sweep has run yet."""
-    directory = config.synth_dir() / "outliers"
-    if not directory.is_dir():
-        return None
-    files = sorted(directory.glob("*.json"))
-    if not files:
-        return None
-    return util.read_json(files[-1])
+    return util.newest_json(config.synth_dir() / "outliers")
 
 
 def main() -> int:

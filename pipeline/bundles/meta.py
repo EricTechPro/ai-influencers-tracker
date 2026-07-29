@@ -5,24 +5,23 @@ needs new leaves.
 """
 from __future__ import annotations
 
-from .. import config, exclusions, read, snapshot, topics, util
+from .. import config, read, snapshot, topics, util
 
 VERSION = 3
 BUILD_STEP = 8
 
 
 def _exclusion_counts(ctx) -> dict:
-    """How much the hand-written exclusions took off the board, counted against what exists.
+    """How much the hand-written exclusions took off the board, read off the sets the context
+    already resolved rather than re-deriving the predicate a third time.
 
     `topics` counts excluded leaves that are real leaves in the taxonomy, so a stale id left in
     the config after a topic is renamed does not inflate the number into a claim.
     """
-    rules = exclusions.load()
     leaves = {t.id for t in ctx.topic_index.values() if topics.is_leaf(t)}
     return {
-        "topics": len(rules.topics & leaves),
-        "videos": sum(1 for v in ctx.videos if rules.excludes_video(v)),
-        "channels": len(rules.channels),
+        "topics": len(ctx.excluded_topic_ids & leaves),
+        "videos": len(ctx.excluded_video_ids),
     }
 
 

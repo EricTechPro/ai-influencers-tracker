@@ -25,20 +25,23 @@ export function RecentFeed({
   bundle,
   avatars,
   selfChannelId,
-  floor,
-  defaultCap,
 }: {
   bundle: RecentBundle
   avatars: Record<string, string | null>
   selfChannelId: string
-  floor: number
-  defaultCap: number
 }) {
+  // Both come from config/thresholds.json via the bundle. They were JSX literals, which meant
+  // the config block documented a decision it did not control and the copy below ("nothing
+  // cleared 2.5x") would keep printing the old bar after someone tuned it.
+  const floor = bundle.display_floor
+  const defaultCap = bundle.per_channel_cap
   const [window, setWindow] = useState<RecentWindow>(7)
   const [format, setFormat] = useState<FormatKey>("videos")
   const [capped, setCapped] = useState(true)
   const [showTail, setShowTail] = useState(false)
 
+  // new Date() belongs inside the factory: built outside it, it is allocated on every render
+  // and is not a dependency, so it never actually re-runs the memo it appears to feed.
   const { ranked, tail } = useMemo(
     () =>
       selectRecent(

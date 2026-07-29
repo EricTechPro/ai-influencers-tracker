@@ -1,4 +1,4 @@
-import { agoText, fmtInt } from "@/lib/trust"
+import { agoText, durationText, fmtInt, tierIndex } from "@/lib/trust"
 import { Avatar } from "./avatar"
 
 export interface VideoCardModel {
@@ -17,14 +17,12 @@ export interface VideoCardModel {
   still_growing: boolean | null
 }
 
-function duration(seconds: number | null): string | null {
-  if (seconds === null || seconds <= 0) return null
-  const h = Math.floor(seconds / 3600)
-  const m = Math.floor((seconds % 3600) / 60)
-  const s = Math.floor(seconds % 60)
-  const pad = (n: number) => String(n).padStart(2, "0")
-  return h > 0 ? `${h}:${pad(m)}:${pad(s)}` : `${m}:${pad(s)}`
-}
+/**
+ * Our multiplier's bands, on the ladder shared with the feed's vidIQ badge so the two read the
+ * same way. Different class names on purpose: this one stays an outline chip and vidIQ's stays
+ * filled, because a Derived figure and a vendor one must not wear the same badge.
+ */
+const MULT_CLASS = ["", "m3", "m5", "m10"] as const
 
 /**
  * A video, shown the way a video is normally shown.
@@ -38,21 +36,8 @@ function duration(seconds: number | null): string | null {
  * keyed entirely by video_id, costs no quota, and nothing downstream depends
  * on it, so a failed load degrades to the title alone.
  */
-/**
- * Louder the further past normal it ran, on the same 3 / 5 / 10 boundaries the feed's vidIQ
- * badge uses, so the two scales are at least read the same way. They are still different
- * numbers from different sources: this one stays an outline chip and vidIQ's stays filled,
- * because a Derived figure and a vendor one must not end up wearing the same badge.
- */
-function multTier(multiplier: number): string {
-  if (multiplier >= 10) return "m10"
-  if (multiplier >= 5) return "m5"
-  if (multiplier >= 3) return "m3"
-  return ""
-}
-
 export function VideoCard({ v }: { v: VideoCardModel }) {
-  const len = duration(v.duration_s)
+  const len = durationText(v.duration_s)
   const hot = v.multiplier !== null && v.multiplier >= 2
   return (
     <a
@@ -87,7 +72,7 @@ export function VideoCard({ v }: { v: VideoCardModel }) {
             <>
               {" "}
               <span
-                className={`vmult ${multTier(v.multiplier!)}`}
+                className={`vmult ${MULT_CLASS[tierIndex(v.multiplier!)]}`}
                 title={`${v.multiplier!.toFixed(1)}x this channel's own median. Derived by us: view_count ÷ the channel's baseline. Not vidIQ's breakout score — that one is on the recent feed, normalises by video age, and runs about half this on the same video.`}
               >
                 {v.multiplier!.toFixed(1)}×

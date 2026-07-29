@@ -96,8 +96,12 @@ def test_read_groups_is_empty_when_no_pass_has_run(ait_root):
 
 # ————— the write side: what the grouping skill hands back —————
 
-def _recent(ait_root, rows):
-    util.write_json(config.db_dir() / "recent.json", {"videos": rows})
+def _sweep(ait_root, rows):
+    """Seeds the _synthesize/ sweep, which is what a grouping pass is validated against. Seeding
+    _db/recent.json instead would test the layer direction backwards."""
+    util.write_json(config.synth_dir() / "outliers" / "2026-07-29.json",
+                    {"date": "2026-07-29", "window": "thisMonth",
+                     "formats": [{"content_type": "long", "videos": rows}]})
 
 
 def _rows():
@@ -105,8 +109,8 @@ def _rows():
             for v in ("a", "b", "c")]
 
 
-def test_candidates_are_the_cards_the_feed_is_showing(ait_root):
-    _recent(ait_root, _rows())
+def test_candidates_are_the_outliers_the_sweep_returned(ait_root):
+    _sweep(ait_root, _rows())
     got = patterns.candidates()
     assert [c["video_id"] for c in got] == ["a", "b", "c"]
 
@@ -116,7 +120,7 @@ def test_candidates_is_empty_when_no_sweep_has_run(ait_root):
 
 
 def test_write_groups_round_trips_through_read_groups(ait_root):
-    _recent(ait_root, _rows())
+    _sweep(ait_root, _rows())
     patterns.write_groups(
         [{"pattern_id": "p1", "label": "A thing", "evidence": ["a", "b"]}],
         dt.date(2026, 7, 29))
@@ -127,7 +131,7 @@ def test_write_groups_round_trips_through_read_groups(ait_root):
 def test_a_video_the_sweep_never_returned_is_refused(ait_root):
     """The whole point of the evidence field is that every id is checkable. A hallucinated
     video_id would render as a card that cannot exist."""
-    _recent(ait_root, _rows())
+    _sweep(ait_root, _rows())
     with pytest.raises(ValueError, match="not in the sweep"):
         patterns.write_groups(
             [{"pattern_id": "p1", "label": "A thing", "evidence": ["a", "ghost"]}],
@@ -137,7 +141,7 @@ def test_a_video_the_sweep_never_returned_is_refused(ait_root):
 def test_one_video_in_two_groups_is_refused(ait_root):
     """recent.py stamps one pattern_id per video, so a video in two groups would silently take
     whichever came last. Ambiguity is refused rather than resolved."""
-    _recent(ait_root, _rows())
+    _sweep(ait_root, _rows())
     with pytest.raises(ValueError, match="two groups"):
         patterns.write_groups(
             [{"pattern_id": "p1", "label": "One", "evidence": ["a", "b"]},
@@ -146,7 +150,7 @@ def test_one_video_in_two_groups_is_refused(ait_root):
 
 
 def test_a_duplicate_pattern_id_is_refused(ait_root):
-    _recent(ait_root, _rows())
+    _sweep(ait_root, _rows())
     with pytest.raises(ValueError, match="pattern_id"):
         patterns.write_groups(
             [{"pattern_id": "p1", "label": "One", "evidence": ["a"]},
@@ -155,7 +159,7 @@ def test_a_duplicate_pattern_id_is_refused(ait_root):
 
 
 def test_an_empty_label_or_evidence_is_refused(ait_root):
-    _recent(ait_root, _rows())
+    _sweep(ait_root, _rows())
     with pytest.raises(ValueError, match="label"):
         patterns.write_groups([{"pattern_id": "p1", "label": "  ", "evidence": ["a"]}],
                               dt.date(2026, 7, 29))
@@ -166,7 +170,7 @@ def test_an_empty_label_or_evidence_is_refused(ait_root):
 
 def test_nothing_is_written_when_validation_fails(ait_root):
     """A half-written pass is worse than no pass: build_data would read it as the real grouping."""
-    _recent(ait_root, _rows())
+    _sweep(ait_root, _rows())
     with pytest.raises(ValueError):
         patterns.write_groups([{"pattern_id": "p1", "label": "One", "evidence": ["ghost"]}],
                               dt.date(2026, 7, 29))

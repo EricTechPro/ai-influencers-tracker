@@ -11,24 +11,26 @@ from __future__ import annotations
 import datetime as dt
 import pathlib
 
-from . import config, topics, util
+from . import config, outliers, topics, util
 
 GROUP_KEYS = ("pattern_id", "label", "evidence")
 
 
-def candidates(today: dt.date | None = None) -> list[dict]:
-    """The cards the feed is showing, as the grouping pass sees them.
+def candidates() -> list[dict]:
+    """The outliers a grouping pass may group, read from the _synthesize/ sweep.
 
-    Deliberately reads _db/recent.json rather than the sweep in _synthesize/: the pass should
-    group what is on the page, so an id it hands back is always one the page can render.
+    The sweep is the upstream authority and is what "a video vidIQ actually returned" literally
+    means. Reading _db/recent.json here instead would run backwards through the layers and close
+    a loop, since recent.json is itself built from the file this validates.
     """
-    bundle = util.read_json(config.db_dir() / "recent.json", default=None)
-    if not bundle:
+    sweep = outliers.latest()
+    if not sweep:
         return []
     return [{"video_id": v.get("video_id"), "title": v.get("title"),
              "channel_name": v.get("channel_name"), "type": v.get("type"),
              "breakout_score": v.get("breakout_score")}
-            for v in bundle.get("videos") or []]
+            for block in sweep.get("formats") or []
+            for v in block.get("videos") or []]
 
 
 def write_groups(groups: list[dict], today: dt.date | None = None) -> pathlib.Path:
@@ -78,15 +80,9 @@ def write_groups(groups: list[dict], today: dt.date | None = None) -> pathlib.Pa
     return path
 
 
-def read_groups(today: dt.date | None = None) -> list[dict]:
+def read_groups() -> list[dict]:
     """The newest grouping pass, or []. Empty is a state: no pass has run."""
-    directory = config.synth_dir() / "patterns"
-    if not directory.is_dir():
-        return []
-    files = sorted(directory.glob("*.json"))
-    if not files:
-        return []
-    return util.read_json(files[-1]).get("groups") or []
+    return (util.newest_json(config.synth_dir() / "patterns", default={}) or {}).get("groups") or []
 
 
 def _matching_leaf(titles: list[str], topic_index) -> str | None:

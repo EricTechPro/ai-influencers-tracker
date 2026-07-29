@@ -48,17 +48,20 @@ export function selectRecent(
     (v) => matchesFormat(v, opts.format) && ageDays(v.published_at, today) <= opts.window
   )
 
+  // One predicate, used both ways. Written twice — once hand-negated — the two had to stay
+  // exact complements by inspection, and a row that satisfied neither would vanish silently.
+  const clears = (v: RecentRow): boolean =>
+    v.breakout_score !== null && v.breakout_score >= opts.floor
+
   const scored = inWindow
-    .filter((v) => v.breakout_score !== null && v.breakout_score >= opts.floor)
+    .filter(clears)
     .sort(
       (a, b) =>
         (b.breakout_score ?? 0) - (a.breakout_score ?? 0) ||
         a.video_id.localeCompare(b.video_id)
     )
 
-  const belowFloor = inWindow.filter(
-    (v) => v.breakout_score === null || v.breakout_score < opts.floor
-  )
+  const belowFloor = inWindow.filter((v) => !clears(v))
 
   const ranked: RecentRow[] = []
   const capped: RecentRow[] = []

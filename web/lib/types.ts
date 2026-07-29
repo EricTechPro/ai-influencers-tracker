@@ -386,6 +386,10 @@ export interface RecentBundle {
   fetched_at: string | null
   window: string | null
   coverage: RecentCoverage
+  /** breakout score under which a row goes to the tail; config/thresholds.json outliers.display_floor */
+  display_floor: number
+  /** how many of one channel's rows reach the grid; config/thresholds.json outliers.per_channel_cap */
+  per_channel_cap: number
   videos: RecentRow[]
   patterns: PatternRow[]
   trust: Record<string, string>

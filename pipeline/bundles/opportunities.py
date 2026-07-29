@@ -1,7 +1,7 @@
 """opportunities.json: leaves only, every band showing what fired, every score showing its work."""
 from __future__ import annotations
 
-from .. import config, exclusions, github, score, topics, util, verdict
+from .. import config, github, score, topics, util, verdict
 
 VERSION = 3
 TRUST = {"demand": "derived", "supply": "derived", "verdict": "derived", "score": "derived"}
@@ -14,20 +14,19 @@ def build(ctx) -> dict:
     hunches = set(config.targets().get("hunches") or [])
     all_repos = list(ctx.repos.get("search") or []) + list(ctx.repos.get("trending") or [])
     linked = github.link_topics(all_repos, ctx.topic_index)
-    rules = exclusions.load()
 
     rows = []
     for leaf in topics.leaves(ctx.topic_index):
         # A topic Eric has taken off the board is not an opportunity to make something. It keeps
         # its assignments in videos.json; it just stops being offered as an answer.
-        if rules.excludes_topic(leaf.id):
+        if leaf.id in ctx.excluded_topic_ids:
             continue
         # Membership, not every recorded hit. This is the count the supply band is computed
         # from, so a video that merely name-drops the topic in its description must not make the
         # niche look more crowded than it is. See topics.is_member.
         in_window = [
             v for v in ctx.videos
-            if not rules.excludes_video(v)
+            if v["video_id"] not in ctx.excluded_video_ids
             and leaf.id in [a["topic_id"]
                            for a in ctx.assignments_by_video.get(v["video_id"], [])
                            if topics.is_member(a, floor)]

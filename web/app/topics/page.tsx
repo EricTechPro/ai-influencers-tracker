@@ -46,8 +46,13 @@ export default function TopicsIndexPage() {
 
   const recent = loadRecent()
   const meta = loadMeta()
+  // Only the channels the feed shows. RecentFeed is a client component, so this map crosses
+  // the RSC boundary on every render; all 72 channels meant shipping ~31 entries nothing reads.
+  const feedChannels = new Set(recent.videos.map((v) => v.channel_id))
   const avatars = Object.fromEntries(
-    channels.map((c) => [c.channel_id, channelAvatarUrl(c.channel_id)])
+    channels
+      .filter((c) => feedChannels.has(c.channel_id))
+      .map((c) => [c.channel_id, channelAvatarUrl(c.channel_id)])
   )
 
   return (
@@ -56,8 +61,6 @@ export default function TopicsIndexPage() {
         bundle={recent}
         avatars={avatars}
         selfChannelId={meta.self_channel_id}
-        floor={2.5}
-        defaultCap={2}
       />
 
       <div className="section-kicker">

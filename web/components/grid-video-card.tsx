@@ -1,23 +1,10 @@
-import { agoText, fmtInt } from "@/lib/trust"
+import { agoText, durationText, fmtInt, tierIndex } from "@/lib/trust"
 import type { RecentRow } from "@/lib/types"
 import { Avatar } from "./avatar"
 
-function duration(seconds: number | null): string | null {
-  if (seconds === null || seconds <= 0) return null
-  const h = Math.floor(seconds / 3600)
-  const m = Math.floor((seconds % 3600) / 60)
-  const s = Math.floor(seconds % 60)
-  const pad = (n: number) => String(n).padStart(2, "0")
-  return h > 0 ? `${h}:${pad(m)}:${pad(s)}` : `${m}:${pad(s)}`
-}
-
-/** Louder the further past normal it ran. Bands only, never a recomputation. */
-function scoreTier(score: number): string {
-  if (score >= 10) return ""
-  if (score >= 5) return "t5"
-  if (score >= 3) return "t3"
-  return "t2"
-}
+/** Louder the further past normal it ran. Bands only, never a recomputation. The filled
+ *  top band carries no modifier class, so index 3 maps to "". */
+const SCORE_CLASS = ["t2", "t3", "t5", ""] as const
 
 /**
  * One video in the recent feed, wearing YouTube's grid geometry.
@@ -37,7 +24,7 @@ export function GridVideoCard({
   avatarUrl: string | null
   isSelf?: boolean
 }) {
-  const len = duration(v.duration_s)
+  const len = durationText(v.duration_s)
   return (
     <a
       className="ycard"
@@ -56,7 +43,7 @@ export function GridVideoCard({
         {v.type === "short" && <span className="yshort">SHORT</span>}
         {v.breakout_score !== null && (
           <span
-            className={`ymult ${scoreTier(v.breakout_score)}`}
+            className={`ymult ${SCORE_CLASS[tierIndex(v.breakout_score)]}`}
             title={`vidIQ breakout score ${v.breakout_score}. How far past this channel's normal performance at this age the video ran. Measured by vidIQ, not by us.`}
           >
             {v.breakout_score.toFixed(2)}&times;

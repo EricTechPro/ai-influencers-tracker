@@ -19,8 +19,12 @@ from . import config
 @dataclasses.dataclass(frozen=True)
 class Rules:
     topics: frozenset[str]
-    terms: tuple[str, ...]
     channels: frozenset[str]
+    # One alternation compiled once at load, not a list rebuilt per call. excludes_video runs
+    # against the whole corpus, so building the patterns inside it made the regex machinery the
+    # dominant cost of two bundles. None when no terms are configured, which skips the search.
+    terms: tuple[str, ...] = ()
+    _pattern: re.Pattern | None = None
 
     def excludes_topic(self, topic_id: str) -> bool:
         return topic_id in self.topics
@@ -37,20 +41,25 @@ class Rules:
         """
         if video.get("channel_id") in self.channels:
             return True
-        title = video.get("title")
-        if not title:
+        if self._pattern is None:
             return False
-        return any(pattern.search(title) for pattern in _patterns(self.terms))
+        title = video.get("title")
+        return bool(title) and self._pattern.search(title) is not None
 
 
-def _patterns(terms: tuple[str, ...]) -> list[re.Pattern]:
-    return [re.compile(rf"\b{re.escape(term)}\b", re.IGNORECASE) for term in terms]
+def _compile(terms: tuple[str, ...]) -> re.Pattern | None:
+    if not terms:
+        return None
+    alternation = "|".join(re.escape(term) for term in terms)
+    return re.compile(rf"\b(?:{alternation})\b", re.IGNORECASE)
 
 
 def load() -> Rules:
     raw = config.optional("exclusions.json")
+    terms = tuple(raw.get("terms") or [])
     return Rules(
         topics=frozenset(raw.get("topics") or []),
-        terms=tuple(raw.get("terms") or []),
         channels=frozenset(raw.get("channels") or []),
+        terms=terms,
+        _pattern=_compile(terms),
     )
