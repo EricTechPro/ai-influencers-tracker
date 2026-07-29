@@ -99,52 +99,37 @@ already reads at speed:
 The existing `.vcard` in `globals.css` stays as it is for the taxonomy shelves. The feed gets a
 sibling class rather than a rewrite of the shared one.
 
-**Controls.** Three segmented toggles, all pure client-side filters over the same bundle. Format
-comes first and is rendered a size larger, because it is the first decision:
+**Controls.** Three segmented toggles. Format and per-channel are pure client-side filters; window
+filters the one `thisMonth` fetch client-side too, so none of them costs a credit:
 
-- **format: videos / shorts / all, default `videos`** (long-form)
-- window: 7d / 14d / 30d, default 7d
-- per channel: max 2 / show all, default max 2
+- **format: videos / shorts / all, default `videos`** (long-form). Rendered a size larger and placed
+  first, because it is the first decision.
+- window: 7d / 14d / 30d, filtered from the `thisMonth` pull. Default 7d.
+- per channel: max 2 / show all, default max 2.
 
 Format leads and defaults to long-form because the two formats are different jobs and a mixed list
-asks the eye to do a conversion it cannot do. A 5.2K-view short at 11.8x and a 32.8K-view
-long-form at 19.4x are not comparable decisions. Defaulting to long-form also changes what the page
-is for: it is a "what should I film" page, and the long-form feed answers that directly.
+asks the eye to do a conversion it cannot do. It also sets what the page is for: this is a "what
+should I film" page, and long-form answers that directly.
 
-Both effects are visible in the real 7-day window. Ranked with shorts mixed in, Samin Yasar takes 6
-of the top 14 (small shorts baseline, so nearly every short he posts scores 8-11x) and the top of
-the feed is dominated by one channel's quote cards. Filtered to long-form the same window opens with
-Hermes Agent at 19.4x, an Opus 5 build-off at 12.7x, and three independent Opus 5 reviews. The
-second list is the one worth acting on.
+The per-channel cap is what stops one prolific channel recreating the exact failure of the
+subscriptions page this section exists to replace. The live week proves it twice over: **AI Engineer
+alone accounts for 6 of the 28 outliers**, posting a conference back-catalogue, and its 17.93x tops
+the whole roster. Uncapped, the first screen is one channel.
 
-Window counts under the default:
+**Sorting.** By `breakoutScore` descending. The badge always renders, because the score is the sort
+key. Below the ranked cards, a collapsed tail counts the outliers that fell under the cap or the
+display floor, so nothing vidIQ returned is silently dropped.
 
-| window | long-form | scored | no baseline |
-|---|---|---|---|
-| 7d | 159 | 112 | 47 |
-| 14d | 310 | 209 | 101 |
-| 30d | 649 | 452 | 197 |
+Measured against the live pull (long-form, `thisWeek`, all 72 channels, 3 calls):
 
-The per-channel cap is not a nicety either. It is what keeps a single prolific channel from
-recreating the exact failure of the subscriptions page this section exists to replace.
+| | count |
+|---|---|
+| outliers vidIQ returned | 28 |
+| shown after max-2-per-channel | 12 |
+| in the collapsed tail | 16 |
+| long-form the roster actually uploaded | 159 |
 
-- Cards sorted by `multiplier.value` descending.
-- Renders the existing `components/video-card.tsx` unchanged except for one thing: the card
-  currently hides the multiplier badge below 2.0x (`const hot = ... >= 2`). In this feed the
-  multiplier is the sort key, so the badge always renders. The `hot` threshold stays as-is for
-  every other surface; the feed passes a prop.
-- Videos whose multiplier is `no_baseline` go in a collapsed tail below the ranked cards, labelled
-  as having no baseline yet. They are never silently dropped and never sorted as if they were zero.
-
-Measured against today's `_db/`:
-
-| window | videos | `multiplier.state == "ok"` | of those, >= 2.0x |
-|---|---|---|---|
-| 7d | 302 | 214 | 39 |
-| 14d | 606 | 410 | 79 |
-| 30d | 1,270 | 827 | 157 |
-
-39 cards is one useful morning. 827 at 30d is still small enough to ship in a bundle.
+The gap between 28 and 159 is the point: vidIQ has already thrown away the routine uploads.
 
 ### Part 2: pattern rows
 
@@ -207,40 +192,54 @@ Nothing in Parts 1 and 2 depends on this.
 
 ## Data
 
-New bundle `_db/recent.json`, written by a new `pipeline/bundles/recent.py`, registered in
-`build_data.build()` alongside the existing bundle writers.
+The outlier pull costs money, so it lands in `_synthesize/` first and is copied into `_db/` by
+`build_data.py`. That is the existing layer rule, not a new one.
 
-Why its own bundle rather than slicing `videos.json` in the web layer: `videos.json` is 16.7 MB and
-`web/lib/bundles.ts` deliberately never ships it wholesale, only id slices. The feed needs a
-whole-set client-side sort across three windows, so it needs its own slim payload. Carrying only
-the card fields for the 30d set keeps it small.
+**`_synthesize/outliers/YYYY-MM-DD.json`** — written by a new `pipeline/outliers.py`, one file per
+run, exactly as vidIQ returned it plus the request that produced it:
 
-Shape, following the existing bundle conventions (`VERSION`, a `TRUST` map, sorted keys, written
-whole):
+```
+{ "fetched_at": ..., "window": "thisMonth", "batches": 3, "credits": 30,
+  "requests": [ {channel_ids: [...], content_type: "long"}, ... ],
+  "videos": [ { video_id, title, published_at, view_count, duration_s, video_type,
+                channel_id, channel_title, breakout_score, vph, engagement_rate } ] }
+```
+
+`pipeline/outliers.py` is the only module that talks to vidIQ for this feature. It batches the
+roster in 24s, retries a failed batch once, and **records a failed batch as a failed batch** rather
+than emitting a short list that looks complete. A partial run is a state the page shows.
+
+**`_db/recent.json`** — the slim bundle the web reads, built from the newest `_synthesize/outliers/`
+file. Its own bundle rather than a slice of `videos.json`, which is 16.7 MB and deliberately never
+shipped wholesale:
 
 ```
 {
-  "generated_at": ..., "version": 1, "window_days": 30,
+  "generated_at": ..., "version": 1, "source": "vidiq", "fetched_at": ...,
+  "coverage": { "channels_requested": 72, "batches_ok": 3, "batches_failed": 0 },
   "videos": [
     { video_id, title, published_at, view_count, duration_s, type,
-      channel_id, channel_name, multiplier: {value, state, baseline, baseline_n},
-      pattern_id | null }
+      channel_id, channel_name, breakout_score, pattern_id | null }
   ],
-  "patterns": [ { pattern_id, label, evidence: [video_id, ...], trust: "inference" } ],
-  "trust": { "multiplier": "derived", "pattern": "inference" }
+  "patterns": [ { pattern_id, label, evidence: [video_id, ...],
+                  creator_count, existing_leaf | null, action } ],
+  "trust": { "breakout_score": "vendor", "pattern": "inference", "existing_leaf": "derived" }
 }
 ```
 
-`channel_name` is denormalised into the row so the feed does not have to load `channels.json` to
-render a card. Avatars keep resolving through the existing `channelAvatarUrl` path.
+`channel_name` is denormalised so a card renders without loading `channels.json`. Avatars keep
+resolving through the existing `channelAvatarUrl` path, and all 72 are already on disk.
+
+`coverage` is load-bearing: if a batch failed, the page says which channels are missing instead of
+presenting 48 channels' outliers as if they were 72.
 
 ## Web
 
 - `web/lib/recent.ts`: pure filter and sort. Takes the bundle plus `{window, format, perChannelCap}`
-  and returns ranked rows plus the no-baseline tail. No I/O.
+  and returns ranked rows plus the tail. No I/O.
 - `web/components/recent-feed.tsx`: client component, owns the three toggles' state.
 - `web/components/grid-video-card.tsx`: the YouTube-geometry card. A sibling to the existing
-  `video-card.tsx`, not a rewrite of it, so the taxonomy shelves below are untouched.
+  `video-card.tsx`, not a rewrite, so the taxonomy shelves stay untouched.
 - `web/lib/bundles.ts`: one new `loadRecent()` following the existing `load<T>()` pattern.
 - `web/lib/types.ts`: `RecentBundle`, `RecentRow`, `PatternRow`.
 - `web/app/topics/page.tsx`: mount the section above the existing root loop.
@@ -249,19 +248,23 @@ render a card. Avatars keep resolving through the existing `channelAvatarUrl` pa
 
 Test-first, per the repo rule for anything that can render a wrong number.
 
-Python (`pipeline/bundles/test_recent.py`):
-- window boundary is inclusive at exactly N days and excludes N+1
-- `no_baseline` rows are present in the bundle and carry their state, never a zero value
-- sort is by multiplier descending, with a stable tiebreak
-- a video with `view_count: null` never appears as ranked
+Python (`pipeline/test_outliers.py`, `pipeline/bundles/test_recent.py`), all against recorded
+fixtures so no test spends a credit:
+
+- the roster batches into groups of at most 24, and 72 channels produce exactly 3 requests
+- a failed batch is recorded as failed and its channels are reported missing, never silently dropped
+- `breakout_score` is carried through unmodified and is never recomputed or rounded
+- the window filter is inclusive at exactly N days and excludes N+1
+- sort is by `breakout_score` descending with a stable tiebreak
 - rebuild is byte-identical (the existing idempotency guarantee)
 
 TypeScript (`web/lib/recent.test.ts`, vitest):
-- filtering 30d down to 7d and 14d returns the expected subsets
-- the per-channel cap keeps the 2 highest-multiplier rows of a channel and drops the rest, and
-  lifting the cap restores them in order
+- filtering the month pull down to 7d and 14d returns the expected subsets
+- the per-channel cap keeps a channel's 2 highest-scoring rows and drops the rest, and lifting the
+  cap restores them in order
 - the format filter partitions cleanly and never drops a row from both sides
-- the no-baseline tail is separated from the ranked list
+- a pattern below the creator floor renders disabled, and one matching an existing leaf renders as
+  add-to-topic
 - an empty window renders as empty, not as an error
 
 ## Out of scope
