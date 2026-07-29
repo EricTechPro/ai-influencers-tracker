@@ -44,11 +44,16 @@
 }
 
 .ybody { display: flex; gap: 10px; padding: 9px 0 0; }
+/* The face is the identifier: this roster is 72 people whose channel names are
+   largely "<First Last> | AI Automation". Initials sit underneath as the layer
+   that shows through when a thumbnail was never downloaded. */
 .yav {
-  flex: none; width: 34px; height: 34px; border-radius: 999px; overflow: hidden;
-  background: var(--secondary); border: 1px solid var(--border);
-  display: grid; place-items: center; font-size: 11px; font-weight: 700; color: var(--muted-foreground);
+  position: relative; flex: none; width: 34px; height: 34px; border-radius: 999px;
+  overflow: hidden; background: var(--secondary); border: 1px solid var(--border);
+  display: grid; place-items: center;
 }
+.yav i { font-style: normal; font-size: 11px; font-weight: 700; color: var(--muted-foreground); }
+.yav img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 .ymeta { min-width: 0; }
 .ytitle {
   font-size: 12.5px; font-weight: 600; line-height: 1.32; margin: 0 0 3px;
@@ -168,7 +173,7 @@
         <a class="ycard" href="https://youtu.be/IbFaY3xFpZM" target="_blank" rel="noreferrer">
           <span class="ythumb"><img src="https://i.ytimg.com/vi/IbFaY3xFpZM/mqdefault.jpg" alt="">
             <span class="ymult">19.4×</span><span class="ylen">17:25</span></span>
-          <span class="ybody"><span class="yav">D</span><span class="ymeta">
+          <span class="ybody"><span class="yav"><img src="avatars/UC4SgqYQmdTCKXUoer2U-lcg.jpg" alt="" loading="lazy"><i>D</i></span><span class="ymeta">
             <span class="ytitle">I Tested 100+ Hermes Agent Automations. These Are The Best</span>
             <span class="ychan">Dubibubi</span><br>
             <span class="ystat">32.8K views · 5d ago</span></span></span>
@@ -177,7 +182,7 @@
         <a class="ycard" href="https://youtu.be/JQInc4V6SWg" target="_blank" rel="noreferrer">
           <span class="ythumb"><img src="https://i.ytimg.com/vi/JQInc4V6SWg/mqdefault.jpg" alt="">
             <span class="ymult">12.7×</span><span class="ylen">19:19</span></span>
-          <span class="ybody"><span class="yav">D</span><span class="ymeta">
+          <span class="ybody"><span class="yav"><img src="avatars/UC4SgqYQmdTCKXUoer2U-lcg.jpg" alt="" loading="lazy"><i>D</i></span><span class="ymeta">
             <span class="ytitle">I Made Claude Opus 5 and Fable 5 Build the Same App (Raw Results)</span>
             <span class="ychan">Dubibubi</span><br>
             <span class="ystat">21.5K views · 3d ago</span></span></span>
@@ -186,7 +191,7 @@
         <a class="ycard" href="https://youtu.be/g89FJiNAlEs" target="_blank" rel="noreferrer">
           <span class="ythumb"><img src="https://i.ytimg.com/vi/g89FJiNAlEs/mqdefault.jpg" alt="">
             <span class="ymult tier2">4.6×</span><span class="ylen">15:08</span></span>
-          <span class="ybody"><span class="yav">ET</span><span class="ymeta">
+          <span class="ybody"><span class="yav"><img src="avatars/UCOXRjenlq9PmlTqd_JhAbMQ.jpg" alt="" loading="lazy"><i>ET</i></span><span class="ymeta">
             <span class="ytitle">4 Free Repos That Cut Claude Code Token Usage</span>
             <span class="ychan yself">Eric Tech · you</span><br>
             <span class="ystat">7.5K views · 7d ago</span></span></span>
@@ -195,7 +200,7 @@
         <a class="ycard" href="https://youtu.be/rD20wJkPUB4" target="_blank" rel="noreferrer">
           <span class="ythumb"><img src="https://i.ytimg.com/vi/rD20wJkPUB4/mqdefault.jpg" alt="">
             <span class="ymult tier2">3.9×</span><span class="ylen">13:20</span></span>
-          <span class="ybody"><span class="yav">CW</span><span class="ymeta">
+          <span class="ybody"><span class="yav"><img src="avatars/UCuU9jE4MHHEIyYMbDfUPSew.jpg" alt="" loading="lazy"><i>CW</i></span><span class="ymeta">
             <span class="ytitle">Kimi K3 explained in 13min..</span>
             <span class="ychan">Caleb Writes Code</span><br>
             <span class="ystat">147K views · 7d ago</span></span></span>
@@ -204,7 +209,7 @@
         <a class="ycard" href="https://youtu.be/7FU98O0JLHs" target="_blank" rel="noreferrer">
           <span class="ythumb"><img src="https://i.ytimg.com/vi/7FU98O0JLHs/mqdefault.jpg" alt="">
             <span class="ymult tier2">3.4×</span><span class="ylen">23:00</span></span>
-          <span class="ybody"><span class="yav">CA</span><span class="ymeta">
+          <span class="ybody"><span class="yav"><img src="avatars/UCoy6cTJ7Tg0dqS-DI-_REsA.jpg" alt="" loading="lazy"><i>CA</i></span><span class="ymeta">
             <span class="ytitle">Turn Claude Into A Design GENIUS In 3 Simple Steps</span>
             <span class="ychan">Chase AI</span><br>
             <span class="ystat">145K views · 5d ago</span></span></span>
@@ -213,7 +218,7 @@
         <a class="ycard" href="https://youtu.be/FrAAxWbxSyE" target="_blank" rel="noreferrer">
           <span class="ythumb"><img src="https://i.ytimg.com/vi/FrAAxWbxSyE/mqdefault.jpg" alt="">
             <span class="ymult tier2">3.4×</span><span class="ylen">8:23</span></span>
-          <span class="ybody"><span class="yav">01</span><span class="ymeta">
+          <span class="ybody"><span class="yav"><img src="avatars/UCAVDRj14A9W2Zix1Y5EUm7Q.jpg" alt="" loading="lazy"><i>01</i></span><span class="ymeta">
             <span class="ytitle">Context Engineering 的全新规则：Claude 5 时代，Claude Code 删掉了 80% 系统提示词</span>
             <span class="ychan">01Coder</span><br>
             <span class="ystat">4.6K views · 2d ago</span></span></span>
@@ -222,7 +227,7 @@
         <a class="ycard" href="https://youtu.be/W973FsTECa8" target="_blank" rel="noreferrer">
           <span class="ythumb"><img src="https://i.ytimg.com/vi/W973FsTECa8/mqdefault.jpg" alt="">
             <span class="ymult tier2">3.1×</span><span class="ylen">10:10</span></span>
-          <span class="ybody"><span class="yav">01</span><span class="ymeta">
+          <span class="ybody"><span class="yav"><img src="avatars/UCAVDRj14A9W2Zix1Y5EUm7Q.jpg" alt="" loading="lazy"><i>01</i></span><span class="ymeta">
             <span class="ytitle">18 万星 Skills 项目的工程链三件套之三 to-tickets</span>
             <span class="ychan">01Coder</span><br>
             <span class="ystat">4.3K views · 5d ago</span></span></span>
@@ -231,7 +236,7 @@
         <a class="ycard" href="https://youtu.be/z_7J_iKuSzU" target="_blank" rel="noreferrer">
           <span class="ythumb"><img src="https://i.ytimg.com/vi/z_7J_iKuSzU/mqdefault.jpg" alt="">
             <span class="ymult tier2">3.1×</span><span class="ylen">27:44</span></span>
-          <span class="ybody"><span class="yav">PS</span><span class="ymeta">
+          <span class="ybody"><span class="yav"><img src="avatars/UCY8ZKVxXj0FgIvSfeiSDclg.jpg" alt="" loading="lazy"><i>PS</i></span><span class="ymeta">
             <span class="ytitle">Opus 5: No-Hype Full Review &amp; Testing</span>
             <span class="ychan">Pat Simmons</span><br>
             <span class="ystat">64.8K views · 3d ago</span></span></span>
@@ -240,7 +245,7 @@
         <a class="ycard" href="https://youtu.be/4kMep3c96kI" target="_blank" rel="noreferrer">
           <span class="ythumb"><img src="https://i.ytimg.com/vi/4kMep3c96kI/mqdefault.jpg" alt="">
             <span class="ymult tier3">2.9×</span><span class="ylen">22:41</span></span>
-          <span class="ybody"><span class="yav">KR</span><span class="ymeta">
+          <span class="ybody"><span class="yav"><img src="avatars/UC2eDm1RP5DAs0nadj4sr-0w.jpg" alt="" loading="lazy"><i>KR</i></span><span class="ymeta">
             <span class="ytitle">I Tried Laguna S 2.1 So You Don't Have To...</span>
             <span class="ychan">Kacper Rutkiewicz | AI Made Simple</span><br>
             <span class="ystat">5.2K views · 5d ago</span></span></span>
@@ -249,7 +254,7 @@
         <a class="ycard" href="https://youtu.be/4sAmpcSOVEw" target="_blank" rel="noreferrer">
           <span class="ythumb"><img src="https://i.ytimg.com/vi/4sAmpcSOVEw/mqdefault.jpg" alt="">
             <span class="ymult tier3">2.7×</span><span class="ylen">22:19</span></span>
-          <span class="ybody"><span class="yav">AT</span><span class="ymeta">
+          <span class="ybody"><span class="yav"><img src="avatars/UCvM5YYWwfLwpcQgbRr68JLQ.jpg" alt="" loading="lazy"><i>AT</i></span><span class="ymeta">
             <span class="ytitle">Hermes Agent - Ultimate Crash Course for Beginners (AI Agent)</span>
             <span class="ychan">Adrian Twarog</span><br>
             <span class="ystat">22.6K views · 7d ago</span></span></span>
@@ -258,7 +263,7 @@
         <a class="ycard" href="https://youtu.be/3OqZHYNKc9A" target="_blank" rel="noreferrer">
           <span class="ythumb"><img src="https://i.ytimg.com/vi/3OqZHYNKc9A/mqdefault.jpg" alt="">
             <span class="ymult tier3">2.5×</span><span class="ylen">11:35</span></span>
-          <span class="ybody"><span class="yav">BS</span><span class="ymeta">
+          <span class="ybody"><span class="yav"><img src="avatars/UCkVfrGwV-iG9bSsgCbrNPxQ.jpg" alt="" loading="lazy"><i>BS</i></span><span class="ymeta">
             <span class="ytitle">This Tiny Engine Runs Impossibly Big AI Models Locally! (colibrì)</span>
             <span class="ychan">Better Stack</span><br>
             <span class="ystat">68.1K views · 3d ago</span></span></span>
@@ -267,7 +272,7 @@
         <a class="ycard" href="https://youtu.be/jbiMx17fEK0" target="_blank" rel="noreferrer">
           <span class="ythumb"><img src="https://i.ytimg.com/vi/jbiMx17fEK0/mqdefault.jpg" alt="">
             <span class="ymult tier3">2.4×</span><span class="ylen">9:35</span></span>
-          <span class="ybody"><span class="yav">BM</span><span class="ymeta">
+          <span class="ybody"><span class="yav"><img src="avatars/UCjc1vfduI7BhVMXBLJLDjmA.jpg" alt="" loading="lazy"><i>BM</i></span><span class="ymeta">
             <span class="ytitle">Anthropic Just Changed How We Build Skills Forever</span>
             <span class="ychan">Brock Mesarich | AI for Non Techies</span><br>
             <span class="ystat">72.4K views · 7d ago</span></span></span>
