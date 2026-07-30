@@ -1,29 +1,34 @@
 "use client"
 
 import { useMemo, useState } from "react"
+import { windowDays } from "@/lib/compare"
 import { deltaText, fmtInt, pctText } from "@/lib/trust"
 import { BuildingCallout } from "@/components/building-callout"
-import type { SnapshotDay, StateCell } from "@/lib/types"
+import type { SnapshotDay, StateCell, WindowKey } from "@/lib/types"
 
 type Metric = "subscribers" | "views"
-const WINDOW_CHOICES = [30, 90, 365] as const
 
 export function ChannelGrowth({
   series,
   delta,
   rate,
   bucket,
+  win,
 }: {
   series: SnapshotDay[]
   delta: Record<string, StateCell>
   rate: Record<string, StateCell>
   bucket: number | null
+  /** the shared window (spec's six), owned by the page's own searchParams —
+   *  this chart used to pick its own 30/90/365 and drifted from every other
+   *  page's window control. */
+  win: WindowKey
 }) {
   const [metric, setMetric] = useState<Metric>("subscribers")
-  const [windowDays, setWindowDays] = useState<(typeof WINDOW_CHOICES)[number]>(90)
+  const days = windowDays(win)
 
   const points = useMemo(() => {
-    const cutoff = Date.parse(series.at(-1)?.date ?? "") - windowDays * 86_400_000
+    const cutoff = Date.parse(series.at(-1)?.date ?? "") - days * 86_400_000
     return series
       .filter((d) => d.status === "ok" && Date.parse(d.date) >= cutoff)
       .map((d) => ({
@@ -31,10 +36,9 @@ export function ChannelGrowth({
         value: metric === "subscribers" ? d.subscriber_count : d.view_count,
       }))
       .filter((p): p is { date: string; value: number } => p.value !== null)
-  }, [series, metric, windowDays])
+  }, [series, metric, days])
 
-  const windowKey = `${windowDays}d`
-  const cell = metric === "subscribers" ? delta[windowKey] : undefined
+  const cell = metric === "subscribers" ? delta[win] : undefined
 
   return (
     <div className="card pad">
@@ -45,16 +49,10 @@ export function ChannelGrowth({
               onClick={() => setMetric(m)}>{m}</button>
           ))}
         </span>
-        <span className="tabs" style={{ marginLeft: "auto" }}>
-          {WINDOW_CHOICES.map((w) => (
-            <button key={w} className={windowDays === w ? "on" : undefined}
-              onClick={() => setWindowDays(w)}>{w}d</button>
-          ))}
-        </span>
       </div>
       {points.length < 2 ? (
         <div style={{ marginTop: 10 }}>
-          <BuildingCallout state={{ kind: "building", have: points.length, need: windowDays }} />
+          <BuildingCallout state={{ kind: "building", have: points.length, need: days }} />
         </div>
       ) : (
         <>
@@ -66,9 +64,9 @@ export function ChannelGrowth({
                   title="last snapshot minus first snapshot in window">
                   {deltaText(cell)} subs
                 </span>{" "}
-                over {windowKey}
+                over {win}
                 {bucket ? <> · bucket {fmtInt(bucket)}</> : null}
-                {rate[windowKey] ? <> · {pctText(rate[windowKey])}</> : null}
+                {rate[win] ? <> · {pctText(rate[win])}</> : null}
               </>
             ) : (
               <span className="muted">

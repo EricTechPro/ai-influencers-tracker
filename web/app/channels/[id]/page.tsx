@@ -6,14 +6,24 @@ import {
 } from "@/lib/bundles"
 import { CADENCE_FORMULA, cadenceDays } from "@/lib/channel"
 import { bucketText, fmtInt } from "@/lib/trust"
+import { parseWindow } from "@/lib/window"
 import { Avatar } from "@/components/avatar"
 import { Chip, Derived } from "@/components/trust"
 import { ChannelGrowth } from "@/components/channel-growth"
 import { CommentTable } from "@/components/comment-table"
 import { StillPulling } from "@/components/still-pulling"
+import { WindowTable } from "@/components/window-table"
 
-export default async function ChannelPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function ChannelPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>
+  searchParams: Promise<{ w?: string }>
+}) {
   const { id } = await params
+  const { w } = await searchParams
+  const win = parseWindow(w)
   const bundle = loadChannels()
   const channel = bundle.channels.find((c) => c.channel_id === id || c.handle === id)
   if (!channel) notFound()
@@ -94,11 +104,13 @@ export default async function ChannelPage({ params }: { params: Promise<{ id: st
         <span className="kicker">growth</span>
         <span className="rule" />
       </div>
+      <WindowTable channel={channel} videos={uploads} />
       <ChannelGrowth
         series={snapshots}
         delta={channel.subscriber_delta}
         rate={channel.subscriber_growth_rate}
         bucket={channel.subscriber_bucket}
+        win={win}
       />
 
       <div className="section-kicker">
