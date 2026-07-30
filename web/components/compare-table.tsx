@@ -54,6 +54,8 @@ interface Row {
   windowed?: {
     them: Record<string, StateCell>
     you: Record<string, StateCell>
+    themLabel: string
+    youLabel: string
     fmt: (cell: StateCell) => string
   }
 }
@@ -101,16 +103,18 @@ function ratioText(cell: StateCell): string {
  *  number: `fmt` is the same deltaText/pctText/ratioText helper the visible
  *  cell used, so a building or blocked window shows its state here exactly as
  *  it does in the table. */
-function WindowStrip({ them, you, fmt }: {
+function WindowStrip({ them, you, themLabel, youLabel, fmt }: {
   them: Record<string, StateCell>
   you: Record<string, StateCell>
+  themLabel: string
+  youLabel: string
   fmt: (cell: StateCell) => string
 }) {
   return (
     <div className="windowstrip">
       {WINDOWS.map((w) => (
         <span key={w} className="windowstrip-cell">
-          <b>{w}</b> them {fmt(them[w])} · you {fmt(you[w])}
+          <b>{w}</b> {themLabel} {fmt(them[w])} · {youLabel} {fmt(you[w])}
         </span>
       ))}
     </div>
@@ -118,11 +122,17 @@ function WindowStrip({ them, you, fmt }: {
 }
 
 /** The two dates a window actually resolved to, for the row a reader expands
- *  to check. `from`/`to` are absent on unresolved windows (building, blocked). */
-function windowDates(a: StateCell | undefined, b: StateCell | undefined): ReactNode {
+ *  to check. `from`/`to` are absent on unresolved windows (building, blocked).
+ *  Labels name the actual channel on each side, falling back to "you" only
+ *  for the side that really is the self channel — /compare can pit any two
+ *  channels against each other, and neither may be you. */
+function windowDates(
+  themLabel: string, youLabel: string,
+  a: StateCell | undefined, b: StateCell | undefined,
+): ReactNode {
   const span = (c: StateCell | undefined) =>
     c?.from && c?.to ? `${c.from} → ${c.to}` : "no resolved dates"
-  return <span className="mono10">them {span(a)} · you {span(b)}</span>
+  return <span className="mono10">{themLabel} {span(a)} · {youLabel} {span(b)}</span>
 }
 
 /** "long" never pluralises here (matches the FORMATS tab label above); "short"
@@ -151,6 +161,12 @@ export function CompareTable({
     [pathname, router, searchParams]
   )
   const [format, setFormat] = useState<VideoFormat>("all")
+
+  // /compare can pit any two channels against each other, so "you" is only
+  // true for the side that actually is the self channel (matches the ★ and
+  // "you round"/"${name} rounds" pattern used elsewhere on this page).
+  const themLabel = them.name
+  const youLabel = you.is_self ? "you" : you.name
 
   const now = new Date()
   const outputOf = (side: CompareSide) => {
@@ -181,8 +197,8 @@ export function CompareTable({
       you: deltaText(you.subscriber_delta[win]),
       gap: gap(okValue(them.subscriber_delta[win]), okValue(you.subscriber_delta[win])),
       share: shareOf(okValue(them.subscriber_delta[win]), okValue(you.subscriber_delta[win])),
-      detail: windowDates(them.subscriber_delta[win], you.subscriber_delta[win]),
-      windowed: { them: them.subscriber_delta, you: you.subscriber_delta, fmt: deltaText },
+      detail: windowDates(themLabel, youLabel, them.subscriber_delta[win], you.subscriber_delta[win]),
+      windowed: { them: them.subscriber_delta, you: you.subscriber_delta, themLabel, youLabel, fmt: deltaText },
     },
     {
       label: <Derived formula="Subscribers gained, as a share of what the channel had when the window started.">growth rate</Derived>,
@@ -190,8 +206,8 @@ export function CompareTable({
       you: pctText(you.subscriber_growth_rate[win]),
       gap: gap(okValue(them.subscriber_growth_rate[win]), okValue(you.subscriber_growth_rate[win])),
       share: shareOf(okValue(them.subscriber_growth_rate[win]), okValue(you.subscriber_growth_rate[win])),
-      detail: windowDates(them.subscriber_growth_rate[win], you.subscriber_growth_rate[win]),
-      windowed: { them: them.subscriber_growth_rate, you: you.subscriber_growth_rate, fmt: pctText },
+      detail: windowDates(themLabel, youLabel, them.subscriber_growth_rate[win], you.subscriber_growth_rate[win]),
+      windowed: { them: them.subscriber_growth_rate, you: you.subscriber_growth_rate, themLabel, youLabel, fmt: pctText },
     },
   ]
 
@@ -209,8 +225,8 @@ export function CompareTable({
       you: deltaText(you.view_delta[win]),
       gap: gap(okValue(them.view_delta[win]), okValue(you.view_delta[win])),
       share: shareOf(okValue(them.view_delta[win]), okValue(you.view_delta[win])),
-      detail: windowDates(them.view_delta[win], you.view_delta[win]),
-      windowed: { them: them.view_delta, you: you.view_delta, fmt: deltaText },
+      detail: windowDates(themLabel, youLabel, them.view_delta[win], you.view_delta[win]),
+      windowed: { them: them.view_delta, you: you.view_delta, themLabel, youLabel, fmt: deltaText },
     },
     {
       label: <Derived formula="How many subscribers each thousand views brought in. Higher means the audience converts better.">subs per 1,000 views</Derived>,
@@ -218,7 +234,7 @@ export function CompareTable({
       you: fmtCell(you.subs_per_1k_views[win]),
       gap: gap(okValue(them.subs_per_1k_views[win]), okValue(you.subs_per_1k_views[win])),
       share: shareOf(okValue(them.subs_per_1k_views[win]), okValue(you.subs_per_1k_views[win])),
-      windowed: { them: them.subs_per_1k_views, you: you.subs_per_1k_views, fmt: ratioText },
+      windowed: { them: them.subs_per_1k_views, you: you.subs_per_1k_views, themLabel, youLabel, fmt: ratioText },
     },
   ]
 
