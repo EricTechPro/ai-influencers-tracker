@@ -9,7 +9,7 @@ import {
 } from "@/lib/compare"
 import { CADENCE_FORMULA, cadenceDays } from "@/lib/channel"
 import { bucketText, deltaText, fmtInt, pctText } from "@/lib/trust"
-import type { StateCell, VideoRow, WindowKey } from "@/lib/types"
+import { WINDOWS, type StateCell, type VideoRow, type WindowKey } from "@/lib/types"
 import { Chip, Derived } from "./trust"
 import { GapCell } from "./gap-cell"
 import { WindowTabs } from "./window-tabs"
@@ -42,6 +42,79 @@ interface Row {
   gap: GapValue
   /** the two dates each side's window resolved to; renders as a collapsible row */
   detail?: ReactNode
+  /** both sides' raw non-negative figures, for the proportional bar under the
+   *  two number cells. Undefined whenever the pair isn't one comparable
+   *  quantity — either side missing, negative, or (`long vs shorts`) two
+   *  counts rather than one. */
+  share?: { them: number; you: number }
+  /** every window's cell for this metric, threaded straight from the bundle
+   *  so the six-window expansion strip reads the exact source the visible
+   *  cell resolved from — never a second pass over the row for a different
+   *  width. */
+  windowed?: {
+    them: Record<string, StateCell>
+    you: Record<string, StateCell>
+    fmt: (cell: StateCell) => string
+  }
+}
+
+/** Share of a two-sided pair, for the bar under a row's number cells. Same
+ *  non-negative guard `gap()` applies before it will compare two values —
+ *  this only turns that already-validated pair into a proportion, never a
+ *  second opinion on which side is ahead. */
+function shareOf(them: number | null, you: number | null): { them: number; you: number } | undefined {
+  if (them === null || you === null) return undefined
+  if (them < 0 || you < 0) return undefined
+  return { them, you }
+}
+
+/** One side's percentage of the pair. Split even when both sides are zero —
+ *  there is no ratio to draw, but zero-and-zero is still a real, comparable
+ *  measurement, unlike a missing one. */
+function sharePct(value: number, share: { them: number; you: number }): number {
+  const total = share.them + share.you
+  return total > 0 ? (value / total) * 100 : 50
+}
+
+/** Decoration under an already-printed number: aria-hidden, and the width is
+ *  the only thing it says that the number beside it doesn't already say. */
+function ShareBar({ pct }: { pct: number }) {
+  return (
+    <span className="share" aria-hidden="true">
+      <i style={{ width: `${pct}%` }} />
+    </span>
+  )
+}
+
+/** subs_per_1k_views' own "ok" formatting (one decimal, no sign — it's a
+ *  ratio, not a delta), but every non-ok state falls through to deltaText.
+ *  deltaText and pctText render identical text for building/blocked/etc (both
+ *  call the same state helpers) — reusing deltaText's fallback here means
+ *  this row's states are worded exactly like every other windowed row's,
+ *  never collapsed to a bare "--" the way the table's own fmtCell does. */
+function ratioText(cell: StateCell): string {
+  return cell.state === "ok" ? (cell.value ?? 0).toFixed(1) : deltaText(cell)
+}
+
+/** The metric at all six windows, so a lead reads as widening or closing
+ *  instead of one snapshot. Every window renders, including the ones with no
+ *  number: `fmt` is the same deltaText/pctText/ratioText helper the visible
+ *  cell used, so a building or blocked window shows its state here exactly as
+ *  it does in the table. */
+function WindowStrip({ them, you, fmt }: {
+  them: Record<string, StateCell>
+  you: Record<string, StateCell>
+  fmt: (cell: StateCell) => string
+}) {
+  return (
+    <div className="windowstrip">
+      {WINDOWS.map((w) => (
+        <span key={w} className="windowstrip-cell">
+          <b>{w}</b> them {fmt(them[w])} · you {fmt(you[w])}
+        </span>
+      ))}
+    </div>
+  )
 }
 
 /** The two dates a window actually resolved to, for the row a reader expands
@@ -100,20 +173,25 @@ export function CompareTable({
       you: <>{you.subscriber_count === null ? "--" : fmtInt(you.subscriber_count)}{" "}
         <Chip>{bucketText(you.subscriber_bucket)}</Chip></>,
       gap: gap(them.subscriber_count, you.subscriber_count),
+      share: shareOf(them.subscriber_count, you.subscriber_count),
     },
     {
       label: <Derived formula="Subscribers at the end of the window minus subscribers at the start.">subs gained</Derived>,
       them: deltaText(them.subscriber_delta[win]),
       you: deltaText(you.subscriber_delta[win]),
       gap: gap(okValue(them.subscriber_delta[win]), okValue(you.subscriber_delta[win])),
+      share: shareOf(okValue(them.subscriber_delta[win]), okValue(you.subscriber_delta[win])),
       detail: windowDates(them.subscriber_delta[win], you.subscriber_delta[win]),
+      windowed: { them: them.subscriber_delta, you: you.subscriber_delta, fmt: deltaText },
     },
     {
       label: <Derived formula="Subscribers gained, as a share of what the channel had when the window started.">growth rate</Derived>,
       them: pctText(them.subscriber_growth_rate[win]),
       you: pctText(you.subscriber_growth_rate[win]),
       gap: gap(okValue(them.subscriber_growth_rate[win]), okValue(you.subscriber_growth_rate[win])),
+      share: shareOf(okValue(them.subscriber_growth_rate[win]), okValue(you.subscriber_growth_rate[win])),
       detail: windowDates(them.subscriber_growth_rate[win], you.subscriber_growth_rate[win]),
+      windowed: { them: them.subscriber_growth_rate, you: you.subscriber_growth_rate, fmt: pctText },
     },
   ]
 
@@ -123,19 +201,24 @@ export function CompareTable({
       them: them.view_count === null ? "--" : fmtInt(them.view_count),
       you: you.view_count === null ? "--" : fmtInt(you.view_count),
       gap: gap(them.view_count, you.view_count),
+      share: shareOf(them.view_count, you.view_count),
     },
     {
       label: <Derived formula="Total views at the end of the window minus total views at the start. Exact, never rounded.">views gained</Derived>,
       them: deltaText(them.view_delta[win]),
       you: deltaText(you.view_delta[win]),
       gap: gap(okValue(them.view_delta[win]), okValue(you.view_delta[win])),
+      share: shareOf(okValue(them.view_delta[win]), okValue(you.view_delta[win])),
       detail: windowDates(them.view_delta[win], you.view_delta[win]),
+      windowed: { them: them.view_delta, you: you.view_delta, fmt: deltaText },
     },
     {
       label: <Derived formula="How many subscribers each thousand views brought in. Higher means the audience converts better.">subs per 1,000 views</Derived>,
       them: fmtCell(them.subs_per_1k_views[win]),
       you: fmtCell(you.subs_per_1k_views[win]),
       gap: gap(okValue(them.subs_per_1k_views[win]), okValue(you.subs_per_1k_views[win])),
+      share: shareOf(okValue(them.subs_per_1k_views[win]), okValue(you.subs_per_1k_views[win])),
+      windowed: { them: them.subs_per_1k_views, you: you.subs_per_1k_views, fmt: ratioText },
     },
   ]
 
@@ -145,7 +228,10 @@ export function CompareTable({
       them: t.stats.videos,
       you: y.stats.videos,
       gap: gap(t.stats.videos, y.stats.videos),
+      share: shareOf(t.stats.videos, y.stats.videos),
     },
+    // long vs shorts gets no share: it's two counts (long, short), not one
+    // comparable quantity, so there is no single proportion to draw a bar of.
     ...(format === "all" ? [{
       label: <Derived formula="How those videos split between long-form and Shorts.">long vs shorts</Derived>,
       them: formatMix(t.mix.long, t.mix.short),
@@ -157,12 +243,14 @@ export function CompareTable({
       them: t.stats.medianViews === null ? "--" : fmtInt(t.stats.medianViews),
       you: y.stats.medianViews === null ? "--" : fmtInt(y.stats.medianViews),
       gap: gap(t.stats.medianViews, y.stats.medianViews),
+      share: shareOf(t.stats.medianViews, y.stats.medianViews),
     },
     {
       label: <Derived formula={CADENCE_FORMULA}>days between uploads</Derived>,
       them: t.cadence === null ? "--" : `${t.cadence}d`,
       you: y.cadence === null ? "--" : `${y.cadence}d`,
       gap: gap(t.cadence, y.cadence, { lowerIsBetter: true, qualifier: "more often" }),
+      share: shareOf(t.cadence, y.cadence),
     },
   ]
 
@@ -208,22 +296,36 @@ function Group({ title, rows }: { title: string; rows: Row[] }) {
 
 function RowCells({ row }: { row: Row }) {
   const [open, setOpen] = useState(false)
+  const expandable = Boolean(row.detail || row.windowed)
+  // Who's ahead comes straight from the row's own gap, never recomputed here:
+  // "ahead" means the you column leads, "behind" means them does, and
+  // even/unknown (the ones GapCell also renders with no glyph) mark neither.
+  const lead = row.gap.direction === "ahead" ? "you" : row.gap.direction === "behind" ? "them" : null
   return (
     <>
       <tr>
         <td>
-          {row.detail ? (
+          {expandable ? (
             <button type="button" className="linklike" aria-expanded={open} onClick={() => setOpen(!open)}>
               {row.label}
             </button>
           ) : row.label}
         </td>
-        <td className="r num">{row.them}</td>
-        <td className="r num">{row.you}</td>
+        <td className={lead === "them" ? "r num lead" : "r num"}>
+          {row.them}
+          {row.share && <ShareBar pct={sharePct(row.share.them, row.share)} />}
+        </td>
+        <td className={lead === "you" ? "r num lead" : "r num"}>
+          {row.you}
+          {row.share && <ShareBar pct={sharePct(row.share.you, row.share)} />}
+        </td>
         <td className="r num"><GapCell value={row.gap} /></td>
       </tr>
-      {row.detail && open && (
-        <tr><td colSpan={4} className="sub mono10">{row.detail}</td></tr>
+      {expandable && open && (
+        <tr><td colSpan={4} className="sub mono10">
+          {row.detail}
+          {row.windowed && <WindowStrip {...row.windowed} />}
+        </td></tr>
       )}
     </>
   )

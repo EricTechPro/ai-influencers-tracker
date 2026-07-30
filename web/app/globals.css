@@ -110,6 +110,22 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: 13px; }
 .gap-behind { color: var(--v-crowded); }
 .gap-even { color: var(--muted-foreground); }
 
+/* Proportional share of a two-channel row. Decoration under a printed number,
+   never the number itself — see the aria-hidden on the element. */
+.share { display: block; height: 2px; margin-top: 3px; background: var(--muted); }
+.share > i { display: block; height: 100%; background: color-mix(in srgb, var(--primary) 55%, transparent); }
+
+/* /compare: the leading side of a row, on hover. Direction comes straight off
+   the row's own GapValue (never recomputed), so this and the gap column's
+   ▲/▼ always agree. Needs the extra class to outrank .tbl-hover's plain
+   row tint above. */
+.tbl-hover tbody tr:hover td.lead { background: color-mix(in srgb, var(--primary) 12%, transparent); }
+
+/* /compare: a windowed row's expansion, all six windows at once so a lead
+   reads as widening or closing rather than one snapshot. */
+.windowstrip { display: flex; flex-wrap: wrap; gap: 4px 16px; margin-top: 4px; }
+.windowstrip-cell b { color: var(--foreground); font-weight: 600; margin-right: 3px; }
+
 /* Segmented gauges.
    A band name is the output of a comparison; the notch puts the number it was
    compared against back on screen, so "crowded" is legible as a distance past
