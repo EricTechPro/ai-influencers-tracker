@@ -98,7 +98,7 @@ export function ChannelDirectory({ channels, win }: { channels: SlimChannel[]; w
 function DirectoryRow({ c, win }: { c: SlimChannel; win: WindowKey }) {
   return (
     <div className={`dirrow${c.is_self ? " youcard" : ""}`}>
-      <Link href={`/channels/${c.channel_id}`} className="chcell dirlink">
+      <Link href={withWindow(`/channels/${c.channel_id}`, win)} className="chcell dirlink">
         <Avatar src={c.avatarUrl} name={c.name} size={36} isSelf={c.is_self} />
         <span className="dirmeta">
           <span className="chname" title={c.name}>

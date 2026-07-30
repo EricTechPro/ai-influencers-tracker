@@ -6,7 +6,7 @@ import {
 } from "@/lib/bundles"
 import { CADENCE_FORMULA, cadenceDays } from "@/lib/channel"
 import { bucketText, fmtInt } from "@/lib/trust"
-import { parseWindow } from "@/lib/window"
+import { parseWindow, withWindow } from "@/lib/window"
 import { Avatar } from "@/components/avatar"
 import { Chip, Derived } from "@/components/trust"
 import { ChannelGrowth } from "@/components/channel-growth"
@@ -68,7 +68,7 @@ export default async function ChannelPage({
               {channel.is_self ? (
                 <Chip variant="you">★ you</Chip>
               ) : (
-                <Link href={`/compare?a=${channel.channel_id}`}
+                <Link href={withWindow(`/compare?a=${channel.channel_id}`, win)}
                   style={{ marginLeft: "auto", fontSize: 12 }}>
                   compare with you →
                 </Link>

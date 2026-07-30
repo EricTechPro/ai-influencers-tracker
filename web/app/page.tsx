@@ -1,10 +1,16 @@
 import { channelAvatarUrl, channelCoverage, loadChannels, loadMeta } from "@/lib/bundles"
 import { slimChannel } from "@/lib/growth"
+import { parseWindow } from "@/lib/window"
 import { LeaderboardTable } from "@/components/leaderboard-table"
 
 /** The board is the landing page. There is no separate home: a top-5 summary above a table of
  *  all 72 was the same answer twice, and the shorter one was never the one being read. */
-export default function LeaderboardPage() {
+export default async function LeaderboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ w?: string }>
+}) {
+  const { w } = await searchParams
   const meta = loadMeta()
   const bundle = loadChannels()
   const channels = bundle.channels.map((c) =>
@@ -27,7 +33,8 @@ export default function LeaderboardPage() {
         <span className="rule" />
         <span className="cap">{meta.channels.total} tracked</span>
       </div>
-      <LeaderboardTable channels={channels} coverage={coverage} selfId={bundle.self_channel_id} />
+      <LeaderboardTable channels={channels} coverage={coverage} selfId={bundle.self_channel_id}
+        initialWindow={parseWindow(w)} />
     </section>
   )
 }

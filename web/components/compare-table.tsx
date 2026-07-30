@@ -1,6 +1,7 @@
 "use client"
 
-import { useState } from "react"
+import { usePathname, useRouter, useSearchParams } from "next/navigation"
+import { useCallback, useState } from "react"
 import type { ReactNode } from "react"
 import {
   gap, okValue, outputStats, splitByFormat, videosInWindow,
@@ -60,7 +61,22 @@ function formatMix(long: number, short: number): string {
 export function CompareTable({
   them, you, initialWindow,
 }: { them: CompareSide; you: CompareSide; initialWindow: WindowKey }) {
+  const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
   const [win, setWin] = useState<WindowKey>(initialWindow)
+  const onWindow = useCallback(
+    (w: WindowKey) => {
+      setWin(w)
+      // /compare carries `a` and `b` alongside `w` — withWindow(pathname, w) would
+      // drop them since usePathname() has no query string. Preserve everything
+      // already on the URL and override only `w`.
+      const next = new URLSearchParams(searchParams.toString())
+      next.set("w", w)
+      router.replace(`${pathname}?${next.toString()}`, { scroll: false })
+    },
+    [pathname, router, searchParams]
+  )
   const [format, setFormat] = useState<VideoFormat>("all")
 
   const now = new Date()
@@ -153,7 +169,7 @@ export function CompareTable({
   return (
     <>
       <div className="section-kicker" style={{ gap: 12 }}>
-        <WindowTabs value={win} onChange={setWin} />
+        <WindowTabs value={win} onChange={onWindow} />
       </div>
       <div className="card tblwrap">
         <table className="tbl tbl-hover" style={{ fontSize: 12 }}>

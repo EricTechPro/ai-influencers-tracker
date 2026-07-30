@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import { usePathname, useRouter } from "next/navigation"
 import { useCallback, useMemo, useState } from "react"
 import { peekStats, type SlimChannel } from "@/lib/growth"
 import { tiered, type SortValue } from "@/lib/sort"
@@ -14,6 +15,7 @@ import {
   pctText,
   stateExplain,
 } from "@/lib/trust"
+import { withWindow } from "@/lib/window"
 import { AvatarPeek } from "./avatar"
 import { CompareBar } from "./compare-bar"
 import { Pager, usePager } from "./pager"
@@ -46,13 +48,24 @@ export function LeaderboardTable({
   channels,
   coverage,
   selfId,
+  initialWindow,
 }: {
   channels: SlimChannel[]
   coverage?: CoverageMap
   selfId: string
+  initialWindow: WindowKey
 }) {
+  const router = useRouter()
+  const pathname = usePathname()
   const [mode, setMode] = useState<RankMode>("growth")
-  const [win, setWin] = useState<WindowKey>("90d")
+  const [win, setWin] = useState<WindowKey>(initialWindow)
+  const onWindow = useCallback(
+    (w: WindowKey) => {
+      setWin(w)
+      router.replace(withWindow(pathname, w), { scroll: false })
+    },
+    [pathname, router]
+  )
   const [niche, setNiche] = useState<string>("all")
   const [cats, setCats] = useState<Set<Cat>>(new Set(CATS))
   // Selection is keyed on channel_id, not row index, so re-sorting or paging
@@ -157,7 +170,7 @@ export function LeaderboardTable({
             </button>
           ))}
         </div>
-        <WindowTabs value={win} onChange={setWin} />
+        <WindowTabs value={win} onChange={onWindow} />
         <select
           value={niche}
           onChange={(e) => setNiche(e.target.value)}
@@ -262,7 +275,7 @@ function LeaderRow({ c, mode, win, cover, picked, onTogglePicked }: {
         {pickCell}
         <td className="muted num">--</td>
         <td>
-          <Link href={`/channels/${c.channel_id}`} className="chcell">
+          <Link href={withWindow(`/channels/${c.channel_id}`, win)} className="chcell">
             <AvatarPeek src={c.avatarUrl} name={c.name} handle={c.handle} size={28} />
             <span className="chname" title={c.name}>{c.name}</span>
           </Link>{" "}
@@ -285,7 +298,7 @@ function LeaderRow({ c, mode, win, cover, picked, onTogglePicked }: {
       {pickCell}
       <td className="num">{c.rank[mode][win] ?? "--"}</td>
       <td>
-        <Link href={`/channels/${c.channel_id}`} className="chcell">
+        <Link href={withWindow(`/channels/${c.channel_id}`, win)} className="chcell">
           <AvatarPeek src={c.avatarUrl} name={c.name} handle={c.handle} size={28}
             isSelf={c.is_self} stats={stats} />
           <span className="chname" title={c.name}>{c.name}</span>
