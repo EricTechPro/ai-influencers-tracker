@@ -1,68 +1,58 @@
 // Pure helpers for /compare. No fs, no react.
-import type { OpportunityRow, Verdict, VideoRow } from "./types"
+import type { StateCell, VideoRow } from "./types"
 
-export interface CoverageCell {
-  videos: number
-  views: number
+/** The value only when the cell earned one. Every non-ok state, `bounded`
+ *  included, is missing data: a gap computed across it would invent a number. */
+export function okValue(cell: StateCell | undefined): number | null {
+  return cell && cell.state === "ok" ? cell.value : null
 }
 
-export interface GapRow {
-  topic_id: string
-  him: CoverageCell | null
-  you: CoverageCell | null
-  verdict: Verdict | null
+export type GapKind = "even" | "percent" | "multiple" | "only-you" | "unknown"
+
+export interface GapValue {
+  kind: GapKind
+  /** a fraction for "percent" (0.414 = 41%), the multiple for "multiple", else null */
+  magnitude: number | null
+  direction: "ahead" | "behind" | null
+  /** suffix for a lower-is-better row, e.g. "more often" */
+  qualifier: string | null
 }
 
-/** Per-leaf-topic coverage for one channel. Views are exact viewCounts (Oracle);
- *  a null view_count contributes 0 views but the video still counts. */
-export function coverageByTopic(
-  videos: VideoRow[],
-  channelId: string,
-): Map<string, CoverageCell> {
-  const out = new Map<string, CoverageCell>()
-  for (const v of videos) {
-    if (v.channel_id !== channelId) continue
-    const topicIds = new Set(
-      (v.topic_assignments as { topic_id: string }[]).map((a) => a.topic_id),
-    )
-    for (const id of topicIds) {
-      const cell = out.get(id) ?? { videos: 0, views: 0 }
-      cell.videos += 1
-      cell.views += v.view_count ?? 0
-      out.set(id, cell)
-    }
+/** Anything inside this band of parity is not worth reporting as a difference. */
+const EVEN_BAND = 0.1
+/** At or above this, a percent stops being readable and becomes a multiple. */
+const MULTIPLE_AT = 2
+
+export function gap(
+  them: number | null,
+  you: number | null,
+  opts: { lowerIsBetter?: boolean; qualifier?: string } = {},
+): GapValue {
+  const qualifier = opts.qualifier ?? null
+  const unknown: GapValue = { kind: "unknown", magnitude: null, direction: null, qualifier: null }
+
+  if (them === null || you === null) return unknown
+  // A ratio across a sign change describes nothing. No channel in the current
+  // build has a negative delta, but losing subscribers is a real thing.
+  if (them < 0 || you < 0) return unknown
+
+  if (them === 0 && you === 0) return { kind: "even", magnitude: null, direction: null, qualifier }
+  if (them === 0) return { kind: "only-you", magnitude: null, direction: "ahead", qualifier: null }
+  if (you === 0) return { kind: "only-you", magnitude: null, direction: "behind", qualifier: null }
+
+  const ratio = you / them
+  const ahead = opts.lowerIsBetter ? ratio < 1 : ratio > 1
+  // Always report the bigger side over the smaller, so the number is never a fraction.
+  const largerSmaller = ratio >= 1 ? ratio : 1 / ratio
+
+  if (largerSmaller <= 1 + EVEN_BAND) {
+    return { kind: "even", magnitude: null, direction: null, qualifier }
   }
-  return out
-}
-
-export function comparePartition(
-  him: Map<string, CoverageCell>,
-  you: Map<string, CoverageCell>,
-  opps: OpportunityRow[],
-): { himOnly: GapRow[]; youOnly: GapRow[]; both: GapRow[] } {
-  const verdictOf = new Map(opps.map((o) => [o.topic_id, o.verdict]))
-  const row = (id: string): GapRow => ({
-    topic_id: id,
-    him: him.get(id) ?? null,
-    you: you.get(id) ?? null,
-    verdict: verdictOf.get(id) ?? null,
-  })
-  const ids = new Set([...him.keys(), ...you.keys()])
-  const himOnly: GapRow[] = []
-  const youOnly: GapRow[] = []
-  const both: GapRow[] = []
-  for (const id of ids) {
-    const r = row(id)
-    if (r.him && !r.you) himOnly.push(r)
-    else if (!r.him && r.you) youOnly.push(r)
-    else both.push(r)
+  const direction = ahead ? "ahead" : "behind"
+  if (largerSmaller >= MULTIPLE_AT) {
+    return { kind: "multiple", magnitude: largerSmaller, direction, qualifier }
   }
-  const byHisViews = (a: GapRow, b: GapRow) =>
-    (b.him?.views ?? 0) - (a.him?.views ?? 0) || a.topic_id.localeCompare(b.topic_id)
-  himOnly.sort(byHisViews)
-  both.sort(byHisViews)
-  youOnly.sort(
-    (a, b) => (b.you?.videos ?? 0) - (a.you?.videos ?? 0) || a.topic_id.localeCompare(b.topic_id),
-  )
-  return { himOnly, youOnly, both }
+  // For percent, use directional magnitude: how much ahead/behind as a fraction of them
+  const magnitude = ahead ? ratio - 1 : 1 - ratio
+  return { kind: "percent", magnitude, direction, qualifier }
 }

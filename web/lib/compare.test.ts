@@ -1,45 +1,83 @@
 import { describe, expect, it } from "vitest"
-import { comparePartition, coverageByTopic } from "./compare"
-import type { OpportunityRow, VideoRow } from "./types"
+import { gap, okValue } from "./compare"
+import type { StateCell } from "./types"
 
-function vid(id: string, channel: string, views: number, topics: string[]): VideoRow {
-  return {
-    video_id: id, channel_id: channel, title: id, published_at: "2026-06-01T00:00:00Z",
-    type: "long", view_count: views, duration_s: 60,
-    topic_assignments: topics.map((t) => ({ topic_id: t, primary: true })),
-    multiplier: { state: "ok", value: null, baseline: null, baseline_n: null, source: "s" },
-    comment_stats: null,
-    traction: { still_growing: null, share_recent_7d: null, views_gained: {} },
-  }
-}
-
-const videos = [
-  vid("a1", "HIM", 100, ["rag"]), vid("a2", "HIM", 50, ["rag"]),
-  vid("a3", "HIM", 10, ["subagents"]),
-  vid("b1", "YOU", 7, ["skills"]), vid("b2", "YOU", 3, ["subagents"]),
-]
-
-describe("coverageByTopic", () => {
-  it("counts videos and sums exact views per topic for one channel", () => {
-    const him = coverageByTopic(videos, "HIM")
-    expect(him.get("rag")).toEqual({ videos: 2, views: 150 })
-    expect(him.get("skills")).toBeUndefined()
+describe("okValue", () => {
+  it("returns the number for an ok cell", () => {
+    expect(okValue({ state: "ok", value: 1200 } as StateCell)).toBe(1200)
   })
-  it("a null view_count adds 0 views but still counts the video", () => {
-    const m = coverageByTopic([{ ...videos[0], view_count: null }], "HIM")
-    expect(m.get("rag")).toEqual({ videos: 1, views: 0 })
+
+  it("returns null for every non-ok state, bounded included", () => {
+    const states = ["bounded", "building", "blocked", "insufficient_data", "no_baseline", "unavailable"]
+    for (const state of states) {
+      expect(okValue({ state, value: 999 } as StateCell)).toBeNull()
+    }
   })
 })
 
-describe("comparePartition", () => {
-  const opp = { topic_id: "rag", verdict: "MAKE_THIS_NOW" } as OpportunityRow
-  it("partitions him-only, you-only, both; him-only sorted by his views desc", () => {
-    const out = comparePartition(
-      coverageByTopic(videos, "HIM"), coverageByTopic(videos, "YOU"), [opp])
-    expect(out.himOnly.map((g) => g.topic_id)).toEqual(["rag"])
-    expect(out.himOnly[0].verdict).toBe("MAKE_THIS_NOW")
-    expect(out.youOnly.map((g) => g.topic_id)).toEqual(["skills"])
-    expect(out.youOnly[0].verdict).toBeNull()
-    expect(out.both.map((g) => g.topic_id)).toEqual(["subagents"])
+describe("gap", () => {
+  it("is unknown when either side is missing", () => {
+    expect(gap(null, 10).kind).toBe("unknown")
+    expect(gap(10, null).kind).toBe("unknown")
+  })
+
+  it("is unknown when either side is negative, because a ratio across a sign is not a gap", () => {
+    expect(gap(-100, 200).kind).toBe("unknown")
+    expect(gap(100, -200).kind).toBe("unknown")
+  })
+
+  it("calls a 0-vs-something row 'only you' rather than dividing by zero", () => {
+    expect(gap(0, 26)).toEqual({ kind: "only-you", magnitude: null, direction: "ahead", qualifier: null })
+  })
+
+  it("calls 0 vs 0 even", () => {
+    expect(gap(0, 0).kind).toBe("even")
+  })
+
+  it("calls anything inside 10% even", () => {
+    expect(gap(12.5, 11.8).kind).toBe("even")
+    expect(gap(100, 110).kind).toBe("even")
+    expect(gap(100, 91).kind).toBe("even")
+  })
+
+  it("treats exactly 10% as still even, and just past it as a percent", () => {
+    expect(gap(100, 110).kind).toBe("even")
+    expect(gap(100, 111).kind).toBe("percent")
+  })
+
+  it("renders a lead under 2x as a percent", () => {
+    const g = gap(12, 20)
+    expect(g.kind).toBe("percent")
+    expect(g.direction).toBe("ahead")
+    expect(g.magnitude).toBeCloseTo(0.667, 3)
+  })
+
+  it("renders a deficit under 2x as a percent", () => {
+    const g = gap(7000, 4100)
+    expect(g.kind).toBe("percent")
+    expect(g.direction).toBe("behind")
+    expect(g.magnitude).toBeCloseTo(0.414, 3)
+  })
+
+  it("switches to a multiple at exactly 2x, in both directions", () => {
+    expect(gap(10, 20)).toMatchObject({ kind: "multiple", direction: "ahead", magnitude: 2 })
+    expect(gap(20, 10)).toMatchObject({ kind: "multiple", direction: "behind", magnitude: 2 })
+  })
+
+  it("reports the multiple as the larger side over the smaller, never a fraction", () => {
+    const g = gap(24097, 3750)
+    expect(g.kind).toBe("multiple")
+    expect(g.direction).toBe("behind")
+    expect(g.magnitude).toBeCloseTo(6.43, 2)
+  })
+
+  it("inverts direction on a lower-is-better row and carries its qualifier", () => {
+    const g = gap(2, 1, { lowerIsBetter: true, qualifier: "more often" })
+    expect(g).toMatchObject({ kind: "multiple", direction: "ahead", qualifier: "more often" })
+    expect(g.magnitude).toBe(2)
+  })
+
+  it("inverts the other way too: posting less often than them is behind", () => {
+    expect(gap(1, 2, { lowerIsBetter: true })).toMatchObject({ kind: "multiple", direction: "behind" })
   })
 })
