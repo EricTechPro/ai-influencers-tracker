@@ -5,7 +5,6 @@ import { bucketText, deltaText, fmtInt, pctText } from "@/lib/trust"
 import { Avatar } from "@/components/avatar"
 import { Chip, Derived, VerdictBadge } from "@/components/trust"
 import { ComparePicker } from "@/components/compare-picker"
-import Link from "next/link"
 
 export default async function ComparePage({
   searchParams,
@@ -65,7 +64,7 @@ export default async function ComparePage({
             )}
             {gaps.himOnly.map((g) => (
               <tr key={g.topic_id}>
-                <td><Link href={`/topics/${g.topic_id}`}>{g.topic_id}</Link></td>
+                <td className="mono10">{g.topic_id}</td>
                 <td className="r num">{g.him!.videos}</td>
                 <td className="r num muted">0</td>
                 <td className="r num">{fmtInt(g.him!.views)}</td>
@@ -77,7 +76,7 @@ export default async function ComparePage({
             )}
             {gaps.youOnly.map((g) => (
               <tr key={g.topic_id}>
-                <td><Link href={`/topics/${g.topic_id}`}>{g.topic_id}</Link></td>
+                <td className="mono10">{g.topic_id}</td>
                 <td className="r num muted">0</td>
                 <td className="r num">{g.you!.videos}</td>
                 <td className="r num muted">--</td>
@@ -89,7 +88,7 @@ export default async function ComparePage({
             )}
             {gaps.both.map((g) => (
               <tr key={g.topic_id}>
-                <td><Link href={`/topics/${g.topic_id}`}>{g.topic_id}</Link></td>
+                <td className="mono10">{g.topic_id}</td>
                 <td className="r num">{g.him!.videos}</td>
                 <td className="r num">{g.you!.videos}</td>
                 <td className="r num">{fmtInt(g.him!.views)}</td>

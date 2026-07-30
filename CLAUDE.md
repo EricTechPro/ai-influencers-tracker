@@ -81,6 +81,12 @@ Six `ait-*` skills sit in `.agents/skills/`, one directory each, all importing t
 `pipeline/`. `.claude/skills` symlinks there and `AGENTS.md` symlinks to this file — one source, two
 names, in both cases.
 
+**Skill names track the layer each one fills**, so `ait-ingest` writes `_raw/` and `ait-synthesize`
+writes `_synthesize/`. Renamed 2026-07-30 from `ait-snapshot` and `ait-analyze`. The module
+`pipeline.snapshot`, `scripts/ait-snapshot.plist`, and the launchd label `ca.erictech.ait-snapshot`
+kept their old names — the cron agent is installed and loaded under that label. `ait-opportunity` is
+the one skill not named for a layer, because it writes none: it reads `_db/` and explains a score.
+
 ## The sibling project
 
 `projects/social-invest/` is the template, not a dependency. **Copy the shape, share no code** —

@@ -5,6 +5,7 @@ import { selectRecent, type FormatKey, type RecentWindow } from "@/lib/recent"
 import type { RecentBundle } from "@/lib/types"
 import { fmtInt } from "@/lib/trust"
 import { GridVideoCard } from "./grid-video-card"
+import { Pager, usePager } from "./pager"
 import { PatternRows } from "./pattern-rows"
 
 const WINDOWS: RecentWindow[] = [7, 14, 30]
@@ -44,9 +45,15 @@ export function RecentFeed({
   const floor = bundle.display_floor
   const defaultCap = bundle.per_channel_cap
   const [window, setWindow] = useState<RecentWindow>(7)
-  const [format, setFormat] = useState<FormatKey>("videos")
-  const [capped, setCapped] = useState(true)
-  const [showTail, setShowTail] = useState(false)
+  const [format, setFormat] = useState<FormatKey>("all")
+  // Uncapped by default. The cap is a per-channel fairness rule for reading a leaderboard, and
+  // it was hiding most of the week: nine cards out of 153 outliers read as a quiet week rather
+  // than as a filtered one. The cap is still one click away.
+  const [capped, setCapped] = useState(false)
+  // The tail is open by default for the same reason. It is still a separate grid under its own
+  // "held back by the floor" line, so the 2.5x bar keeps its meaning; it is just not a wall the
+  // week sits behind. Collapse it with the same button.
+  const [showTail, setShowTail] = useState(true)
 
   // new Date() belongs inside the factory: built outside it, it is allocated on every render
   // and is not a dependency, so it never actually re-runs the memo it appears to feed.
@@ -59,6 +66,11 @@ export function RecentFeed({
       ),
     [bundle, window, format, capped, defaultCap, floor]
   )
+
+  // 12 is three full rows at the widest grid and two at the common one, so a page always ends on
+  // a complete row rather than one orphan card.
+  const { slice: rankedPage, props: rankedPager } = usePager(ranked, 12)
+  const { slice: tailPage, props: tailPager } = usePager(tail, 12)
 
   const failed = bundle.coverage.batches_failed
 
@@ -137,16 +149,19 @@ export function RecentFeed({
           {ranked.length === 0 ? (
             <p className="note">Nothing cleared {floor}× in this window.</p>
           ) : (
-            <div className="ygrid">
-              {ranked.map((v) => (
-                <GridVideoCard
-                  key={v.video_id}
-                  v={v}
-                  avatarUrl={avatars[v.channel_id] ?? null}
-                  isSelf={v.channel_id === selfChannelId}
-                />
-              ))}
-            </div>
+            <>
+              <div className="ygrid">
+                {rankedPage.map((v) => (
+                  <GridVideoCard
+                    key={v.video_id}
+                    v={v}
+                    avatarUrl={avatars[v.channel_id] ?? null}
+                    isSelf={v.channel_id === selfChannelId}
+                  />
+                ))}
+              </div>
+              <Pager {...rankedPager} unit="videos" perPageOptions={[12, 24, 48]} />
+            </>
           )}
 
           {tail.length > 0 && (
@@ -164,16 +179,19 @@ export function RecentFeed({
           )}
 
           {showTail && (
-            <div className="ygrid" style={{ marginTop: "14px" }}>
-              {tail.map((v) => (
-                <GridVideoCard
-                  key={v.video_id}
-                  v={v}
-                  avatarUrl={avatars[v.channel_id] ?? null}
-                  isSelf={v.channel_id === selfChannelId}
-                />
-              ))}
-            </div>
+            <>
+              <div className="ygrid" style={{ marginTop: "14px" }}>
+                {tailPage.map((v) => (
+                  <GridVideoCard
+                    key={v.video_id}
+                    v={v}
+                    avatarUrl={avatars[v.channel_id] ?? null}
+                    isSelf={v.channel_id === selfChannelId}
+                  />
+                ))}
+              </div>
+              <Pager {...tailPager} unit="held back" perPageOptions={[12, 24, 48]} />
+            </>
           )}
 
           <div className="section-kicker">

@@ -1,7 +1,6 @@
 "use client"
 
 import { useEffect, useMemo, useRef, useState } from "react"
-import Link from "next/link"
 import {
   categoryTabs, filterByCategory, lagText, sortComments,
 } from "@/lib/channel"
@@ -176,9 +175,7 @@ export function CommentTable({
                   </td>
                 )}
                 <td className="mono10">
-                  {r.topic_ids[0] ? (
-                    <Link href={`/topics/${r.topic_ids[0]}`}>{r.topic_ids[0]}</Link>
-                  ) : ("--")}
+                  {r.topic_ids[0] ?? "--"}
                 </td>
                 <td className="r num nowrap">{lagText(r.lag_days)}</td>
               </tr>

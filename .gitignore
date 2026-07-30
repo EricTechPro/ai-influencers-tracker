@@ -22,3 +22,4 @@ _db/*
 # a few MB each, so the folder and its README are tracked and the PNGs are not.
 docs/mockups/screenshots/*
 !docs/mockups/screenshots/README.md
+.superpowers/

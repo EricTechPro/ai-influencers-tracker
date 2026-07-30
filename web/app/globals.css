@@ -43,10 +43,16 @@ h1 { font-size: 1.6rem; line-height: 2.1rem; font-weight: 700; color: var(--prim
 .mono10 { font-size: 10px; color: var(--muted-foreground); }
 .note { font-size: 12px; color: var(--muted-foreground); }
 
+/* Two measures, and the chrome uses the wide one. Prose keeps 64rem because that is where a
+   line of text stops being readable; the tables need more. The nav sat on the prose measure,
+   which put the logo ~200px inside the left edge of every table under it and read as the board
+   being shoved right. One shared width for chrome and tables, so their left edges line up. */
+:root { --wide: 90rem; }
+
 .page { max-width: 64rem; margin: 0 auto; padding: 0 1.5rem; }
 
 /* app chrome */
-.appnav { display: flex; align-items: center; gap: 1.5rem; height: 5rem; padding: 0 1.5rem; max-width: 64rem; margin: 0 auto; }
+.appnav { display: flex; align-items: center; gap: 1.5rem; height: 5rem; padding: 0 1.5rem; max-width: var(--wide); margin: 0 auto; }
 .appnav .logo { font-size: 1.125rem; font-weight: 700; letter-spacing: -0.02em; white-space: nowrap; }
 .appnav nav { display: flex; gap: 1.25rem; font-size: 13px; }
 .appnav nav a { color: var(--foreground); }
@@ -137,7 +143,7 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: 13px; }
    the viewport instead of the 64rem column, and stops growing at 90rem so the
    table never becomes a scan across a whole ultrawide display. */
 .breakout {
-  width: min(90rem, calc(100vw - 3rem));
+  width: min(var(--wide), calc(100vw - 3rem));
   margin-left: 50%;
   transform: translateX(-50%);
 }
@@ -413,6 +419,41 @@ body { margin: 0; }
 .controls { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin: 0.6rem 0 0.9rem; }
 .controls select, .controls label { font: inherit; font-size: 12px; }
 .controls select { border: 1px solid var(--border); background: var(--card); padding: 3px 8px; }
+
+/* Pagination.
+   The readout leads and the controls sit at the far end, because the sentence "25 of 72" is the
+   part that has to be read and the arrows are the part that has to be found. Numerals are
+   tabular so the range does not jitter its own width as you page through it. */
+.pager {
+  display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+  margin: 0.75rem 0 0.25rem; font-size: 12px; color: var(--muted-foreground);
+}
+.pgcount { color: var(--foreground); letter-spacing: 0.01em; }
+.pgof { color: var(--muted-foreground); }
+.pgper { display: flex; align-items: center; }
+.pgper label { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; }
+.pgper select {
+  font: inherit; font-size: 11px; border: 1px solid var(--border);
+  background: var(--card); padding: 2px 6px;
+}
+.pgnav { margin-left: auto; display: inline-flex; align-items: center; gap: 2px; }
+.pgnav button {
+  font: inherit; font-size: 12px; font-variant-numeric: tabular-nums;
+  min-width: 26px; height: 24px; padding: 0 6px;
+  border: 1px solid transparent; background: none; color: var(--muted-foreground);
+  cursor: pointer; transition: color 120ms ease, border-color 120ms ease, background 120ms ease;
+}
+.pgnav button:hover:not(:disabled) { color: var(--foreground); border-color: var(--border); }
+.pgnav button.on {
+  color: var(--foreground); border-color: var(--border); background: var(--card);
+  font-weight: 600;
+}
+/* The current page is marked twice: the box says "you are here", the rule underneath is the
+   same wavy accent the active nav link uses, so the two "you are here" signals in the app
+   read as one idea rather than two conventions. */
+.pgnav button.on { text-decoration: underline 2px wavy var(--primary); text-underline-offset: 5px; }
+.pgnav button:disabled { opacity: 0.3; cursor: default; }
+.pggap { padding: 0 2px; color: var(--muted-foreground); }
 /* Sparkline with a readout.
    The line auto-scales to its own min and max, so on its own it looks the same
    whether a channel gained 40 subscribers or 40,000. The endpoints below it
@@ -457,9 +498,11 @@ details.sect[open] > summary .kicker::before { content: "\25BE  "; }
    page's own max width the wrapper goes back to visible, because an
    overflow-x container also becomes an overflow-y scrollport, and a sticky
    thead inside one sticks to a scrollport the same height as its table, which
-   is to say it does not stick at all. */
+   is to say it does not stick at all.
+   The breakpoint is the wide measure, not the prose one: the tables live in .breakout now, so
+   64rem here left every viewport between the two measures clipping its last column. */
 .tblwrap { overflow-x: auto; }
-@media (min-width: 64rem) { .tblwrap { overflow-x: visible; } }
+@media (min-width: 90rem) { .tblwrap { overflow-x: visible; } }
 
 /* Scroll shadows, no JS: the two `local` gradients travel with the content and
    sit on top of the two `scroll` shadows, so a shadow is only visible on an

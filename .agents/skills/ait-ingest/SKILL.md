@@ -1,12 +1,15 @@
 ---
-name: ait-snapshot
-description: Run the daily free sweep for ai-influencers-tracker (channels, uploads, per-video counts, comments, GitHub velocity, GitHub Trending) and report the gap list. Use when the user says ait-snapshot, "run the sweep", "pull today's numbers", or asks why the dashboard has a hole in it.
+name: ait-ingest
+description: Run the daily free sweep for ai-influencers-tracker (channels, uploads, per-video counts, comments, GitHub velocity, GitHub Trending) into _raw/ and report the gap list. Use when the user says ait-ingest, "run the sweep", "run the snapshot", "pull today's numbers", or asks why the dashboard has a hole in it.
 ---
 
-# ait-snapshot
+# ait-ingest
 
-The daily free sweep. About 176 of 10,000 YouTube quota units, 0 vidIQ credits, 0 dollars.
-`launchd` already runs it at 09:00; this skill is for running it by hand.
+Writes `_raw/`. The daily free sweep, about 176 of 10,000 YouTube quota units, 0 vidIQ credits,
+0 dollars. `launchd` already runs it at 09:00; this skill is for running it by hand.
+
+The module is still `pipeline.snapshot` and the launchd label is still `ca.erictech.ait-snapshot`
+— the skill was renamed to match the `_raw/` layer it fills, the cron job and the module were not.
 
 ## Run it
 

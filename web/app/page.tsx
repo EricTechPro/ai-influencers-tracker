@@ -1,81 +1,32 @@
-import {
-  channelAvatarUrl,
-  channelCoverage,
-  loadChannels,
-  loadMeta,
-  loadOpportunities,
-  loadSnapshots,
-  loadTopicPages,
-  videosById,
-} from "@/lib/bundles"
-import { slimChannel, sparkAll } from "@/lib/growth"
-import { oppRowModels } from "@/lib/opportunity"
-import { topVideoCards } from "@/lib/topic"
-import { SCORE_FORMULA } from "@/lib/trust"
-import { GrowthPanel } from "@/components/growth-panel"
-import { OpportunityShelves } from "@/components/opportunity-shelves"
+import { channelAvatarUrl, channelCoverage, loadChannels, loadMeta } from "@/lib/bundles"
+import { slimChannel } from "@/lib/growth"
+import { LeaderboardTable } from "@/components/leaderboard-table"
 
-const CARDS_PER_TOPIC = 8
-
-export default function HomePage() {
+/** The board is the landing page. There is no separate home: a top-5 summary above a table of
+ *  all 72 was the same answer twice, and the shorter one was never the one being read. */
+export default function LeaderboardPage() {
   const meta = loadMeta()
-  const channels = loadChannels().channels
-  const snapshots = loadSnapshots()
-  const slim = channels.map((c) => slimChannel(c, channelAvatarUrl(c.channel_id)))
+  const channels = loadChannels().channels.map((c) =>
+    slimChannel(c, channelAvatarUrl(c.channel_id))
+  )
+  // Coverage is a filesystem read, so it is resolved here and handed to the
+  // client table as plain numbers.
   const coverage = Object.fromEntries(
-    slim.map((c) => {
+    channels.map((c) => {
       const { videos, comments } = channelCoverage(c.channel_id)
       return [c.channel_id, { videos, comments }]
     })
   )
-  const sparks = Object.fromEntries(
-    slim.map((c) => [c.channel_id, sparkAll(snapshots, c.channel_id)])
-  )
-  const opps = loadOpportunities().rows
-  const models = oppRowModels(
-    opps,
-    loadTopicPages().topics,
-    channels,
-    videosById,
-    channelAvatarUrl
-  )
-  // The rail per topic, resolved on the server: the ids come from the same in_window list the
-  // supply count was measured over, so the thumbnails and the number cannot disagree.
-  const idsByTopic = new Map(opps.map((r) => [r.topic_id, r.video_ids]))
-  const cardsByTopic = Object.fromEntries(
-    opps.map((r) => [
-      r.topic_id,
-      topVideoCards(videosById(idsByTopic.get(r.topic_id) ?? []), channels, channelAvatarUrl,
-                    CARDS_PER_TOPIC),
-    ])
-  )
-
   return (
-    <div className="vb">
-      <section>
-        <div className="section-kicker">
-          <span className="kicker bigsec">WHO IS GROWING</span>
-          <span className="rule" />
-          <a className="cap" href="/leaderboard">
-            see all {meta.channels.total} →
-          </a>
-        </div>
-        <p className="note">
-          ranked by subscriber growth rate
-        </p>
-        <GrowthPanel channels={slim} sparks={sparks} coverage={coverage} />
-      </section>
-      {/* Seven columns, two of them gauges, do not fit the 64rem reading
-          measure the rest of the app is set to. This section breaks out to the
-          viewport instead of asking the topic column to wrap every label. */}
-      <section className="breakout">
-        <div className="section-kicker">
-          <span className="kicker bigsec">WHAT TO MAKE NEXT</span>
-          <span className="rule" />
-          <span className="cap num">{SCORE_FORMULA}</span>
-        </div>
-        <OpportunityShelves models={models} cardsByTopic={cardsByTopic} />
-      </section>
-    </div>
+    // Eight columns plus a 28px face do not fit the 64rem reading measure the
+    // prose pages use; the last column was being clipped at the viewport edge.
+    <section className="breakout">
+      <div className="section-kicker">
+        <span className="kicker">ALL CHANNELS</span>
+        <span className="rule" />
+        <span className="cap">{meta.channels.total} tracked</span>
+      </div>
+      <LeaderboardTable channels={channels} coverage={coverage} />
+    </section>
   )
 }

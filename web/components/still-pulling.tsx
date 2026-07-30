@@ -105,7 +105,7 @@ function FragmentRow({ row, channelClassified, open, onToggle }: {
               <>
                 <div className="mono10" style={{ marginBottom: 6 }}>
                   <b className="num">{fmtInt(row.comments.totals.comments)}</b> comments
-                  {row.topic_id ? <> · topic: <a href={`/topics/${row.topic_id}`}>{row.topic_id}</a></> : null}
+                  {row.topic_id ? <> · topic: <span className="mono10">{row.topic_id}</span></> : null}
                   {" · "}
                   <a href={`https://youtu.be/${row.video_id}`} target="_blank" rel="noreferrer">
                     open video ↗

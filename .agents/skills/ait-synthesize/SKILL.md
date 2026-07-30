@@ -1,11 +1,11 @@
 ---
-name: ait-analyze
-description: Topic matching and coverage for ai-influencers-tracker; later, comment classification and step extraction. Use when the user says ait-analyze, asks which topics a video matched, asks why coverage_rate is falling, or asks what new leaves config/topics.json is missing.
+name: ait-synthesize
+description: Topic matching and coverage for ai-influencers-tracker; later, comment classification and step extraction. Use when the user says ait-synthesize, ait-analyze, asks which topics a video matched, asks why coverage_rate is falling, or asks what new leaves config/topics.json is missing.
 ---
 
-# ait-analyze
+# ait-synthesize
 
-Currently the cheap form only: keyword topic matching over title, description and tags, all free
+Writes `_synthesize/`. Currently the cheap form only: keyword topic matching over title, description and tags, all free
 from the YouTube Data API. Comment classification lands at build step 12 and step extraction at 15.
 
 ## What matched, and what did not

@@ -42,7 +42,7 @@ config/  channels.json (72) · topics.json · thresholds.json · excluded_repos.
 │    -> _synthesize/classifications.jsonl                                   │
 │  channel blurbs           step 11, one per channel, cached                │
 │    -> _synthesize/blurbs.json                                             │
-│  ait-analyze              step 15, trunk/fork or themes/split, path judge │
+│  ait-synthesize           step 15, trunk/fork or themes/split, path judge │
 │    -> _synthesize/extractions/<videoId>.json    ~40k tokens each          │
 └──────────────────────────────────────────────────────────────────────────┘
 
@@ -118,8 +118,8 @@ ai-influencers-tracker/
 | Layer | Written by | Deleting it costs |
 |---|---|---|
 | `config/` | **humans only** | your roster and your tuning. Back it up. |
-| `_raw/` | `ait-snapshot` | recent days refetchable; old history **gone forever** |
-| `_synthesize/` | `ait-analyze` | money — every extraction is ~40k tokens |
+| `_raw/` | `ait-ingest` | recent days refetchable; old history **gone forever** |
+| `_synthesize/` | `ait-synthesize` | money — every extraction is ~40k tokens |
 | `_db/` | `build_data.py` | nothing. One rebuild recreates it byte for byte. |
 
 **That last row is the test of whether the design is right: deleting `_db/` must be boring.**
@@ -161,14 +161,14 @@ snapshot reader, cost guard, YouTube client, GitHub client, comment store.
 
 | Skill | Mirrors | Job | Build step |
 |---|---|---|---|
-| `ait-snapshot` | (new) | Daily free sweep: channels, videos, comments, GitHub, trending. Gap detection. | 1, 6, 7 |
+| `ait-ingest` | `si-research-*` | Daily free sweep: channels, videos, comments, GitHub, trending. Gap detection. | 1, 6, 7 |
 | `ait-opportunity` | (new) | Velocity, indie score, keyword scores, verdict bands, opportunity score | 7–8 |
-| `ait-analyze` | `si-analyze-yt` | Keyword topic matching, comment classification, then step extraction | 8 → 12 → 15 |
+| `ait-synthesize` | `si-analyze-yt` | Keyword topic matching, comment classification, then step extraction | 8 → 12 → 15 |
 | `ait-refresh` | `si-refresh` | Orchestrator: cost guard, ledger, pre-flight preview | 2 |
 | `ait-dashboard` | `si-dashboard` | Start dev server on 3002, open browser | 9 |
 | `ait-research-yt` | `si-research-yt` | Deep per-video transcript extraction | 14 |
 
-`ait-match-topics` is not a seventh skill; it is `ait-analyze`'s cheap form.
+`ait-match-topics` is not a seventh skill; it is `ait-synthesize`'s cheap form.
 
 ### Topic matching, the cheap form
 
@@ -864,7 +864,7 @@ provides: purchased daily history, and keyword search volume.
 This is the loop that runs every morning. **Nothing here is metered; it is all free quota.**
 
 ```
-09:00  ait-snapshot starts
+09:00  ait-ingest starts
        │
        ├─ 0. GAP CHECK ─────────────────────────────────────────────────────────
        │     read _raw/snapshots/, find missing calendar dates
@@ -994,7 +994,7 @@ rule: *"the best model on the job, not the highest expensive one."*
  missed snapshot day        YES        delta() returns "building"        gap-window
  corrupt vidIQ point        YES        monotonicity filter, "corrupt"    monotonicity reject
  video deleted              YES        status:"absent" in video series   video-absent
- zero/multi self channel    YES        ait-snapshot fails loudly         self-channel guard
+ zero/multi self channel    YES        ait-ingest fails loudly           self-channel guard
  leaf becomes a parent      YES        warn + re-match its videos        tree-demotion
  sub delta below bucket     YES        state:"bounded" + upper, "< N"    measurement-floor
  category without evidence  YES        bundle pairs category with text   category-evidence
@@ -1096,7 +1096,7 @@ The ordered slices are in [spec.md](spec.md) §10. This is the task list under t
 
 **Snapshot and growth — steps 1–3**
 
-- **T4** `ait-snapshot`: `status` field + gap detection for channels.
+- **T4** `ait-ingest`: `status` field + gap detection for channels.
 - **T4b** per-video daily `videos.list` sweep, 50 ids per call. Verify: ≤ 80 quota units for 3,600 videos.
 - **T5** `delta()` returns `building` on any incompleteness, channels and videos alike.
 - **T5b** **the measurement floor.** `bounded` state, `upper`, the four rank modes, and the

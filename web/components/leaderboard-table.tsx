@@ -15,6 +15,7 @@ import {
   stateExplain,
 } from "@/lib/trust"
 import { AvatarPeek } from "./avatar"
+import { Pager, usePager } from "./pager"
 import { SortableHeader, useTableSort, type SortColumn } from "./sortable-table"
 import { Chip, Derived } from "./trust"
 import { WindowTabs } from "./window-tabs"
@@ -122,6 +123,9 @@ export function LeaderboardTable({
     value,
     "rank"
   )
+  // Paged after sorting, never before: page 2 has to be the next 25 of the order on screen, not
+  // the next 25 of the roster's own order re-sorted inside the page.
+  const { slice, props: pager } = usePager(sorted, 25)
 
   return (
     <>
@@ -185,13 +189,14 @@ export function LeaderboardTable({
         <table className="tbl tbl-sticky tbl-hover tbl-zebra" style={{ minWidth: "62rem" }}>
           <SortableHeader columns={columns} sortKey={sortKey} sortDir={sortDir} onSort={toggle} />
           <tbody>
-            {sorted.map((c) => (
+            {slice.map((c) => (
               <LeaderRow key={c.channel_id} c={c} mode={mode} win={win}
               cover={coverage?.[c.channel_id]} />
             ))}
           </tbody>
         </table>
       </div>
+      <Pager {...pager} unit="channels" />
     </>
   )
 }
