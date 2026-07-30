@@ -118,27 +118,27 @@ export default async function ChannelPage({
       </div>
       <StillPulling rows={stillRows} channelClassified={comments?.channel.totals.classified ?? 0} />
 
-      <div className="section-kicker">
-        <span className="kicker">what {channel.is_self ? "your" : "their"} viewers ask</span>
-        <span className="rule" />
-        {comments && (
-          <span className="cap">
-            {fmtInt(comments.channel.totals.ingested)} in {comments.channel.totals.window_days}d
-          </span>
-        )}
-      </div>
-      {comments ? (
-        <CommentTable rows={comments.channel.top} byCategory={comments.channel.by_category}
-          totals={comments.channel.totals} />
-      ) : (
-        <div className="card pad">
-          <p className="note" style={{ margin: 0 }}>
-            The comment ledger has not reached this channel yet. It fills on the next daily
-            sweep with spare quota; {channelsWithComments} of {bundle.channels.length} channels
-            are in so far.
-          </p>
+      <details>
+        <summary>
+          comments{comments ? ` · ${fmtInt(comments.channel.totals.ingested)} ingested` : ""}
+        </summary>
+        <div className="section-kicker">
+          <span className="kicker">what {channel.is_self ? "your" : "their"} viewers ask</span>
+          <span className="rule" />
         </div>
-      )}
+        {comments ? (
+          <CommentTable rows={comments.channel.top} byCategory={comments.channel.by_category}
+            totals={comments.channel.totals} />
+        ) : (
+          <div className="card pad">
+            <p className="note" style={{ margin: 0 }}>
+              The comment ledger has not reached this channel yet. It fills on the next daily
+              sweep with spare quota; {channelsWithComments} of {bundle.channels.length} channels
+              are in so far.
+            </p>
+          </div>
+        )}
+      </details>
     </section>
   )
 }
