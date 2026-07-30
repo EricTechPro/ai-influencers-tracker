@@ -19,4 +19,8 @@ describe("compareHref", () => {
   it("does not pair you with yourself", () => {
     expect(compareHref(["SELF"], "SELF", "30d")).toBeNull()
   })
+
+  it("refuses a blank side rather than rendering a malformed link", () => {
+    expect(compareHref(["UC1"], "", "30d")).toBeNull()
+  })
 })

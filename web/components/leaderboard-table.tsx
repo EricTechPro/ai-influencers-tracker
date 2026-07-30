@@ -17,7 +17,7 @@ import {
 import { AvatarPeek } from "./avatar"
 import { CompareBar } from "./compare-bar"
 import { Pager, usePager } from "./pager"
-import { useTableSort, type SortColumn } from "./sortable-table"
+import { SortableHeader, useTableSort, type SortColumn } from "./sortable-table"
 import { Chip, Derived } from "./trust"
 import { WindowTabs } from "./window-tabs"
 
@@ -197,33 +197,13 @@ export function LeaderboardTable({
           lines, and matches how the other dense tables behave. */}
       <div className="tblwrap">
         <table className="tbl tbl-sticky tbl-hover tbl-zebra" style={{ minWidth: "62rem" }}>
-          {/* SortableHeader has no slot for a leading, unsorted column, so the
-              checkbox header is built here rather than growing that shared
-              component for one caller. */}
-          <thead>
-            <tr>
-              <th className="pickcol"><span className="sr-only">select to compare</span></th>
-              {columns.map((col) => {
-                const active = col.key === sortKey
-                const ariaSort = active
-                  ? sortDir === -1
-                    ? ("descending" as const)
-                    : ("ascending" as const)
-                  : ("none" as const)
-                const arrow = active ? (sortDir === -1 ? "▾" : "▴") : "↕"
-                return (
-                  <th key={col.key} aria-sort={ariaSort}
-                    className={col.align === "right" ? "r" : undefined} title={col.tip}>
-                    <button type="button" className={active ? "thsort on" : "thsort"}
-                      onClick={() => toggle(col.key)} title={`Sort by ${col.label}`}>
-                      <span className="thlabel">{col.label}</span>
-                      <span className="tharrow" aria-hidden="true">{arrow}</span>
-                    </button>
-                  </th>
-                )
-              })}
-            </tr>
-          </thead>
+          <SortableHeader
+            columns={columns}
+            sortKey={sortKey}
+            sortDir={sortDir}
+            onSort={toggle}
+            leading={<th className="pickcol"><span className="sr-only">select to compare</span></th>}
+          />
           <tbody>
             {slice.map((c) => (
               <LeaderRow key={c.channel_id} c={c} mode={mode} win={win}

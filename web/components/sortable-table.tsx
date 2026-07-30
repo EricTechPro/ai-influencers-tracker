@@ -1,6 +1,7 @@
 "use client"
 
 import { useCallback, useMemo, useState } from "react"
+import type { ReactNode } from "react"
 import { compareSortValues, type SortDir, type SortValue } from "@/lib/sort"
 
 export interface SortColumn<K extends string> {
@@ -52,15 +53,21 @@ export function SortableHeader<K extends string>({
   sortKey,
   sortDir,
   onSort,
+  leading,
 }: {
   columns: SortColumn<K>[]
   sortKey: K
   sortDir: SortDir
   onSort: (key: K) => void
+  /** An extra, unsorted `<th>` rendered before the sortable columns — the
+   *  leaderboard's selection checkbox column, for one. Optional so every
+   *  other table using this header is unaffected. */
+  leading?: ReactNode
 }) {
   return (
     <thead>
       <tr>
+        {leading}
         {columns.map((col) => {
           const active = col.key === sortKey
           const sortable = col.sortable !== false

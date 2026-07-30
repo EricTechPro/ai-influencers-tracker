@@ -63,6 +63,31 @@ describe("SortableHeader aria-sort", () => {
     expect(bCell).not.toContain("<button")
     expect(bCell).not.toContain("aria-sort")
   })
+
+  // The leaderboard's checkbox column has no sort of its own, so it rides in
+  // as `leading` rather than growing this header's own column model.
+  it("renders leading before the mapped columns when given one", () => {
+    const html = renderToStaticMarkup(
+      <table>
+        <SortableHeader
+          columns={COLUMNS}
+          sortKey="a"
+          sortDir={-1}
+          onSort={() => {}}
+          leading={<th data-testid="leading-cell">pick</th>}
+        />
+      </table>
+    )
+    const leadingIndex = html.indexOf("leading-cell")
+    const firstColumnIndex = html.indexOf(">A<")
+    expect(leadingIndex).toBeGreaterThan(-1)
+    expect(leadingIndex).toBeLessThan(firstColumnIndex)
+  })
+
+  it("omitting leading renders no extra cell, so every other caller is unaffected", () => {
+    const html = renderHeader("a", -1)
+    expect(html).not.toContain("leading-cell")
+  })
 })
 
 interface Row {
