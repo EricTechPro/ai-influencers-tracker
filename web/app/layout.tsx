@@ -25,9 +25,9 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <div className="navrule">
           <header className="appnav">
             <span className="logo">AI INFLUENCERS</span>
-            {/* useSearchParams needs a Suspense boundary under static rendering, and
-                /topics has no page-level searchParams read to force it dynamic on its
-                own — without this, `npm run build` fails only on that one route. */}
+            {/* NavLinks calls useSearchParams, which requires a Suspense boundary under
+                static rendering. This boundary provides defensive protection: if any route
+                becomes static without reading searchParams, the nav will still hydrate correctly. */}
             <Suspense fallback={<nav />}>
               <NavLinks />
             </Suspense>
