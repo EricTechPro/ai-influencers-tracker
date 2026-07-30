@@ -77,4 +77,22 @@ describe("groupFeedByTopic", () => {
     expect(out[0].views).toBe(0)
     expect(out[0].videos).toHaveLength(1)
   })
+
+  it("preserves first-appearance order when groups have equal views (stable sort)", () => {
+    const rows = [
+      row({ video_id: "a", view_count: 100 }),
+      row({ video_id: "b", view_count: 100 }),
+    ]
+    const out = groupFeedByTopic(rows, (id) => (id === "a" ? ["first"] : ["second"]))
+    expect(out.map((g) => g.topic_id)).toEqual(["first", "second"])
+  })
+
+  it("deduplicates topic IDs to prevent double-counting within a group", () => {
+    const rows = [row({ video_id: "a", view_count: 100 })]
+    const out = groupFeedByTopic(rows, () => ["x", "x"])
+    expect(out).toHaveLength(1)
+    expect(out[0].topic_id).toBe("x")
+    expect(out[0].videos).toHaveLength(1)
+    expect(out[0].views).toBe(100)
+  })
 })

@@ -4,8 +4,12 @@ export interface TopicGroup {
   /** null is the untopiced group: 46 of the 153 feed videos carry no
    *  assignment, and dropping them would hide 30% of what broke out. */
   topic_id: string | null
+  /** videos in this group. A video assigned to N topics appears in N groups,
+   *  so this is a per-group figure and is not additive across the array. */
   videos: RecentRow[]
   creators: number
+  /** sum of view_count for videos in this group. Per-group figure: a video
+   *  assigned to N topics contributes to N groups, so do not sum across all groups. */
   views: number
   /** mean of the vidIQ scores that exist. vidIQ's individual numbers are never
    *  recomputed; averaging them is our arithmetic, so callers label it Derived. */
@@ -19,7 +23,8 @@ export function groupFeedByTopic(
   const buckets = new Map<string | null, RecentRow[]>()
   for (const r of rows) {
     const topics = topicsOf(r.video_id)
-    const keys: (string | null)[] = topics.length > 0 ? topics : [null]
+    // Deduplicate topic IDs to prevent double-counting if callback returns duplicates
+    const keys: (string | null)[] = topics.length > 0 ? [...new Set(topics)] : [null]
     for (const k of keys) {
       const list = buckets.get(k) ?? []
       list.push(r)
