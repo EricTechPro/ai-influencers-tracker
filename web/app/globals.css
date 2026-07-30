@@ -394,6 +394,17 @@ img.avatar { object-fit: cover; background: var(--secondary); }
 .cattabs .t.on { border-color: var(--foreground); color: var(--foreground); font-weight: 500; }
 .cattabs .t b { font-weight: 600; color: var(--foreground); }
 
+/* /channels: a directory row rather than a table row, so the roster reads as
+   scannable cards, not a ninth copy of the leaderboard's grid. */
+.chsearch { border: 1px solid var(--border); background: var(--card); padding: 4px 9px; font: inherit; font-size: 12px; min-width: 16rem; }
+.directory { display: flex; flex-direction: column; gap: 1px; margin-top: 0.6rem; }
+.dirrow { display: flex; align-items: center; gap: 10px; padding: 8px 10px; background: var(--card); border: 1px solid var(--border); border-top-width: 0; }
+.dirrow:first-child { border-top-width: 1px; }
+.dirrow.youcard { background: color-mix(in srgb, var(--primary) 3%, var(--card)); }
+.dirlink { flex: 1; min-width: 0; }
+.dirmeta { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.dirmeta .chname { max-width: none; }
+
 .callout { border: 1px solid; padding: 0.9rem 1.1rem; font-size: 13px; }
 .callout.warn { border-color: color-mix(in srgb, var(--warning) 55%, transparent); background: color-mix(in srgb, var(--warning) 5%, transparent); }
 .callout.inf { border-color: color-mix(in srgb, var(--inf) 40%, var(--border)); background: color-mix(in srgb, var(--inf) 3%, var(--card)); }

@@ -32,6 +32,7 @@ function chan(over: Partial<SlimChannel>): SlimChannel {
     status: "ok",
     category: "ai-creator",
     niche: null,
+    lang: null,
     subscriber_bucket: 1000,
     subscriber_count: 219000,
     view_count: 1000000,

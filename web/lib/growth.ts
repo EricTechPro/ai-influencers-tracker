@@ -18,6 +18,7 @@ export type SlimChannel = Pick<
   | "status"
   | "category"
   | "niche"
+  | "lang"
   | "subscriber_bucket"
   | "subscriber_count"
   | "view_count"
@@ -44,6 +45,7 @@ export function slimChannel(row: ChannelRow, avatarUrl: string | null): SlimChan
     status: row.status,
     category: row.category,
     niche: row.niche,
+    lang: row.lang,
     subscriber_bucket: row.subscriber_bucket,
     subscriber_count: row.subscriber_count,
     view_count: row.view_count,
