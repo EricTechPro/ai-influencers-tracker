@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key><string>ca.erictech.ait-snapshot</string>
+  <key>StartCalendarInterval</key>
+  <dict><key>Hour</key><integer>9</integer><key>Minute</key><integer>0</integer></dict>
+  <key>WorkingDirectory</key>
+  <string>/Users/erictech/Desktop/EricOS/projects/ai-influencers-tracker</string>
+  <key>ProgramArguments</key>
+  <array><string>/opt/homebrew/bin/python3</string><string>-m</string><string>pipeline.snapshot</string></array>
+  <key>StandardOutPath</key>
+  <string>/Users/erictech/Desktop/EricOS/projects/ai-influencers-tracker/.logs/snapshot.log</string>
+  <key>StandardErrorPath</key>
+  <string>/Users/erictech/Desktop/EricOS/projects/ai-influencers-tracker/.logs/snapshot.err</string>
+  <key>RunAtLoad</key><false/>
+</dict>
+</plist>
