@@ -641,7 +641,11 @@ export function GapCell({ value }: { value: GapValue }) {
 
   return (
     <span className={cls} style={strong ? { fontWeight: 600 } : undefined}>
+      {/* Corrected during execution: the glyph alone is aria-hidden, so a screen
+          reader heard "3.2×" with no idea who was ahead. The sr-only word is the
+          direction signal for assistive tech; the glyph is its visual twin. */}
       {glyph && <span aria-hidden="true">{glyph} </span>}
+      {value.direction && <span className="sr-only">{value.direction} </span>}
       {body}
       {value.qualifier ? ` ${value.qualifier}` : ""}
     </span>
