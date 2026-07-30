@@ -113,9 +113,15 @@ CHANNELS ───────────────────────�
   ● Eric Tech ★          @erictech
     69K subs · 340 videos · en                            you
 
-  ○ Some Channel         @somechannel      absent since 2026-06-11
+  ○ Some Channel         @somechannel                          absent
     last seen 21.4K subs · 88 videos
 ```
+
+**Corrected during execution: there is no `absent since` date.** `ChannelRow` carries `status` but
+no date field, so the wireframe above originally promised a date the directory cannot render. The
+date *is* derivable — `snapshots.json` series rows carry `date` and `status` — but only by loading
+a second bundle into this page, which is not worth it for a row that says "this channel went
+private". The row shows an `absent` chip and its last-seen figures, and invents nothing.
 
 `ChannelsTable` stops being a sortable stats table. The rank column, the window tabs, and every
 Δ column leave — they belong to `/`. What remains is enough to recognise a channel: face, name,

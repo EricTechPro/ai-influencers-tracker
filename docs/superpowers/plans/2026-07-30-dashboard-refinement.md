@@ -1191,7 +1191,11 @@ Expected: PASS, 7 tests
 
 - [ ] **Step 5: Build the directory component**
 
-Create `web/components/channel-directory.tsx`: a `"use client"` component with a search `<input>`, a `.tabs` group of category buttons (`all`, `ai-creator`, `company`, `adjacent`, `you`), and one row per channel showing avatar, name, `@handle`, `subs · videos · lang`, and either a `compare →` link or the `you` chip. An `absent` channel renders `absent since <date>` and its last-seen figures instead of current ones.
+Create `web/components/channel-directory.tsx`: a `"use client"` component with a search `<input>`, a `.tabs` group of category buttons (`all`, `ai-creator`, `company`, `adjacent`, `you`), and one row per channel showing avatar, name, `@handle`, `subs · videos · lang`, and either a `compare →` link or the `you` chip. An `absent` channel renders an `absent` chip and its last-seen figures instead of current ones.
+
+**Corrected during execution:** an earlier draft of this step said `absent since <date>`.
+`ChannelRow` has no date field, so that promised something this page cannot render without loading
+`snapshots.json` as a second bundle. Render the chip and the last-seen figures; invent no date.
 
 Delete `web/components/channels-table.tsx` and point `app/channels/page.tsx` at the new component.
 
