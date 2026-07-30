@@ -15,8 +15,9 @@ import {
   stateExplain,
 } from "@/lib/trust"
 import { AvatarPeek } from "./avatar"
+import { CompareBar } from "./compare-bar"
 import { Pager, usePager } from "./pager"
-import { SortableHeader, useTableSort, type SortColumn } from "./sortable-table"
+import { useTableSort, type SortColumn } from "./sortable-table"
 import { Chip, Derived } from "./trust"
 import { WindowTabs } from "./window-tabs"
 
@@ -44,14 +45,23 @@ export type CoverageMap = Record<string, { videos: number; comments: number | nu
 export function LeaderboardTable({
   channels,
   coverage,
+  selfId,
 }: {
   channels: SlimChannel[]
   coverage?: CoverageMap
+  selfId: string
 }) {
   const [mode, setMode] = useState<RankMode>("growth")
   const [win, setWin] = useState<WindowKey>("90d")
   const [niche, setNiche] = useState<string>("all")
   const [cats, setCats] = useState<Set<Cat>>(new Set(CATS))
+  // Selection is keyed on channel_id, not row index, so re-sorting or paging
+  // never silently swaps who is selected. A third tick drops the oldest
+  // rather than refusing the click.
+  const [picked, setPicked] = useState<string[]>([])
+  const togglePicked = useCallback((id: string) => {
+    setPicked((p) => (p.includes(id) ? p.filter((x) => x !== id) : [...p, id].slice(-2)))
+  }, [])
 
   const columns: SortColumn<Key>[] = [
     {
@@ -187,16 +197,45 @@ export function LeaderboardTable({
           lines, and matches how the other dense tables behave. */}
       <div className="tblwrap">
         <table className="tbl tbl-sticky tbl-hover tbl-zebra" style={{ minWidth: "62rem" }}>
-          <SortableHeader columns={columns} sortKey={sortKey} sortDir={sortDir} onSort={toggle} />
+          {/* SortableHeader has no slot for a leading, unsorted column, so the
+              checkbox header is built here rather than growing that shared
+              component for one caller. */}
+          <thead>
+            <tr>
+              <th className="pickcol"><span className="sr-only">select to compare</span></th>
+              {columns.map((col) => {
+                const active = col.key === sortKey
+                const ariaSort = active
+                  ? sortDir === -1
+                    ? ("descending" as const)
+                    : ("ascending" as const)
+                  : ("none" as const)
+                const arrow = active ? (sortDir === -1 ? "▾" : "▴") : "↕"
+                return (
+                  <th key={col.key} aria-sort={ariaSort}
+                    className={col.align === "right" ? "r" : undefined} title={col.tip}>
+                    <button type="button" className={active ? "thsort on" : "thsort"}
+                      onClick={() => toggle(col.key)} title={`Sort by ${col.label}`}>
+                      <span className="thlabel">{col.label}</span>
+                      <span className="tharrow" aria-hidden="true">{arrow}</span>
+                    </button>
+                  </th>
+                )
+              })}
+            </tr>
+          </thead>
           <tbody>
             {slice.map((c) => (
               <LeaderRow key={c.channel_id} c={c} mode={mode} win={win}
-              cover={coverage?.[c.channel_id]} />
+                cover={coverage?.[c.channel_id]}
+                picked={picked.includes(c.channel_id)} onTogglePicked={() => togglePicked(c.channel_id)} />
             ))}
           </tbody>
         </table>
       </div>
       <Pager {...pager} unit="channels" />
+      <CompareBar picked={picked} channels={channels} selfId={selfId} win={win}
+        onClear={() => setPicked([])} />
     </>
   )
 }
@@ -218,16 +257,29 @@ function stateText(cell: SlimChannel["subscriber_delta"][WindowKey]): string {
 
 const stateTitle = stateExplain
 
-function LeaderRow({ c, mode, win, cover }: {
+function LeaderRow({ c, mode, win, cover, picked, onTogglePicked }: {
   c: SlimChannel
   mode: RankMode
   win: WindowKey
   cover?: { videos: number; comments: number | null }
+  picked: boolean
+  onTogglePicked: () => void
 }) {
   const stats = peekStats(c, cover)
+  const pickCell = (
+    <td className="pickcol">
+      <input
+        type="checkbox"
+        checked={picked}
+        onChange={onTogglePicked}
+        aria-label={`select ${c.name} to compare`}
+      />
+    </td>
+  )
   if (c.status === "absent") {
     return (
       <tr>
+        {pickCell}
         <td className="muted num">--</td>
         <td>
           <Link href={`/channels/${c.channel_id}`} className="chcell">
@@ -250,6 +302,7 @@ function LeaderRow({ c, mode, win, cover }: {
   const per1k = c.subs_per_1k_views[win]
   return (
     <tr className={c.is_self ? "youcard" : undefined}>
+      {pickCell}
       <td className="num">{c.rank[mode][win] ?? "--"}</td>
       <td>
         <Link href={`/channels/${c.channel_id}`} className="chcell">

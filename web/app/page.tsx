@@ -6,7 +6,8 @@ import { LeaderboardTable } from "@/components/leaderboard-table"
  *  all 72 was the same answer twice, and the shorter one was never the one being read. */
 export default function LeaderboardPage() {
   const meta = loadMeta()
-  const channels = loadChannels().channels.map((c) =>
+  const bundle = loadChannels()
+  const channels = bundle.channels.map((c) =>
     slimChannel(c, channelAvatarUrl(c.channel_id))
   )
   // Coverage is a filesystem read, so it is resolved here and handed to the
@@ -26,7 +27,7 @@ export default function LeaderboardPage() {
         <span className="rule" />
         <span className="cap">{meta.channels.total} tracked</span>
       </div>
-      <LeaderboardTable channels={channels} coverage={coverage} />
+      <LeaderboardTable channels={channels} coverage={coverage} selfId={bundle.self_channel_id} />
     </section>
   )
 }
