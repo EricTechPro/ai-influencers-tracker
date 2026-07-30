@@ -39,6 +39,22 @@ interface Row {
   them: ReactNode
   you: ReactNode
   gap: GapValue
+  /** the two dates each side's window resolved to; renders as a collapsible row */
+  detail?: ReactNode
+}
+
+/** The two dates a window actually resolved to, for the row a reader expands
+ *  to check. `from`/`to` are absent on unresolved windows (building, blocked). */
+function windowDates(a: StateCell | undefined, b: StateCell | undefined): ReactNode {
+  const span = (c: StateCell | undefined) =>
+    c?.from && c?.to ? `${c.from} → ${c.to}` : "no resolved dates"
+  return <span className="mono10">them {span(a)} · you {span(b)}</span>
+}
+
+/** "long" never pluralises here (matches the FORMATS tab label above); "short"
+ *  does, including at zero, because zero Shorts is a real measurement. */
+function formatMix(long: number, short: number): string {
+  return `${long} long · ${short} short${short === 1 ? "" : "s"}`
 }
 
 export function CompareTable({
@@ -70,16 +86,18 @@ export function CompareTable({
       gap: gap(them.subscriber_count, you.subscriber_count),
     },
     {
-      label: <Derived formula="last snapshot minus first snapshot in window">Δ subs</Derived>,
+      label: <Derived formula="Subscribers at the end of the window minus subscribers at the start.">subs gained</Derived>,
       them: deltaText(them.subscriber_delta[win]),
       you: deltaText(you.subscriber_delta[win]),
       gap: gap(okValue(them.subscriber_delta[win]), okValue(you.subscriber_delta[win])),
+      detail: windowDates(them.subscriber_delta[win], you.subscriber_delta[win]),
     },
     {
-      label: <Derived formula="Δ subs divided by subs at window start">growth rate</Derived>,
+      label: <Derived formula="Subscribers gained, as a share of what the channel had when the window started.">growth rate</Derived>,
       them: pctText(them.subscriber_growth_rate[win]),
       you: pctText(you.subscriber_growth_rate[win]),
       gap: gap(okValue(them.subscriber_growth_rate[win]), okValue(you.subscriber_growth_rate[win])),
+      detail: windowDates(them.subscriber_growth_rate[win], you.subscriber_growth_rate[win]),
     },
   ]
 
@@ -91,13 +109,14 @@ export function CompareTable({
       gap: gap(them.view_count, you.view_count),
     },
     {
-      label: <Derived formula="exact viewCount delta over window">Δ views</Derived>,
+      label: <Derived formula="Total views at the end of the window minus total views at the start. Exact, never rounded.">views gained</Derived>,
       them: deltaText(them.view_delta[win]),
       you: deltaText(you.view_delta[win]),
       gap: gap(okValue(them.view_delta[win]), okValue(you.view_delta[win])),
+      detail: windowDates(them.view_delta[win], you.view_delta[win]),
     },
     {
-      label: <Derived formula="Δ subs divided by Δ views, times 1000">subs / 1k views</Derived>,
+      label: <Derived formula="How many subscribers each thousand views brought in. Higher means the audience converts better.">subs per 1,000 views</Derived>,
       them: fmtCell(them.subs_per_1k_views[win]),
       you: fmtCell(you.subs_per_1k_views[win]),
       gap: gap(okValue(them.subs_per_1k_views[win]), okValue(you.subs_per_1k_views[win])),
@@ -106,25 +125,25 @@ export function CompareTable({
 
   const output: Row[] = [
     {
-      label: <Derived formula="videos published inside the window; their views are lifetime totals, not views earned in the window">videos published</Derived>,
+      label: <Derived formula="Videos posted inside the window. Their view counts are lifetime totals, not views earned during the window.">videos published</Derived>,
       them: t.stats.videos,
       you: y.stats.videos,
       gap: gap(t.stats.videos, y.stats.videos),
     },
     ...(format === "all" ? [{
-      label: "mix",
-      them: `${t.mix.long}L · ${t.mix.short}S`,
-      you: `${y.mix.long}L · ${y.mix.short}S`,
+      label: <Derived formula="How those videos split between long-form and Shorts.">long vs shorts</Derived>,
+      them: formatMix(t.mix.long, t.mix.short),
+      you: formatMix(y.mix.long, y.mix.short),
       gap: { kind: "unknown", magnitude: null, direction: null, qualifier: null } as GapValue,
     }] : []),
     {
-      label: <Derived formula="median of exact lifetime viewCounts, videos published in window">median views</Derived>,
+      label: <Derived formula="The middle value: half these videos did better, half did worse. Lifetime views, not views earned during the window.">typical views per video</Derived>,
       them: t.stats.medianViews === null ? "--" : fmtInt(t.stats.medianViews),
       you: y.stats.medianViews === null ? "--" : fmtInt(y.stats.medianViews),
       gap: gap(t.stats.medianViews, y.stats.medianViews),
     },
     {
-      label: <Derived formula={CADENCE_FORMULA}>cadence</Derived>,
+      label: <Derived formula={CADENCE_FORMULA}>days between uploads</Derived>,
       them: t.cadence === null ? "--" : `${t.cadence}d`,
       you: y.cadence === null ? "--" : `${y.cadence}d`,
       gap: gap(t.cadence, y.cadence, { lowerIsBetter: true, qualifier: "more often" }),
@@ -172,13 +191,25 @@ function Group({ title, rows }: { title: string; rows: Row[] }) {
 }
 
 function RowCells({ row }: { row: Row }) {
+  const [open, setOpen] = useState(false)
   return (
-    <tr>
-      <td>{row.label}</td>
-      <td className="r num">{row.them}</td>
-      <td className="r num">{row.you}</td>
-      <td className="r num"><GapCell value={row.gap} /></td>
-    </tr>
+    <>
+      <tr>
+        <td>
+          {row.detail ? (
+            <button type="button" className="linklike" aria-expanded={open} onClick={() => setOpen(!open)}>
+              {row.label}
+            </button>
+          ) : row.label}
+        </td>
+        <td className="r num">{row.them}</td>
+        <td className="r num">{row.you}</td>
+        <td className="r num"><GapCell value={row.gap} /></td>
+      </tr>
+      {row.detail && open && (
+        <tr><td colSpan={4} className="sub mono10">{row.detail}</td></tr>
+      )}
+    </>
   )
 }
 
