@@ -1,5 +1,6 @@
 import type { Metadata } from "next"
 import type { ReactNode } from "react"
+import { Suspense } from "react"
 import { loadMeta } from "@/lib/bundles"
 import { fmtInt } from "@/lib/trust"
 import { NavLinks } from "@/components/nav-links"
@@ -18,7 +19,12 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <div className="navrule">
           <header className="appnav">
             <span className="logo">AI INFLUENCERS</span>
-            <NavLinks />
+            {/* useSearchParams needs a Suspense boundary under static rendering, and
+                /topics has no page-level searchParams read to force it dynamic on its
+                own — without this, `npm run build` fails only on that one route. */}
+            <Suspense fallback={<nav />}>
+              <NavLinks />
+            </Suspense>
             <div className="right">
               {/* This used to read "1 of 90 days", counting our own sweep files against the
                   default window. True, and read by everyone as how much history the board has —
