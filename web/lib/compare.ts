@@ -1,5 +1,5 @@
 // Pure helpers for /compare. No fs, no react.
-import type { StateCell, VideoRow } from "./types"
+import type { StateCell, VideoRow, WindowKey } from "./types"
 
 /** The value only when the cell earned one. Every non-ok state, `bounded`
  *  included, is missing data: a gap computed across it would invent a number. */
@@ -55,4 +55,51 @@ export function gap(
   // For percent, use directional magnitude: how much ahead/behind as a fraction of them
   const magnitude = ahead ? ratio - 1 : 1 - ratio
   return { kind: "percent", magnitude, direction, qualifier }
+}
+
+export type VideoFormat = "all" | "long" | "short"
+
+const DAY_MS = 86_400_000
+
+export function windowDays(w: WindowKey): number {
+  return Number(w.replace("d", ""))
+}
+
+/** Videos published inside the window. Note what this is not: it is not views
+ *  earned inside the window. Per-video views_gained is `building` on every row
+ *  in the corpus, so lifetime view counts are all that exist. */
+export function videosInWindow(videos: VideoRow[], w: WindowKey, now: Date): VideoRow[] {
+  const cutoff = now.getTime() - windowDays(w) * DAY_MS
+  return videos.filter((v) => Date.parse(v.published_at) >= cutoff)
+}
+
+export function splitByFormat(videos: VideoRow[], format: VideoFormat): VideoRow[] {
+  return format === "all" ? videos : videos.filter((v) => v.type === format)
+}
+
+export interface OutputStats {
+  videos: number
+  long: number
+  short: number
+  /** null when nothing in the set carried a view count; never 0 for "unknown" */
+  medianViews: number | null
+}
+
+export function outputStats(videos: VideoRow[]): OutputStats {
+  const views = videos
+    .map((v) => v.view_count)
+    .filter((n): n is number => n !== null)
+    .sort((a, b) => a - b)
+  const mid = Math.floor(views.length / 2)
+  const medianViews = views.length === 0
+    ? null
+    : views.length % 2 === 1
+      ? views[mid]
+      : (views[mid - 1] + views[mid]) / 2
+  return {
+    videos: videos.length,
+    long: videos.filter((v) => v.type === "long").length,
+    short: videos.filter((v) => v.type === "short").length,
+    medianViews,
+  }
 }
