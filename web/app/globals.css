@@ -104,6 +104,12 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: 13px; }
 .muted { color: var(--muted-foreground); }
 .gain { color: var(--v-make); }
 
+/* The gap column's three states. Hue is never the only signal: GapCell also
+   renders a ▲/▼ glyph, so the cell survives a colourblind reader. */
+.gap-ahead { color: var(--v-make); }
+.gap-behind { color: var(--v-crowded); }
+.gap-even { color: var(--muted-foreground); }
+
 /* Segmented gauges.
    A band name is the output of a comparison; the notch puts the number it was
    compared against back on screen, so "crowded" is legible as a distance past
