@@ -40,6 +40,13 @@ describe("deltaText: a bounded delta renders < N and never a bare number", () =>
   it("bounded", () => {
     expect(deltaText(bounded(50000))).toBe("< 50,000")
   })
+  it("a fractional upper never rounds tighter than itself", () => {
+    // Live subs_per_1k_views bounded cells: 47.3440 must never read "< 47" —
+    // a true value of 47.2 would satisfy the data and contradict the screen.
+    expect(deltaText(bounded(47.344))).toBe("< 48")
+    expect(deltaText(bounded(45.3597))).toBe("< 46")
+    expect(deltaText(bounded(50000))).not.toBe("< 49,999") // exact integers are untouched
+  })
   it("bounded ignores a stray value; belt over the pipeline's braces", () => {
     expect(deltaText({ state: "bounded", value: 12345, upper: 50000 })).toBe("< 50,000")
   })
@@ -63,6 +70,11 @@ describe("pctText", () => {
   })
   it("bounded growth renders < N%", () => {
     expect(pctText(bounded(0.02))).toBe("< 2.0%")
+  })
+  it("a fractional upper never rounds tighter than itself", () => {
+    // 47.31% must render "< 47.4%", never "< 47.3%" — toFixed(1) alone rounds
+    // to nearest and would tighten this one.
+    expect(pctText(bounded(0.4731))).toBe("< 47.4%")
   })
   it("building matches deltaText exactly", () => {
     expect(pctText(building(1, 90))).toBe("building, 1 of 90 days")
@@ -149,6 +161,9 @@ describe("card capping: the hero number never outgrows its card", () => {
   it("a bounded percent stays bounded through the cap", () => {
     expect(capPctText(bounded(0.02))).toEqual({ text: "< 2.0%", exact: null })
     expect(capPctText(bounded(12))).toEqual({ text: "< 1.2k%", exact: "< 1,200.0%" })
+  })
+  it("a fractional bounded percent under the cap ceils too (growth-card feeds subscriber_growth_rate here)", () => {
+    expect(capPctText(bounded(0.4731))).toEqual({ text: "< 47.4%", exact: null })
   })
   it("building and unmeasured states pass through as themselves, never a number", () => {
     expect(capPctText(building(1, 90))).toEqual({ text: "building, 1 of 90 days", exact: null })

@@ -8,6 +8,23 @@ export function fmtInt(n: number): string {
   return Math.round(n).toLocaleString("en-US")
 }
 
+/**
+ * An upper bound never rounds toward the true value. `fmtInt`'s Math.round is
+ * correct for an exact ("ok") measurement, but a `bounded` cell's upper is a
+ * ceiling the true value sits somewhere under — Math.round(47.34) reads
+ * "< 47", which a true value of 47.2 satisfies and the screen contradicts.
+ * Every "< N" and "< N%" ceils instead, so the bound only ever describes
+ * numbers strictly below what it prints.
+ */
+function ceilInt(n: number): string {
+  return Math.ceil(n).toLocaleString("en-US")
+}
+
+/** Same reasoning as `ceilInt`, at one decimal place for a percent. */
+function ceilPct1(pct: number): string {
+  return (Math.ceil(pct * 10) / 10).toFixed(1)
+}
+
 export function signedInt(n: number): string {
   return (n >= 0 ? "+" : "-") + fmtInt(Math.abs(n))
 }
@@ -88,7 +105,16 @@ function capPct(fraction: number): CappedText {
 export function capPctText(cell: StateCell): CappedText {
   if (cell.state === "ok") return capPct(cell.value ?? 0)
   if (cell.state === "bounded") {
-    const capped = capPct(cell.upper ?? 0)
+    const upper = cell.upper ?? 0
+    // Same ceiling reasoning as pctText above: an upper bound must round away
+    // from the true value. capPct's own toFixed(1) rounds to nearest, which
+    // is correct for an exact ("ok") value but would tighten a fractional
+    // bound the same way the un-capped renderer used to (growth-card feeds
+    // subscriber_growth_rate through here, and its bounded uppers are
+    // fractional). The compact k% path above PCT_CAP is untouched: no
+    // bounded cell in the live data reaches it.
+    if (Math.abs(upper) < PCT_CAP) return { text: `< ${ceilPct1(upper * 100)}%`, exact: null }
+    const capped = capPct(upper)
     const strip = (s: string) => `< ${s.replace(/^[+-]/, "")}`
     return { text: strip(capped.text), exact: capped.exact && strip(capped.exact) }
   }
@@ -147,7 +173,7 @@ function buildingText(cell: StateCell): string {
 
 export function deltaText(cell: StateCell): string {
   if (cell.state === "ok") return signedInt(cell.value ?? 0)
-  if (cell.state === "bounded") return `< ${fmtInt(cell.upper ?? 0)}`
+  if (cell.state === "bounded") return `< ${ceilInt(cell.upper ?? 0)}`
   if (cell.state === "building") return buildingText(cell)
   if (cell.state === "blocked") return blockedText(cell)
   return "--"
@@ -155,7 +181,7 @@ export function deltaText(cell: StateCell): string {
 
 export function pctText(cell: StateCell): string {
   if (cell.state === "ok") return signedPct(cell.value ?? 0)
-  if (cell.state === "bounded") return `< ${((cell.upper ?? 0) * 100).toFixed(1)}%`
+  if (cell.state === "bounded") return `< ${ceilPct1((cell.upper ?? 0) * 100)}%`
   if (cell.state === "building") return buildingText(cell)
   if (cell.state === "blocked") return blockedText(cell)
   return "--"
