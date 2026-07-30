@@ -38,6 +38,7 @@ export function RecentFeed({
   selfChannelId,
   topicsByVideo,
   ownCoverage,
+  topicLabels,
 }: {
   bundle: RecentBundle
   avatars: Record<string, string | null>
@@ -46,6 +47,8 @@ export function RecentFeed({
   topicsByVideo: Record<string, string[]>
   /** topic id -> how many of the self channel's videos carry it */
   ownCoverage: Record<string, number>
+  /** topic id -> human label, narrowed server-side to only the ids this feed shows */
+  topicLabels: Record<string, string>
 }) {
   // Both come from config/thresholds.json via the bundle. They were JSX literals, which meant
   // the config block documented a decision it did not control and the copy below ("nothing
@@ -172,8 +175,14 @@ export function RecentFeed({
                 key={g.topic_id ?? "__untopiced"}
               >
                 <div className="ohead">
-                  <span className="otitle">
-                    {g.topic_id ?? `${fmtInt(g.videos.length)} videos have no topic assigned`}
+                  {/* The label is what a reader can act on ("Setting up MCP with Claude Code");
+                      the raw topic id rides the hover for whoever needs to match it to a URL or
+                      a config entry. A group with no assignment states that directly instead of
+                      falling back to a slug that reads as a made-up topic. */}
+                  <span className="otitle" title={g.topic_id ?? undefined}>
+                    {g.topic_id === null
+                      ? `${fmtInt(g.videos.length)} videos have no topic assigned`
+                      : topicLabels[g.topic_id] ?? g.topic_id}
                   </span>
                   <span className="oscore">
                     {g.avgBreakout === null ? (

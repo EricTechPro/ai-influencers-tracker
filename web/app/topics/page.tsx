@@ -1,4 +1,6 @@
-import { channelAvatarUrl, channelVideos, loadChannels, loadMeta, loadRecent, videosById } from "@/lib/bundles"
+import {
+  channelAvatarUrl, channelVideos, loadChannels, loadMeta, loadRecent, loadTopicPages, videosById,
+} from "@/lib/bundles"
 import { RecentFeed } from "@/components/recent-feed"
 
 /**
@@ -8,8 +10,20 @@ import { RecentFeed } from "@/components/recent-feed"
  * its best videos. That is the corpus, and the corpus is not the question — "what is the niche
  * making" takes 25 shelves nobody scrolls, while "what broke out, and is it still climbing" is
  * one screen. Nothing was lost with it: the same counts feed the opportunity blocks on the home
- * page, and every topic still has its own route.
+ * page.
+ *
+ * This is the only one of the five routes that never reads `searchParams`, so without this it is
+ * the only one Next prerenders statically. Two things break under that: NavLinks reads
+ * useSearchParams, which without a page-level dynamic API needs its Suspense fallback for the
+ * static HTML, so the nav ships empty and only appears after client hydration — the four sibling
+ * routes render it inline because reading their own searchParams already makes them dynamic. And
+ * the feed and the snapshot date get baked in at build time instead of read per request, which is
+ * the wrong tradeoff for the one page whose entire job is "what broke out recently." Forcing
+ * dynamic rendering costs static prerendering for this route, matching the other four, and fixes
+ * both.
  */
+export const dynamic = "force-dynamic"
+
 export default function TopicsIndexPage() {
   const recent = loadRecent()
   const meta = loadMeta()
@@ -36,6 +50,17 @@ export default function TopicsIndexPage() {
     ])
   )
   const feedTopics = new Set(Object.values(topicsByVideo).flat())
+
+  // Human labels for the feed's own topic ids ("claude-code-mcp-setup" ->
+  // "Setting up MCP with Claude Code"), narrowed to the ids this feed
+  // actually shows for the same reason the avatars map above is narrowed:
+  // this crosses the RSC boundary on every render.
+  const topicLabels = Object.fromEntries(
+    loadTopicPages()
+      .topics.filter((t) => feedTopics.has(t.topic_id))
+      .map((t) => [t.topic_id, t.label])
+  )
+
   const ownCoverage: Record<string, number> = {}
   for (const v of channelVideos(meta.self_channel_id)) {
     for (const a of v.topic_assignments as { topic_id: string }[]) {
@@ -53,6 +78,7 @@ export default function TopicsIndexPage() {
         selfChannelId={meta.self_channel_id}
         topicsByVideo={topicsByVideo}
         ownCoverage={ownCoverage}
+        topicLabels={topicLabels}
       />
     </section>
   )
