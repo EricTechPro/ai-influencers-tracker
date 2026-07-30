@@ -339,7 +339,10 @@ export function gap(
   if (magnitude >= MULTIPLE_AT) {
     return { kind: "multiple", magnitude, direction, qualifier }
   }
-  return { kind: "percent", magnitude: magnitude - 1, direction, qualifier }
+  // Corrected during execution: `magnitude - 1` is wrong on the behind side.
+  // For 7000 vs 4100 it yields 0.707 where the spec's own example says 41%.
+  // The percent is how far you are above them, or below them — not symmetric.
+  return { kind: "percent", magnitude: ahead ? ratio - 1 : 1 - ratio, direction, qualifier }
 }
 ```
 
