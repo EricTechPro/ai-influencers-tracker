@@ -22,6 +22,7 @@ export function GapCell({ value }: { value: GapValue }) {
   return (
     <span className={cls} style={strong ? { fontWeight: 600 } : undefined}>
       {glyph && <span aria-hidden="true">{glyph} </span>}
+      {value.direction && <span className="sr-only">{value.direction} </span>}
       {body}
       {value.qualifier ? ` ${value.qualifier}` : ""}
     </span>

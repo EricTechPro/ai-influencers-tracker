@@ -39,4 +39,17 @@ describe("GapCell", () => {
     render(<GapCell value={{ kind: "multiple", magnitude: 2, direction: "ahead", qualifier: "more often" }} />)
     expect(screen.getByText(/2×\s*more often/)).toBeTruthy()
   })
+
+  it("renders direction in sr-only text for screen readers", () => {
+    render(<GapCell value={{ kind: "percent", magnitude: 1.17, direction: "ahead", qualifier: null }} />)
+    expect(screen.getByText("ahead")).toBeTruthy()
+    const srText = screen.getByText("ahead")
+    expect(srText.className).toBe("sr-only")
+  })
+
+  it("does not render direction in sr-only for even values", () => {
+    render(<GapCell value={{ kind: "even", magnitude: null, direction: null, qualifier: null }} />)
+    expect(screen.queryByText("ahead")).toBeNull()
+    expect(screen.queryByText("behind")).toBeNull()
+  })
 })
