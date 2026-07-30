@@ -6,9 +6,15 @@ import { fmtInt } from "@/lib/trust"
 import { NavLinks } from "@/components/nav-links"
 import "./globals.css"
 
-export const metadata: Metadata = {
-  title: "AI Influencers Tracker",
-  description: "72 AI/automation YouTube channels and what to make next",
+// A function, not a static object: the roster's own count (meta.channels.total, the same figure
+// every kicker on the site reads) rather than a copy hand-typed here that goes stale the next
+// time a channel is added or dropped — as it already had, silently, at 72 instead of 74.
+export function generateMetadata(): Metadata {
+  const meta = loadMeta()
+  return {
+    title: "AI Influencers Tracker",
+    description: `${meta.channels.total} AI/automation YouTube channels and what to make next`,
+  }
 }
 
 export default function RootLayout({ children }: { children: ReactNode }) {
