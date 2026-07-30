@@ -855,6 +855,9 @@ select.chip:hover { border-color: var(--muted-foreground); }
 .oshelf:last-child { border-bottom: 0; }
 .ohead { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .otitle { font-size: 15px; font-weight: 700; color: var(--primary); }
+/* The untopiced shelf is a state, not a topic, so its title reads as one: muted rather than the
+   primary-colored topic name every other shelf gets. */
+.oshelf.untopiced .otitle { color: var(--muted-foreground); font-weight: 600; }
 .oscore { margin-left: auto; font-size: 15px; font-weight: 700; }
 .ostats {
   display: flex; gap: 16px; flex-wrap: wrap; margin: 5px 0 2px;

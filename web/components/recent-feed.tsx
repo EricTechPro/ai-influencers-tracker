@@ -2,11 +2,13 @@
 
 import { useMemo, useState } from "react"
 import { selectRecent, type FormatKey, type RecentWindow } from "@/lib/recent"
+import { groupFeedByTopic } from "@/lib/topic-groups"
 import type { RecentBundle } from "@/lib/types"
 import { fmtInt } from "@/lib/trust"
 import { GridVideoCard } from "./grid-video-card"
 import { Pager, usePager } from "./pager"
 import { PatternRows } from "./pattern-rows"
+import { Derived } from "./trust"
 
 const WINDOWS: RecentWindow[] = [7, 14, 30]
 
@@ -34,10 +36,16 @@ export function RecentFeed({
   bundle,
   avatars,
   selfChannelId,
+  topicsByVideo,
+  ownCoverage,
 }: {
   bundle: RecentBundle
   avatars: Record<string, string | null>
   selfChannelId: string
+  /** video id -> topic ids, narrowed server-side to only the feed's own videos */
+  topicsByVideo: Record<string, string[]>
+  /** topic id -> how many of the self channel's videos carry it */
+  ownCoverage: Record<string, number>
 }) {
   // Both come from config/thresholds.json via the bundle. They were JSX literals, which meant
   // the config block documented a decision it did not control and the copy below ("nothing
@@ -67,9 +75,18 @@ export function RecentFeed({
     [bundle, window, format, capped, defaultCap, floor]
   )
 
+  // The unit for the grid used to be the video, paged 12 at a time. It is now the topic: the
+  // grouping itself is the chunking, so the ranked grid no longer pages. The tail is still a flat
+  // list (grouping the overflow would just reproduce the noise the cap and floor exist to cut),
+  // so it keeps its own pager.
+  const groups = useMemo(
+    () => groupFeedByTopic(ranked, (id) => topicsByVideo[id] ?? []),
+    [ranked, topicsByVideo]
+  )
+  const untopicedCount = groups.find((g) => g.topic_id === null)?.videos.length ?? 0
+
   // 12 is three full rows at the widest grid and two at the common one, so a page always ends on
   // a complete row rather than one orphan card.
-  const { slice: rankedPage, props: rankedPager } = usePager(ranked, 12)
   const { slice: tailPage, props: tailPager } = usePager(tail, 12)
 
   const failed = bundle.coverage.batches_failed
@@ -149,19 +166,50 @@ export function RecentFeed({
           {ranked.length === 0 ? (
             <p className="note">Nothing cleared {floor}× in this window.</p>
           ) : (
-            <>
-              <div className="ygrid">
-                {rankedPage.map((v) => (
-                  <GridVideoCard
-                    key={v.video_id}
-                    v={v}
-                    avatarUrl={avatars[v.channel_id] ?? null}
-                    isSelf={v.channel_id === selfChannelId}
-                  />
-                ))}
+            groups.map((g) => (
+              <div
+                className={g.topic_id === null ? "oshelf untopiced" : "oshelf"}
+                key={g.topic_id ?? "__untopiced"}
+              >
+                <div className="ohead">
+                  <span className="otitle">
+                    {g.topic_id ?? `${fmtInt(g.videos.length)} videos have no topic assigned`}
+                  </span>
+                  <span className="oscore">
+                    {g.avgBreakout === null ? (
+                      "no scores"
+                    ) : (
+                      <Derived formula="mean of the vidIQ breakout scores in this group">
+                        {g.avgBreakout.toFixed(2)}&times; avg breakout
+                      </Derived>
+                    )}
+                  </span>
+                </div>
+                <div className="ostats">
+                  <span>
+                    {fmtInt(g.videos.length)} videos · {fmtInt(g.creators)} creators
+                  </span>
+                  {g.topic_id === null ? (
+                    <span>
+                      {fmtInt(ranked.length - untopicedCount)} of {fmtInt(ranked.length)} shown
+                      here carry a topic assignment
+                    </span>
+                  ) : (
+                    <span>you: {fmtInt(ownCoverage[g.topic_id] ?? 0)} videos</span>
+                  )}
+                </div>
+                <div className="ygrid" style={{ marginTop: "10px" }}>
+                  {g.videos.map((v) => (
+                    <GridVideoCard
+                      key={v.video_id}
+                      v={v}
+                      avatarUrl={avatars[v.channel_id] ?? null}
+                      isSelf={v.channel_id === selfChannelId}
+                    />
+                  ))}
+                </div>
               </div>
-              <Pager {...rankedPager} unit="videos" perPageOptions={[12, 24, 48]} />
-            </>
+            ))
           )}
 
           {tail.length > 0 && (
@@ -194,17 +242,21 @@ export function RecentFeed({
             </>
           )}
 
-          <div className="section-kicker">
-            <span className="kicker">PATTERNS</span>
-            <span className="rule" />
-            <span className="cap">inference · over vidIQ&apos;s {bundle.videos.length}</span>
-          </div>
-          <PatternRows
-            patterns={bundle.patterns}
-            videos={bundle.videos}
-            avatars={avatars}
-            selfChannelId={selfChannelId}
-          />
+          {bundle.patterns.length > 0 && (
+            <>
+              <div className="section-kicker">
+                <span className="kicker">PATTERNS</span>
+                <span className="rule" />
+                <span className="cap">inference · over vidIQ&apos;s {bundle.videos.length}</span>
+              </div>
+              <PatternRows
+                patterns={bundle.patterns}
+                videos={bundle.videos}
+                avatars={avatars}
+                selfChannelId={selfChannelId}
+              />
+            </>
+          )}
         </>
       )}
     </section>

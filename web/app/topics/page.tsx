@@ -1,4 +1,4 @@
-import { channelAvatarUrl, loadChannels, loadMeta, loadRecent } from "@/lib/bundles"
+import { channelAvatarUrl, channelVideos, loadChannels, loadMeta, loadRecent, videosById } from "@/lib/bundles"
 import { RecentFeed } from "@/components/recent-feed"
 
 /**
@@ -24,9 +24,36 @@ export default function TopicsIndexPage() {
       .map((c) => [c.channel_id, channelAvatarUrl(c.channel_id)])
   )
 
+  // Topic assignments for the feed's own videos, and the self channel's coverage of those same
+  // topics — both narrowed to only what /topics can show, for the same reason the avatars map
+  // above is narrowed to the feed's channels: this crosses the RSC boundary on every render, and
+  // shipping all 11,820 videos' assignments would be a waste.
+  const feedIds = new Set(recent.videos.map((v) => v.video_id))
+  const topicsByVideo = Object.fromEntries(
+    videosById([...feedIds]).map((v) => [
+      v.video_id,
+      (v.topic_assignments as { topic_id: string }[]).map((a) => a.topic_id),
+    ])
+  )
+  const feedTopics = new Set(Object.values(topicsByVideo).flat())
+  const ownCoverage: Record<string, number> = {}
+  for (const v of channelVideos(meta.self_channel_id)) {
+    for (const a of v.topic_assignments as { topic_id: string }[]) {
+      if (feedTopics.has(a.topic_id)) {
+        ownCoverage[a.topic_id] = (ownCoverage[a.topic_id] ?? 0) + 1
+      }
+    }
+  }
+
   return (
     <section className="breakout">
-      <RecentFeed bundle={recent} avatars={avatars} selfChannelId={meta.self_channel_id} />
+      <RecentFeed
+        bundle={recent}
+        avatars={avatars}
+        selfChannelId={meta.self_channel_id}
+        topicsByVideo={topicsByVideo}
+        ownCoverage={ownCoverage}
+      />
     </section>
   )
 }
