@@ -930,7 +930,7 @@ rtk git commit -m "feat(web): /compare becomes a stats comparison"
 
 ---
 
-### Task 6: Row expansion on compare
+### Task 6: Plain-language labels, and row expansion
 
 **Files:**
 - Modify: `web/components/compare-table.tsx`
@@ -938,6 +938,35 @@ rtk git commit -m "feat(web): /compare becomes a stats comparison"
 **Interfaces:**
 - Consumes: `StateCell.from` / `StateCell.to`, already on the bundle
 - Produces: nothing new for other tasks
+
+**Why this task grew.** Eric read the shipped table and asked "cadence, what does that mean? what does mix mean?" A label a reader has to ask about is a broken label. Every row now says what it means in words a person uses, and the `<Derived>` tooltip explains it in a sentence rather than restating the arithmetic.
+
+- [ ] **Step A1: Rename the row labels**
+
+In `web/components/compare-table.tsx`, replace each label and its `formula` string exactly as below. Line numbers are from the current file; match on the label text rather than trusting the number.
+
+| current label | new label | new `formula` string |
+|---|---|---|
+| `Δ subs` | `subs gained` | `Subscribers at the end of the window minus subscribers at the start.` |
+| `growth rate` | `growth rate` | `Subscribers gained, as a share of what the channel had when the window started.` |
+| `Δ views` | `views gained` | `Total views at the end of the window minus total views at the start. Exact, never rounded.` |
+| `subs / 1k views` | `subs per 1,000 views` | `How many subscribers each thousand views brought in. Higher means the audience converts better.` |
+| `videos published` | `videos published` | `Videos posted inside the window. Their view counts are lifetime totals, not views earned during the window.` |
+| `mix` | `long vs shorts` | `How those videos split between long-form and Shorts.` |
+| `median views` | `typical views per video` | `The middle value: half these videos did better, half did worse. Lifetime views, not views earned during the window.` |
+| `cadence` | `days between uploads` | keep `CADENCE_FORMULA` — the channel page uses the same constant and the two must agree |
+
+The `mix` row currently has a bare string label. It becomes a `<Derived formula="...">long vs shorts</Derived>` like its neighbours.
+
+`subscribers` and `views` keep bare labels — they need no explanation.
+
+- [ ] **Step A2: Make the mix cells readable**
+
+`27L · 1S` is the same problem in miniature. Render `27 long · 1 short` instead, and singularise correctly (`1 long`, `1 short`). A count of zero still renders (`0 shorts`), because zero videos of a format is a real measurement, not missing data.
+
+- [ ] **Step A3: Verify**
+
+Run `npx vitest run` from `web/` — the suite must stay green. Then load `http://localhost:3002/compare` and confirm every row label reads as plain English and every dotted-underline tooltip explains rather than restates.
 
 - [ ] **Step 1: Add an optional detail to the Row type**
 
@@ -1625,6 +1654,54 @@ Check against the spec's wireframes. Every number that is not `ok` must render i
 ```bash
 rtk git add -A web
 rtk git commit -m "test(web): verify the five-route refinement end to end"
+```
+
+---
+
+### Task 15: Make the gap visible, not just computed
+
+**Files:**
+- Modify: `web/components/compare-table.tsx`
+- Modify: `web/app/globals.css`
+
+**Why.** Eric asked to make the table "much more interactive, much more cool". The gap column states the difference in words; nothing in the table lets you *see* it. Three changes, all driven by data already on the page — no new bundles, no new claims.
+
+**Interfaces:**
+- Consumes: `GapValue` from `@/lib/compare`
+- Produces: nothing other tasks depend on
+
+- [ ] **Step 1: A proportional bar behind the two number cells**
+
+For rows where both sides are real non-negative numbers, render a thin bar under each channel's figure whose width is that side's share of the pair — `them / (them + you)` and its complement. The bar is decoration for a number that is already printed, so it carries `aria-hidden="true"` and never becomes the only way to read the value.
+
+Rows where either side is not `state: "ok"`, or where the row is `long vs shorts`, render no bar at all. A bar drawn from missing data would imply a measurement that does not exist.
+
+```css
+/* Proportional share of a two-channel row. Decoration under a printed number,
+   never the number itself — see the aria-hidden on the element. */
+.share { display: block; height: 2px; margin-top: 3px; background: var(--muted); }
+.share > i { display: block; height: 100%; background: color-mix(in srgb, var(--primary) 55%, transparent); }
+```
+
+- [ ] **Step 2: Highlight the leading side on hover**
+
+On row hover, the winning channel's cell gets a subtle background. Derive the winner from the row's existing `GapValue.direction` — `"ahead"` means the `you` column leads, `"behind"` means `them` leads, and `even`/`unknown` highlight neither. Do not recompute the comparison; a second implementation of "who won" is how the two drift apart.
+
+- [ ] **Step 3: Expand a row to all six windows**
+
+Task 6 made rows expandable to show the window's resolved `from → to` dates. Extend that panel: for the three windowed audience/reach rows, render the metric at all six windows as a small inline strip, so you can see whether a lead is widening or closing rather than reading one snapshot.
+
+Each window's value renders through the same `deltaText`/`pctText` helpers, so a `building` or `blocked` window shows its state in the strip exactly as it does in the table. Never omit a window from the strip because it has no number — the gap in the series is information.
+
+- [ ] **Step 4: Verify**
+
+Run `npx vitest run` from `web/`. Then load `/compare` and confirm: bars appear only on comparable rows, hover marks the leader, and expanding a windowed row shows six entries with non-ok windows rendered as states.
+
+- [ ] **Step 5: Commit**
+
+```bash
+rtk git add web/components/compare-table.tsx web/app/globals.css
+rtk git commit -m "feat(web): show the gap as a bar, mark the leader, expand to all windows"
 ```
 
 ---
