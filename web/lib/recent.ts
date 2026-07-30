@@ -44,9 +44,15 @@ export function selectRecent(
   opts: RecentOptions,
   today: Date
 ): RecentSelection {
-  const inWindow = bundle.videos.filter(
-    (v) => matchesFormat(v, opts.format) && ageDays(v.published_at, today) <= opts.window
-  )
+  // ageDays has no lower bound of its own: a future-dated published_at would
+  // otherwise satisfy "<= window" in every window between now and then. Zero
+  // future-dated rows exist in the live corpus today; the guard costs nothing
+  // and stops that from being silently true tomorrow.
+  const inWindow = bundle.videos.filter((v) => {
+    if (!matchesFormat(v, opts.format)) return false
+    const age = ageDays(v.published_at, today)
+    return age >= 0 && age <= opts.window
+  })
 
   // One predicate, used both ways. Written twice — once hand-negated — the two had to stay
   // exact complements by inspection, and a row that satisfied neither would vanish silently.

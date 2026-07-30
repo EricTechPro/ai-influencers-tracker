@@ -52,21 +52,23 @@ const channel = {
 // never a bare "0" that would collide with the "never a zero" assertion below.
 const videos = [{ published_at: new Date().toISOString() } as never as VideoRow]
 
+const generatedAt = new Date().toISOString()
+
 describe("WindowTable", () => {
   it("renders one row per window", () => {
-    render(<WindowTable channel={channel} videos={videos} />)
+    render(<WindowTable channel={channel} videos={videos} generatedAt={generatedAt} />)
     for (const w of WINDOWS) {
       expect(screen.getByText(w)).toBeTruthy()
     }
   })
 
   it("shows an ok delta as a signed number", () => {
-    render(<WindowTable channel={channel} videos={videos} />)
+    render(<WindowTable channel={channel} videos={videos} generatedAt={generatedAt} />)
     expect(screen.getByText("+1,400")).toBeTruthy()
   })
 
   it("renders a blocked window as its reason, never as a zero", () => {
-    render(<WindowTable channel={channel} videos={videos} />)
+    render(<WindowTable channel={channel} videos={videos} generatedAt={generatedAt} />)
     expect(screen.getAllByText("1 bad day").length).toBeGreaterThan(0)
     expect(screen.queryByText("0")).toBeNull()
   })

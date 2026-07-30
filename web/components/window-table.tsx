@@ -25,8 +25,14 @@ function per1kText(cell: StateCell): string {
  * the reason it has none (one hover away via `title`) rather than a blank
  * or a zero.
  */
-export function WindowTable({ channel, videos }: { channel: WindowedChannel; videos: VideoRow[] }) {
-  const now = new Date()
+export function WindowTable({ channel, videos, generatedAt }: {
+  channel: WindowedChannel
+  videos: VideoRow[]
+  generatedAt: string
+}) {
+  // The server's clock, not the browser's — see videosInWindow's doc comment
+  // in lib/compare.ts for why this cannot be `new Date()`.
+  const now = new Date(generatedAt)
   return (
     <div className="card tblwrap">
       <table className="tbl tbl-hover" style={{ fontSize: 12 }}>

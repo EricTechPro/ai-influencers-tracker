@@ -53,6 +53,13 @@ describe("selectRecent windows", () => {
     const { ranked } = selectRecent(b, { ...OPTS, window: 7 }, TODAY)
     expect(ranked.map((v) => v.video_id)).toEqual(["in"])
   })
+
+  it("drops a future-dated video instead of counting it in every window", () => {
+    const b = bundle([row({ video_id: "future", published_at: "2026-08-05T00:00:00Z" })])
+    const { ranked, tail } = selectRecent(b, OPTS, TODAY)
+    expect(ranked).toEqual([])
+    expect(tail).toEqual([])
+  })
 })
 
 describe("selectRecent format", () => {

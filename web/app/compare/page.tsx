@@ -1,4 +1,4 @@
-import { channelAvatarUrl, loadChannels, channelVideos } from "@/lib/bundles"
+import { channelAvatarUrl, loadChannels, loadMeta, channelVideos } from "@/lib/bundles"
 import { parseWindow } from "@/lib/window"
 import { fmtInt } from "@/lib/trust"
 import { Avatar } from "@/components/avatar"
@@ -12,6 +12,7 @@ export default async function ComparePage({
 }) {
   const { a, b, w } = await searchParams
   const bundle = loadChannels()
+  const meta = loadMeta()
   const byId = new Map(bundle.channels.map((c) => [c.channel_id, c]))
   const self = bundle.channels.find((c) => c.is_self)
   const defaultA = bundle.channels
@@ -64,7 +65,8 @@ export default async function ComparePage({
           A subscriber comparison across this size gap is not like-for-like. Views carry no such caveat.
         </div>
       )}
-      <CompareTable them={toSide(him)} you={toSide(you)} initialWindow={parseWindow(w)} />
+      <CompareTable them={toSide(him)} you={toSide(you)} initialWindow={parseWindow(w)}
+        generatedAt={meta.generated_at} />
     </section>
   )
 }

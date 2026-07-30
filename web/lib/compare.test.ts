@@ -122,6 +122,16 @@ describe("videosInWindow", () => {
   it("returns an empty array rather than throwing on an empty corpus", () => {
     expect(videosInWindow([], "30d", NOW)).toEqual([])
   })
+
+  it("excludes a null view_count, matching the pipeline's own filter", () => {
+    const v = vid({ published_at: "2026-07-28T00:00:00Z", view_count: null })
+    expect(videosInWindow([v], "7d", NOW)).toHaveLength(0)
+  })
+
+  it("excludes a future-dated video instead of counting it in every window", () => {
+    const v = vid({ published_at: "2026-08-15T00:00:00Z" })
+    expect(videosInWindow([v], "365d", NOW)).toHaveLength(0)
+  })
 })
 
 describe("splitByFormat", () => {

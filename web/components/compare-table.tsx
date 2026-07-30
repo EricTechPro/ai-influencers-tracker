@@ -93,9 +93,16 @@ function ShareBar({ pct }: { pct: number }) {
  *  deltaText and pctText render identical text for building/blocked/etc (both
  *  call the same state helpers) — reusing deltaText's fallback here means
  *  this row's states are worded exactly like every other windowed row's,
- *  never collapsed to a bare "--" the way the table's own fmtCell does. */
+ *  never collapsed to a bare "--" the way the table's own fmtCell used to. */
 function ratioText(cell: StateCell): string {
   return cell.state === "ok" ? (cell.value ?? 0).toFixed(1) : deltaText(cell)
+}
+
+/** A plain measured count, or the unmeasured glyph — the one guard repeated
+ *  at every non-windowed number cell on this page (subscribers, views,
+ *  typical views per video). */
+function numOrDash(v: number | null): string {
+  return v === null ? "--" : fmtInt(v)
 }
 
 /** The metric at all six windows, so a lead reads as widening or closing
@@ -142,8 +149,8 @@ function formatMix(long: number, short: number): string {
 }
 
 export function CompareTable({
-  them, you, initialWindow,
-}: { them: CompareSide; you: CompareSide; initialWindow: WindowKey }) {
+  them, you, initialWindow, generatedAt,
+}: { them: CompareSide; you: CompareSide; initialWindow: WindowKey; generatedAt: string }) {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
@@ -168,7 +175,8 @@ export function CompareTable({
   const themLabel = them.name
   const youLabel = you.is_self ? "you" : you.name
 
-  const now = new Date()
+  // The server's clock, not the browser's — see videosInWindow's doc comment.
+  const now = new Date(generatedAt)
   const outputOf = (side: CompareSide) => {
     const inWindow = videosInWindow(side.videos, win, now)
     const filtered = splitByFormat(inWindow, format)
@@ -184,9 +192,9 @@ export function CompareTable({
   const audience: Row[] = [
     {
       label: "subscribers",
-      them: <>{them.subscriber_count === null ? "--" : fmtInt(them.subscriber_count)}{" "}
+      them: <>{numOrDash(them.subscriber_count)}{" "}
         <Chip>{bucketText(them.subscriber_bucket)}</Chip></>,
-      you: <>{you.subscriber_count === null ? "--" : fmtInt(you.subscriber_count)}{" "}
+      you: <>{numOrDash(you.subscriber_count)}{" "}
         <Chip>{bucketText(you.subscriber_bucket)}</Chip></>,
       gap: gap(them.subscriber_count, you.subscriber_count),
       share: shareOf(them.subscriber_count, you.subscriber_count),
@@ -214,8 +222,8 @@ export function CompareTable({
   const reach: Row[] = [
     {
       label: "views",
-      them: them.view_count === null ? "--" : fmtInt(them.view_count),
-      you: you.view_count === null ? "--" : fmtInt(you.view_count),
+      them: numOrDash(them.view_count),
+      you: numOrDash(you.view_count),
       gap: gap(them.view_count, you.view_count),
       share: shareOf(them.view_count, you.view_count),
     },
@@ -256,8 +264,8 @@ export function CompareTable({
     }] : []),
     {
       label: <Derived formula="The middle value: half these videos did better, half did worse. Lifetime views, not views earned during the window.">typical views per video</Derived>,
-      them: t.stats.medianViews === null ? "--" : fmtInt(t.stats.medianViews),
-      you: y.stats.medianViews === null ? "--" : fmtInt(y.stats.medianViews),
+      them: numOrDash(t.stats.medianViews),
+      you: numOrDash(y.stats.medianViews),
       gap: gap(t.stats.medianViews, y.stats.medianViews),
       share: shareOf(t.stats.medianViews, y.stats.medianViews),
     },
@@ -347,7 +355,13 @@ function RowCells({ row }: { row: Row }) {
   )
 }
 
+/** The collapsed subs/1k cell, in the same words as the expanded strip below
+ *  it. This used to route through `okValue`, which returns null for every
+ *  non-ok state by design (gap arithmetic must never invent a number from a
+ *  bound) — reused here it collapsed a `bounded` or `building` cell to the
+ *  bare "--" reserved for unmeasured, while the same row's expanded strip
+ *  (which already calls ratioText) printed "< 47" or "building, 3 of 7 days"
+ *  one click away. Same cell, same window, two different claims. */
 function fmtCell(cell: StateCell | undefined): string {
-  const v = okValue(cell)
-  return v === null ? "--" : v.toFixed(1)
+  return cell ? ratioText(cell) : "--"
 }

@@ -46,7 +46,8 @@ export default async function ChannelPage({
     topic_id: (v.topic_assignments as { topic_id: string }[])[0]?.topic_id ?? null,
     comments: comments?.videos[v.video_id] ?? null,
   }))
-  const channelsWithComments = loadMeta().comment_health.channels_with_comments
+  const meta = loadMeta()
+  const channelsWithComments = meta.comment_health.channels_with_comments
 
   return (
     <section>
@@ -104,7 +105,7 @@ export default async function ChannelPage({
         <span className="kicker">growth</span>
         <span className="rule" />
       </div>
-      <WindowTable channel={channel} videos={uploads} />
+      <WindowTable channel={channel} videos={uploads} generatedAt={meta.generated_at} />
       <ChannelGrowth
         series={snapshots}
         delta={channel.subscriber_delta}

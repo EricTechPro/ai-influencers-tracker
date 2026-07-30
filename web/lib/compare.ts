@@ -65,12 +65,35 @@ export function windowDays(w: WindowKey): number {
   return Number(w.replace("d", ""))
 }
 
-/** Videos published inside the window. Note what this is not: it is not views
- *  earned inside the window. Per-video views_gained is `building` on every row
- *  in the corpus, so lifetime view counts are all that exist. */
+/**
+ * Videos published inside the window. Note what this is not: it is not views
+ * earned inside the window. Per-video views_gained is `building` on every row
+ * in the corpus, so lifetime view counts are all that exist.
+ *
+ * `now` must be `meta.generated_at`, never the browser's clock: the pipeline's
+ * own videos_published["30d"] anchors to the build's `today`, and a client
+ * anchored to its own `new Date()` drifts from that count through the day and
+ * without bound if `_db` goes unrebuilt. Excluding a null view_count matches
+ * the pipeline's own filter (pipeline/bundles/channels.py) so both surfaces
+ * count the same set.
+ *
+ * The upper bound guards a genuinely future-dated `published_at` from landing
+ * inside every window between now and then. It stops at the end of `now`'s
+ * calendar day rather than at `now`'s own instant: build_data.py sets
+ * generated_at to midnight UTC of the pipeline's `today` regardless of the
+ * hour the build actually ran, so a video published later that same UTC day
+ * is not "future" to the pipeline — its calendar-day videos_published counts
+ * it, and cutting at the exact instant instead of the day would silently
+ * reopen the same drift this fix exists to close.
+ */
 export function videosInWindow(videos: VideoRow[], w: WindowKey, now: Date): VideoRow[] {
   const cutoff = now.getTime() - windowDays(w) * DAY_MS
-  return videos.filter((v) => Date.parse(v.published_at) >= cutoff)
+  const endOfDay = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1) - 1
+  return videos.filter((v) => {
+    if (v.view_count === null) return false
+    const t = Date.parse(v.published_at)
+    return t >= cutoff && t <= endOfDay
+  })
 }
 
 export function splitByFormat(videos: VideoRow[], format: VideoFormat): VideoRow[] {
