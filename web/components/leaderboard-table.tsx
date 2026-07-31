@@ -18,8 +18,8 @@ import {
 import { withWindow } from "@/lib/window"
 import { AvatarPeek } from "./avatar"
 import { CompareBar } from "./compare-bar"
-import { Pager, usePager } from "./pager"
-import { SortableHeader, useTableSort, type SortColumn } from "./sortable-table"
+import { PagedTable } from "./paged-table"
+import type { SortColumn } from "./sortable-table"
 import { Chip, Derived } from "./trust"
 import { WindowTabs } from "./window-tabs"
 
@@ -141,15 +141,6 @@ export function LeaderboardTable({
     [mode, win]
   )
 
-  const { sorted, sortKey, sortDir, toggle } = useTableSort<SlimChannel, Key>(
-    filtered,
-    value,
-    "rank"
-  )
-  // Paged after sorting, never before: page 2 has to be the next 25 of the order on screen, not
-  // the next 25 of the roster's own order re-sorted inside the page.
-  const { slice, props: pager } = usePager(sorted, 25)
-
   return (
     <>
       <div className="controls">
@@ -208,25 +199,23 @@ export function LeaderboardTable({
       {/* Nine columns and a one-line name cap need more width than a narrow
           viewport has. Scrolling sideways beats wrapping every row to two
           lines, and matches how the other dense tables behave. */}
-      <div className="tblwrap">
-        <table className="tbl tbl-sticky tbl-hover tbl-zebra" style={{ minWidth: "62rem" }}>
-          <SortableHeader
-            columns={columns}
-            sortKey={sortKey}
-            sortDir={sortDir}
-            onSort={toggle}
-            leading={<th className="pickcol"><span className="sr-only">select to compare</span></th>}
-          />
-          <tbody>
-            {slice.map((c) => (
-              <LeaderRow key={c.channel_id} c={c} mode={mode} win={win}
-                cover={coverage?.[c.channel_id]}
-                picked={picked.includes(c.channel_id)} onTogglePicked={() => togglePicked(c.channel_id)} />
-            ))}
-          </tbody>
-        </table>
-      </div>
-      <Pager {...pager} unit="channels" />
+      <PagedTable
+        rows={filtered}
+        columns={columns}
+        value={value}
+        initialKey="rank"
+        rowKey={(c) => c.channel_id}
+        unit="channels"
+        empty="no channels match these filters"
+        className="tbl tbl-sticky tbl-hover tbl-zebra"
+        style={{ minWidth: "62rem" }}
+        leadingHeader={<th className="pickcol"><span className="sr-only">select to compare</span></th>}
+        row={(c) => (
+          <LeaderRow c={c} mode={mode} win={win}
+            cover={coverage?.[c.channel_id]}
+            picked={picked.includes(c.channel_id)} onTogglePicked={() => togglePicked(c.channel_id)} />
+        )}
+      />
       <CompareBar picked={picked} channels={channels} selfId={selfId} win={win}
         onClear={() => setPicked([])} />
     </>

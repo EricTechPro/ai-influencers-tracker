@@ -462,35 +462,58 @@ body { margin: 0; }
    The readout leads and the controls sit at the far end, because the sentence "25 of 72" is the
    part that has to be read and the arrows are the part that has to be found. Numerals are
    tabular so the range does not jitter its own width as you page through it. */
+/* The pager, refined.
+   Every long table on the board ends in one of these, so it is read more often than any single
+   number on the page and has to hold still. The composition is one line: the coverage sentence
+   on the left, the size control beside it, the controls pushed right. That order is deliberate.
+   "1-10 of 74" is the sentence and the buttons are how you move; a bare row of numbers tells you
+   where the widget is and never how much you have not seen, and this board's whole contract is
+   that a number never hides what is behind it.
+
+   The type is the board's own mono at 12px with tabular figures, so the readout does not shift
+   width as you page through it. The rule above separates the pager from the last table row
+   without adding a box: the table already has borders, and a second container around the pager
+   would read as a second table. */
 .pager {
-  display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
-  margin: 0.75rem 0 0.25rem; font-size: 12px; color: var(--muted-foreground);
+  display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+  margin: 0; padding: 10px 2px 2px; font-size: 12px; color: var(--muted-foreground);
+  border-top: 1px solid var(--border);
 }
-.pgcount { color: var(--foreground); letter-spacing: 0.01em; }
+.pgcount { color: var(--foreground); letter-spacing: 0.01em; font-variant-numeric: tabular-nums; }
 .pgof { color: var(--muted-foreground); }
 .pgper { display: flex; align-items: center; }
 .pgper label { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; }
 .pgper select {
   font: inherit; font-size: 11px; border: 1px solid var(--border);
-  background: var(--card); padding: 2px 6px;
+  background: var(--card); padding: 2px 6px; color: var(--foreground); cursor: pointer;
 }
-.pgnav { margin-left: auto; display: inline-flex; align-items: center; gap: 2px; }
+.pgper select:hover { border-color: var(--foreground); }
+
+.pgnav { margin-left: auto; display: inline-flex; align-items: center; gap: 3px; }
 .pgnav button {
   font: inherit; font-size: 12px; font-variant-numeric: tabular-nums;
-  min-width: 26px; height: 24px; padding: 0 6px;
+  min-width: 28px; height: 26px; padding: 0 7px;
   border: 1px solid var(--border); background: var(--card); color: var(--foreground);
   cursor: pointer; transition: color 120ms ease, border-color 120ms ease, background 120ms ease;
 }
-.pgnav button:hover:not(:disabled) { color: var(--foreground); border-color: var(--border); }
-.pgnav button.on { font-weight: 600; }
+.pgnav button:hover:not(:disabled):not(.on) { border-color: var(--foreground); }
+.pgnav button:focus-visible { outline: 2px solid var(--primary); outline-offset: 1px; }
 /* The wavy accent the nav links use does not survive being squeezed to one character wide: on a
    "1" it rendered as a small hooked glyph hanging under the button and read as a broken icon.
-   The current page is marked by inverting the box instead, which is legible at any width. */
+   The current page inverts its box instead, which is legible at any width and needs no glyph. */
 .pgnav button.on {
   background: var(--foreground); color: var(--background); border-color: var(--foreground);
+  font-weight: 600; cursor: default;
 }
-.pgnav button:disabled { opacity: 0.3; cursor: default; }
-.pggap { padding: 0 2px; color: var(--muted-foreground); }
+/* The arrows are the same size box as a page number so the row does not step up and down, but
+   they carry no border until you can actually use them — a disabled bordered box on page one
+   reads as a page you failed to click. */
+.pgnav button[aria-label$="page"] { border-color: transparent; background: none; }
+.pgnav button[aria-label$="page"]:hover:not(:disabled) {
+  border-color: var(--border); background: var(--card);
+}
+.pgnav button:disabled { opacity: 0.28; cursor: default; }
+.pggap { padding: 0 2px; color: var(--muted-foreground); user-select: none; }
 /* Sparkline with a readout.
    The line auto-scales to its own min and max, so on its own it looks the same
    whether a channel gained 40 subscribers or 40,000. The endpoints below it

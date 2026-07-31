@@ -75,7 +75,7 @@ function pageList(page: number, count: number): (number | "gap")[] {
 export function Pager({
   page, pageCount, perPage, total, onPage, onPerPage,
   unit = "rows",
-  perPageOptions = [25, 50, 100],
+  perPageOptions = [10, 25, 50, 100],
 }: PagerProps) {
   if (total === 0) return null
   const from = (page - 1) * perPage + 1

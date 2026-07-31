@@ -29,19 +29,22 @@ describe("CommentTable", () => {
     expect(screen.getByText("hello world")).toBeTruthy()
     expect(screen.getByText(/3d after/)).toBeTruthy()
   })
-  it("caps honestly: showing n of ingested when top is a slice", () => {
-    render(<CommentTable rows={Array.from({ length: 8 }, (_, i) => row({ like_count: i }))}
-      byCategory={counts} totals={totals} />)
-    expect(screen.getByText(/showing 5 of 120/)).toBeTruthy()
-    fireEvent.click(screen.getByText("show 10"))
-    expect(screen.getByText(/showing 8 of 120/)).toBeTruthy()
+  it("caps honestly: the 8 rows it holds never pass for the 120 ingested", () => {
+    // The show-more counter became a pager, so the claim moved but must survive: a table
+    // handed a top-N slice has to say it is one. The pager counts what it was given; the
+    // footnote says what that was a slice of.
+    const { container } = render(
+      <CommentTable rows={Array.from({ length: 8 }, (_, i) => row({ like_count: i }))}
+        byCategory={counts} totals={totals} />)
+    expect(container.querySelector(".pgcount")?.textContent).toContain("8")
+    expect(screen.getByText(/top 8 by likes out of 120/)).toBeTruthy()
   })
-  it("sorts by replies when toggled", () => {
+  it("sorts by replies from the column header, not a separate control", () => {
     render(<CommentTable
       rows={[row({ text: "L", like_count: 9, reply_count: 0 }),
              row({ text: "R", like_count: 0, reply_count: 9 })]}
       byCategory={counts} totals={totals} />)
-    fireEvent.click(screen.getByText("replies"))
+    fireEvent.click(screen.getByText("repl"))
     const cells = screen.getAllByTestId("comment-text")
     expect(cells[0].textContent).toBe("R")
   })

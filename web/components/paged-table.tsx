@@ -1,6 +1,6 @@
 "use client"
 
-import type { ReactNode } from "react"
+import { Fragment, type CSSProperties, type ReactNode } from "react"
 import { Pager, usePager } from "./pager"
 import { SortableHeader, useTableSort, type SortColumn } from "./sortable-table"
 import type { SortDir, SortValue } from "@/lib/sort"
@@ -30,10 +30,14 @@ export function PagedTable<T, K extends string>({
   row,
   rowKey,
   unit = "rows",
-  perPage = 25,
+  perPage = 10,
   leadingHeader,
   empty = "nothing matches these filters",
   className = "tbl tbl-hover",
+  colgroup,
+  style,
+  wrapClassName = "tblwrap",
+  footnote,
 }: {
   rows: T[]
   columns: SortColumn<K>[]
@@ -41,16 +45,26 @@ export function PagedTable<T, K extends string>({
   value: (row: T, key: K) => SortValue
   initialKey: K
   initialDir?: SortDir
-  /** the row's cells, without the surrounding <tr> */
+  /** the row's complete markup, `<tr>` included. Returning a fragment of several `<tr>`s is
+   *  how an expandable table renders its detail row under its summary row. */
   row: (row: T) => ReactNode
   rowKey: (row: T) => string
   /** what one row is, for the pager's readout: "channels", "videos" */
   unit?: string
+  /** 10 by default: a table you can read without scrolling beats one you can read all of. */
   perPage?: number
   /** an extra unsorted <th> before the sortable ones, matching SortableHeader's own slot */
   leadingHeader?: ReactNode
   empty?: ReactNode
   className?: string
+  /** fixed column widths, for a table whose layout must not reflow when a tab or sort
+   *  changes. Rendered straight through as the table's own <colgroup>. */
+  colgroup?: ReactNode
+  style?: CSSProperties
+  wrapClassName?: string
+  /** a sentence under the pager: what this table is a slice OF, when that is not the
+   *  same question as which page you are on. */
+  footnote?: ReactNode
 }) {
   // Order the whole set...
   const { sorted, sortKey, sortDir, toggle } = useTableSort(rows, value, initialKey, initialDir)
@@ -61,8 +75,9 @@ export function PagedTable<T, K extends string>({
 
   return (
     <>
-      <div className="tblwrap">
-        <table className={className}>
+      <div className={wrapClassName}>
+        <table className={className} style={style}>
+          {colgroup}
           <SortableHeader
             columns={columns}
             sortKey={sortKey}
@@ -72,12 +87,13 @@ export function PagedTable<T, K extends string>({
           />
           <tbody>
             {slice.map((r) => (
-              <tr key={rowKey(r)}>{row(r)}</tr>
+              <Fragment key={rowKey(r)}>{row(r)}</Fragment>
             ))}
           </tbody>
         </table>
       </div>
       <Pager {...pager} unit={unit} />
+      {footnote}
     </>
   )
 }

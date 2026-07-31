@@ -1,9 +1,10 @@
 "use client"
 
-import { useEffect, useMemo, useRef, useState } from "react"
-import {
-  categoryTabs, filterByCategory, lagText, sortComments,
-} from "@/lib/channel"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { categoryTabs, filterByCategory, lagText } from "@/lib/channel"
+import { PagedTable } from "./paged-table"
+import type { SortColumn } from "./sortable-table"
+import type { SortValue } from "@/lib/sort"
 import { fmtInt } from "@/lib/trust"
 import type { CategoryCounts, CommentCategory, CommentRow } from "@/lib/types"
 
@@ -20,6 +21,27 @@ const COL = {
   creator: 6.5, who: 6.5, cat: 2.8, likes: 4.4, repl: 3.4, video: 8, topic: 7.5, lag: 5.2,
 }
 const COMMENT_MIN = 15
+
+type ColKey =
+  | "creator" | "who" | "comment" | "cat" | "likes" | "replies" | "video" | "topic" | "lag"
+
+/** Built per render rather than as a module constant: the creator and video columns are
+ *  conditional (topic view adds one, the channel view drops the other), and the header has to
+ *  agree with the colgroup and the cells or the whole fixed layout shears by one column. */
+function columns(withCreator: boolean, withVideo: boolean): SortColumn<ColKey>[] {
+  return [
+    ...(withCreator ? [{ key: "creator" as const, label: "creator" }] : []),
+    { key: "who", label: "who" },
+    { key: "comment", label: "comment", sortable: false },
+    { key: "cat", label: "cat" },
+    { key: "likes", label: "likes", align: "right" as const },
+    { key: "replies", label: "repl", align: "right" as const },
+    ...(withVideo ? [{ key: "video" as const, label: "video" }] : []),
+    { key: "topic", label: "topic" },
+    { key: "lag", label: "lag", align: "right" as const,
+      tip: "days between the video going up and the comment" },
+  ]
+}
 const rem = (n: number) => `${n}rem`
 
 /** Clamped to three lines, with the toggle shown only when the text is really
@@ -73,14 +95,22 @@ export function CommentTable({
   creatorNames?: Record<string, string>
 }) {
   const [tab, setTab] = useState<"all" | CommentCategory>("all")
-  const [sortBy, setSortBy] = useState<"likes" | "replies">("likes")
-  const [shown, setShown] = useState(5)
 
-  const visible = useMemo(
-    () => sortComments(filterByCategory(rows, tab), sortBy),
-    [rows, tab, sortBy],
-  )
-  const page = visible.slice(0, shown)
+  const visible = useMemo(() => filterByCategory(rows, tab), [rows, tab])
+  // Every column sorts now. It used to be two buttons offering likes or replies, which meant
+  // "which of these landed late" and "who said this" were questions the table held the answer
+  // to and would not order by.
+  const value = useCallback((r: CommentRow, key: ColKey): SortValue => {
+    if (key === "likes") return r.like_count
+    if (key === "replies") return r.reply_count
+    if (key === "lag") return r.lag_days
+    if (key === "who") return r.author.toLowerCase()
+    if (key === "creator") return creatorNames?.[r.channel_id]?.toLowerCase() ?? r.channel_id
+    if (key === "cat") return r.category?.key ?? null
+    if (key === "video") return r.video_title.toLowerCase()
+    if (key === "topic") return r.topic_ids[0] ?? null
+    return null
+  }, [creatorNames])
   const unclassified = totals.classified === 0
   const minWidth = COL.who + COL.cat + COL.likes + COL.repl + COL.topic + COL.lag + COMMENT_MIN
     + (creatorNames ? COL.creator : 0) + (showVideo ? COL.video : 0)
@@ -94,20 +124,12 @@ export function CommentTable({
               key={t.key}
               className={`t${tab === t.key ? " on" : ""}`}
               disabled={t.key !== "all" && unclassified}
-              onClick={() => { setTab(t.key); setShown(5) }}
+              onClick={() => setTab(t.key)}
             >
               {t.label} <b>{unclassified && t.key !== "all" ? "--" : fmtInt(t.count)}</b>
             </button>
           ))}
         </div>
-        <span className="mono10 sortctl" style={{ marginLeft: "auto" }}>
-          sort
-          {(["likes", "replies"] as const).map((s) => (
-            <button key={s} className={`linklike${sortBy === s ? " on" : ""}`}
-              aria-pressed={sortBy === s}
-              onClick={() => setSortBy(s)}>{s}</button>
-          ))}
-        </span>
       </div>
       {unclassified && (
         <p className="note" style={{ margin: "6px 0 0", fontSize: 11 }}>
@@ -115,9 +137,18 @@ export function CommentTable({
           {fmtInt(byCategory.unsorted)} ingested comments render unlabeled below.
         </p>
       )}
-      <div className="card tblwrap" style={{ marginTop: 8 }}>
-        <table className="tbl tbl-fixed tbl-sticky tbl-hover"
-          style={{ fontSize: 12, minWidth: rem(minWidth) }}>
+      <PagedTable
+        rows={visible}
+        columns={columns(Boolean(creatorNames), showVideo)}
+        value={value}
+        initialKey="likes"
+        rowKey={(r) => r.comment_id}
+        unit="comments"
+        empty="no comments in this category"
+        wrapClassName="card tblwrap"
+        className="tbl tbl-fixed tbl-sticky tbl-hover"
+        style={{ fontSize: 12, minWidth: rem(minWidth) }}
+        colgroup={
           <colgroup>
             {creatorNames && <col style={{ width: rem(COL.creator) }} />}
             <col style={{ width: rem(COL.who) }} />
@@ -129,25 +160,16 @@ export function CommentTable({
             <col style={{ width: rem(COL.topic) }} />
             <col style={{ width: rem(COL.lag) }} />
           </colgroup>
-          <thead>
-            <tr>
-              {creatorNames && <th>creator</th>}
-              <th>who</th>
-              <th>comment</th>
-              <th>cat</th>
-              <th className="r">likes</th>
-              <th className="r">repl</th>
-              {showVideo && <th>video</th>}
-              <th>topic</th>
-              <th className="r">
-                <span className="derived" title="days between the video going up and the comment">
-                  lag
-                </span>
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {page.map((r) => (
+        }
+        footnote={
+          rows.length < totals.ingested ? (
+            <p className="mono10" style={{ marginTop: 6 }}>
+              These are the top {fmtInt(rows.length)} by likes out of {fmtInt(totals.ingested)}
+              {" "}ingested. The pager above slices that {fmtInt(rows.length)}, not the whole set.
+            </p>
+          ) : null
+        }
+        row={(r) => (
               <tr key={r.comment_id}>
                 {creatorNames && (
                   <td className="mono10 ell" title={creatorNames[r.channel_id] ?? r.channel_id}>
@@ -179,21 +201,8 @@ export function CommentTable({
                 </td>
                 <td className="r num nowrap">{lagText(r.lag_days)}</td>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-      <div className="mono10" style={{ marginTop: 6, display: "flex", gap: 10 }}>
-        <span>
-          showing {Math.min(shown, visible.length)} of {fmtInt(totals.ingested)}
-          {rows.length < totals.ingested ? ` · top ${rows.length} by likes` : ""}
-        </span>
-        {shown < visible.length && (
-          <button className="linklike" onClick={() => setShown(shown === 5 ? 10 : shown + 20)}>
-            {shown === 5 ? "show 10" : "show more"}
-          </button>
         )}
-      </div>
+      />
     </div>
   )
 }

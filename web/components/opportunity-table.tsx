@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useCallback, useMemo, useState } from "react"
 import Link from "next/link"
 import type { OppRowModel } from "@/lib/opportunity"
 import { firedThreshold, scoreSortValue, topicSortValue, verdictSentence } from "@/lib/opportunity"
@@ -15,7 +15,8 @@ import {
   VERDICT_LABEL,
   VERDICT_RANK,
 } from "@/lib/trust"
-import { SortableHeader, useTableSort, type SortColumn } from "./sortable-table"
+import { PagedTable } from "./paged-table"
+import type { SortColumn } from "./sortable-table"
 import { AvatarCluster } from "./avatar-cluster"
 import { Meter } from "./meter"
 import { Chip, Derived, VerdictBadge } from "./trust"
@@ -83,9 +84,10 @@ export function OpportunityTable({ models }: { models: OppRowModel[] }) {
     [models, hideCovered, verdictFilter]
   )
 
-  const { sorted, sortKey, sortDir, toggle } = useTableSort<OppRowModel, Key>(
-    filtered,
-    (m, key): SortValue => {
+  // Hoisted out of the table so PagedTable can own the sort/page composition. It sorted the
+  // whole list already and simply never paged it, so 31 topic rows arrived as one wall.
+  const value = useCallback(
+    (m: OppRowModel, key: Key): SortValue => {
       switch (key) {
         case "topic":
           return topicSortValue(m)
@@ -103,7 +105,7 @@ export function OpportunityTable({ models }: { models: OppRowModel[] }) {
           return m.newest_video_at ? new Date(m.newest_video_at).getTime() : null
       }
     },
-    "score"
+    []
   )
 
   return (
@@ -133,22 +135,23 @@ export function OpportunityTable({ models }: { models: OppRowModel[] }) {
           notch = the threshold the band is measured against
         </span>
       </div>
-      <div className="tblwrap">
-        <table className="tbl tbl-hover opptbl">
-          <SortableHeader columns={COLUMNS} sortKey={sortKey} sortDir={sortDir} onSort={toggle} />
-          <tbody>
-            {sorted.map((m) => (
-              <Row
-                key={m.row.topic_id}
-                model={m}
-                expanded={expanded === m.row.topic_id}
-                onToggle={() => setExpanded(expanded === m.row.topic_id ? null : m.row.topic_id)}
-              />
-            ))}
-          </tbody>
-        </table>
-      </div>
-      {sorted.length === 0 && <div className="empty">no rows match these filters</div>}
+      <PagedTable
+        rows={filtered}
+        columns={COLUMNS}
+        value={value}
+        initialKey="score"
+        rowKey={(m) => m.row.topic_id}
+        unit="topics"
+        empty="no rows match these filters"
+        className="tbl tbl-hover opptbl"
+        row={(m) => (
+          <Row
+            model={m}
+            expanded={expanded === m.row.topic_id}
+            onToggle={() => setExpanded(expanded === m.row.topic_id ? null : m.row.topic_id)}
+          />
+        )}
+      />
     </>
   )
 }

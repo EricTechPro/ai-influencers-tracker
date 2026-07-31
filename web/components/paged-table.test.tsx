@@ -21,7 +21,11 @@ function table(rows: Row[], perPage = 3) {
       perPage={perPage}
       unit="rows"
       rowKey={(r) => r.id}
-      row={(r) => <td>{r.id}</td>}
+      row={(r) => (
+        <tr>
+          <td>{r.id}</td>
+        </tr>
+      )}
     />
   )
 }

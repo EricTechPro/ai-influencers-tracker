@@ -119,7 +119,11 @@ export function ChannelDirectory({ channels, win }: { channels: SlimChannel[]; w
         rowKey={(c) => c.channel_id}
         unit="channels"
         empty="no channels match these filters"
-        row={(c) => <DirectoryCells c={c} win={win} />}
+        row={(c) => (
+          <tr>
+            <DirectoryCells c={c} win={win} />
+          </tr>
+        )}
       />
     </>
   )
