@@ -350,6 +350,9 @@ export interface Meta {
     /** distinct days the board can measure over, swept or bought: "how much history" */
     history_days: number
     first_date: string | null
+    /** when the newest daily sweep landed, to the minute. Null for every snapshot written
+     *  before pipeline/snapshot.py started stamping the clock. */
+    fetched_at_utc: string | null
   }
   video_snapshot_health: { days_present: number; videos_tracked: number }
   comment_health: { ingested: number; classified: number; channels_with_comments: number }

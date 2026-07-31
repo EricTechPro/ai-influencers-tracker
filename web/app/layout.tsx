@@ -17,6 +17,21 @@ export function generateMetadata(): Metadata {
   }
 }
 
+/**
+ * When the board's data landed, in the most precise form the sweep recorded.
+ *
+ * `fetched_at_utc` is the newest _raw snapshot's own stamp — a real wall clock. `generated_at` is
+ * the build day anchored to midnight UTC, which is what keeps a rebuild byte-identical, so it can
+ * say the day and nothing finer. Printing "00:00" off it would be an invented measurement.
+ */
+function sweptText(fetchedAtUtc: string | null, generatedAt: string): string {
+  if (!fetchedAtUtc) return `swept ${generatedAt.slice(0, 10)}`
+  const t = new Date(fetchedAtUtc)
+  const date = t.toLocaleDateString(undefined, { year: "numeric", month: "2-digit", day: "2-digit" })
+  const clock = t.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" })
+  return `swept ${date} ${clock}`
+}
+
 export default function RootLayout({ children }: { children: ReactNode }) {
   const meta = loadMeta()
   return (
@@ -40,17 +55,23 @@ export default function RootLayout({ children }: { children: ReactNode }) {
                   backfill — our own sweep has recorded a handful of days — and `vendor` is a
                   distinct trust tier here, so the readout names the split rather than letting the
                   bought history pass as measured. */}
+              {/* Three lines of readout in the header wrapped under the nav on a laptop. The one
+                  thing it has to answer here is how old this is; the rest — how much of the
+                  history is ours rather than vidIQ's backfill, and how many of the last 90 days
+                  the sweep actually recorded — is the same sentence it always was, on the hover.
+                  The clock time comes from the newest _raw snapshot, so it is when the data
+                  landed. A sweep written before that stamp existed says its day and stops. */}
               <span
                 className="num"
                 title={
-                  `daily sweep: ${meta.snapshot_health.days_present} of the last ` +
+                  `${fmtInt(meta.snapshot_health.history_days)} days of history, of which ` +
+                  `${meta.snapshot_health.days_present} of the last ` +
                   `${meta.snapshot_health.days_present + meta.snapshot_health.days_missing} days ` +
-                  `recorded by us. Everything before that is vidIQ backfill. ` +
+                  `were recorded by us. Everything before that is vidIQ backfill. ` +
                   `History since ${meta.snapshot_health.first_date ?? "--"}.`
                 }
               >
-                snapshot {meta.generated_at.slice(0, 10)} · {fmtInt(meta.snapshot_health.history_days)}{" "}
-                days of history ({fmtInt(meta.snapshot_health.days_present)} swept by us)
+                {sweptText(meta.snapshot_health.fetched_at_utc, meta.generated_at)}
               </span>
               <span
                 className="livedot"

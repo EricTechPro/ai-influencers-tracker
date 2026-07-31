@@ -180,62 +180,79 @@ export function LeaderboardTable({
   return (
     <>
       <div className="controls">
-        <span className="note" title="What the # column counts down. It sets the ranking only; every column stays sortable on its own.">
-          rank by
-        </span>
-        <div className="tabs" role="group" aria-label="rank by">
-          {RANK_MODES.map((m) => (
-            <button
-              key={m}
-              type="button"
-              className={m === mode ? "on" : undefined}
-              aria-pressed={m === mode}
-              onClick={() => setMode(m)}
-              title={MODE_TIPS[m]}
-            >
-              {m}
-            </button>
-          ))}
+        <div className="grp">
+          <span className="note" title="What the # column counts down. It sets the ranking only; every column stays sortable on its own.">
+            rank by
+          </span>
+          <div className="tabs" role="group" aria-label="rank by">
+            {RANK_MODES.map((m) => (
+              <button
+                key={m}
+                type="button"
+                className={m === mode ? "on" : undefined}
+                aria-pressed={m === mode}
+                onClick={() => setMode(m)}
+                title={MODE_TIPS[m]}
+              >
+                {m}
+              </button>
+            ))}
+          </div>
         </div>
-        <WindowTabs value={win} onChange={onWindow} />
+
+        <div className="grp">
+          <WindowTabs value={win} onChange={onWindow} />
+        </div>
+
         {/* A dimension with no data is a missing state, not an empty filter. Every one of the 74
             channels has `niche: null`, so this rendered as a fully enabled select holding one
-            option, indistinguishable from a working filter, with the explanation hidden in a
-            `title` that no phone and no keyboard can reach. It renders when there is something to
-            filter by and says so plainly when there is not. */}
-        {niches.length > 0 ? (
-          <select value={niche} onChange={(e) => setNiche(e.target.value)} aria-label="filter by niche">
-            <option value="all">all niches</option>
-            {niches.map((n) => (
-              <option key={n}>{n}</option>
-            ))}
-          </select>
-        ) : (
-          <span className="note">no niches tagged yet</span>
+            option, indistinguishable from a working filter. When there is nothing to filter by it
+            leaves the control row entirely and says so underneath, where a fact belongs. */}
+        {niches.length > 0 && (
+          <div className="grp">
+            <span className="note">niche</span>
+            <select value={niche} onChange={(e) => setNiche(e.target.value)} aria-label="filter by niche">
+              <option value="all">all niches</option>
+              {niches.map((n) => (
+                <option key={n}>{n}</option>
+              ))}
+            </select>
+          </div>
         )}
-        {/* These are the roster's own category tags, set by hand in
-            config/channels.json: who is an independent creator, who is a
-            company channel, who is adjacent to the niche, and who has not been
-            tagged yet. Unlabelled they read as three stray switches. */}
-        <span className="note" title="Each tracked channel is tagged by hand in config/channels.json. Untick a tag to drop those channels from the table.">
-          show
-        </span>
-        {CATS.map((cat) => (
-          <label key={cat} title={CAT_TIPS[cat]}>
-            <input
-              type="checkbox"
-              checked={cats.has(cat)}
-              onChange={(e) => {
-                const next = new Set(cats)
-                if (e.target.checked) next.add(cat)
-                else next.delete(cat)
-                setCats(next)
-              }}
-            />{" "}
-            {cat}
-          </label>
-        ))}
+
+        {/* The roster's own category tags, set by hand in config/channels.json: who is an
+            independent creator, who is a company channel, who is adjacent to the niche, and who
+            has not been tagged yet. They were checkboxes in a row of tabs — the only control on
+            the board you toggled a different way — and four ticked boxes read as four warnings
+            rather than as "all four are in". Keys, pressed when included. */}
+        <div className="grp">
+          <span className="note" title="Each tracked channel is tagged by hand in config/channels.json. Switch a tag off to drop those channels from the table.">
+            include
+          </span>
+          {/* multi, not one-of: pressed is outlined rather than ink-filled, so four included
+              tags do not read as four selected answers to one question. */}
+          <div className="tabs multi" role="group" aria-label="include">
+            {CATS.map((cat) => (
+              <button
+                key={cat}
+                type="button"
+                title={CAT_TIPS[cat]}
+                aria-pressed={cats.has(cat)}
+                className={cats.has(cat) ? "on" : undefined}
+                onClick={() => {
+                  const next = new Set(cats)
+                  if (next.has(cat)) next.delete(cat)
+                  else next.add(cat)
+                  setCats(next)
+                }}
+              >
+                {cat}
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
+
       {/* Nine columns and a one-line name cap need more width than a narrow
           viewport has. Scrolling sideways beats wrapping every row to two
           lines, and matches how the other dense tables behave. */}

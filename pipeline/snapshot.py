@@ -56,7 +56,13 @@ def channel_rows(roster: list[dict], fetched: dict[str, dict], today: dt.date) -
 def write_channel_snapshot(rows: dict[str, dict], today: dt.date) -> pathlib.Path:
     date_string = util.date_str(today)
     path = snapshot_path(date_string)
-    util.write_json(path, {"date": date_string, "channels": rows})
+    # The clock as well as the day. "date" answers which day these readings belong to, which is
+    # what every window calculation needs; the header additionally has to answer how stale they
+    # are, and a bare date cannot separate a sweep that landed at 09:00 from one still to run.
+    # Stamped after the API returned, so it is when the data arrived.
+    util.write_json(path, {"date": date_string,
+                           "fetched_at_utc": util.iso_z(dt.datetime.now(tz=util.UTC)),
+                           "channels": rows})
     return path
 
 
@@ -185,6 +191,20 @@ def present_dates() -> list[str]:
     if not directory.exists():
         return []
     return sorted(p.stem for p in directory.glob("*.json"))
+
+
+def newest_fetched_at() -> str | None:
+    """When the freshest daily sweep actually landed, to the minute, or None.
+
+    Read off the newest snapshot file rather than the clock, so a rebuild stays byte-identical.
+    None for every file written before the stamp existed, and the header says the day alone in
+    that case rather than inventing a time for it.
+    """
+    dates = present_dates()
+    if not dates:
+        return None
+    payload = util.read_json(snapshot_path(dates[-1]))
+    return payload.get("fetched_at_utc")
 
 
 def missing_dates(today: dt.date, days: int) -> list[str]:

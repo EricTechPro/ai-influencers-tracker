@@ -502,9 +502,29 @@ body { margin: 0; }
 .page { padding-bottom: 6rem; }
 .thsort { border: 0; background: none; font: inherit; color: inherit; cursor: pointer; padding: 0; text-transform: inherit; letter-spacing: inherit; }
 .thsort:hover { color: var(--foreground); }
-.controls { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin: 0.6rem 0 0.9rem; }
+/* One row, read as groups. It was a single flat line of a label, four tabs, a label, six tabs, a
+   sentence, a label and four checkboxes — eighteen controls with nothing saying where one
+   question ended and the next began. The group labels are micro-caps, the gap between groups is
+   double the gap inside one, and the checkboxes became keys so every control on this row picks
+   the same way. */
+.controls {
+  display: flex; gap: 6px 20px; align-items: center; flex-wrap: wrap; margin: 0.6rem 0 0.9rem;
+}
+.controls .grp { display: flex; align-items: center; gap: 7px; }
+.controls .note {
+  font-size: 9px; text-transform: uppercase; letter-spacing: 0.1em; opacity: 0.7;
+}
 .controls select, .controls label { font: inherit; font-size: 12px; }
-.controls select { border: 1px solid var(--border); background: var(--card); padding: 3px 8px; }
+.controls select {
+  font-size: 11px; border: 1px solid var(--border); border-radius: 3px;
+  background: var(--card); padding: 2px 6px;
+}
+/* A multi-select row. Ink-fill answers "this is the one"; four ink blocks side by side asked
+   that question four times over. Included reads as outlined-and-dark, excluded as faded out. */
+.tabs.multi button.on {
+  background: var(--card); border-color: var(--foreground); color: var(--foreground);
+}
+.tabs.multi button:not(.on) { opacity: 0.55; text-decoration: line-through; }
 
 /* Pagination.
    The readout leads and the controls sit at the far end, because the sentence "25 of 72" is the

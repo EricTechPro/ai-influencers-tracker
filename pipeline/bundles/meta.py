@@ -54,6 +54,9 @@ def build(ctx) -> dict:
         "exclusions": _exclusion_counts(ctx),
         "self_channel_id": ctx.self_channel_id,
         "snapshot_health": {"first_date": history[0] if history else None,
+                            # When the freshest sweep landed, to the minute. Read off the newest
+                            # _raw file, never from the clock, so a rebuild stays byte-identical.
+                            "fetched_at_utc": snapshot.newest_fetched_at(),
                             "days_present": len(present),
                             "days_missing": len(snapshot.missing_dates(ctx.today, window)),
                             "history_days": len(history)},
