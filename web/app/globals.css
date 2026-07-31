@@ -785,47 +785,65 @@ select.chip:hover { border-color: var(--muted-foreground); }
    The feed used to carry its filters in a row above the grid and its low end in a second
    collapsed grid below. Both are gone: filters stack down the left where a long list of topics
    has room to be a list, and the low end is page two. */
-.shop { display: grid; grid-template-columns: 178px minmax(0, 1fr); gap: 24px; }
+/* The rail is 140px and hairline-quiet: five stacked bordered boxes read as five competing
+   panels next to a grid of photographs, and the filters are not the page. One vertical rule
+   separates them from the results instead, and the selected row is marked by a bar in the
+   margin rather than by a filled blue block. */
+.shop { display: grid; grid-template-columns: 158px minmax(0, 1fr); gap: 22px; margin-top: 14px; }
 @media (max-width: 60rem) {
   .shop { grid-template-columns: minmax(0, 1fr); gap: 14px; }
-  .shopside { display: flex; flex-wrap: wrap; gap: 14px 22px; }
+  .shopside { position: static; border-right: 0; padding-right: 0;
+    display: flex; flex-wrap: wrap; gap: 4px 26px; }
+  .facet { margin-bottom: 8px; }
+}
+/* Sticky: the filters are how you get back out of a long list, so they cannot scroll away
+   above it. align-self keeps the rail its own height rather than the row's. */
+.shopside {
+  position: sticky; top: 14px; align-self: start;
+  border-right: 1px solid var(--border); padding-right: 18px;
 }
 .shopmain { min-width: 0; }
 
-.facet { margin-bottom: 18px; }
+.facet { margin-bottom: 15px; }
 .flabel {
-  display: block; font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em;
-  color: var(--muted-foreground); margin-bottom: 6px;
+  display: block; font-size: 9px; text-transform: uppercase; letter-spacing: 0.1em;
+  color: var(--muted-foreground); opacity: 0.75; margin-bottom: 4px;
 }
 .shopsort {
-  font: inherit; font-size: 11px; width: 100%; padding: 4px 6px;
-  border: 1px solid var(--border); border-radius: 4px; background: var(--card);
+  font: inherit; font-size: 11px; width: 100%; padding: 3px 4px;
+  border: 0; border-bottom: 1px solid var(--border); border-radius: 0;
+  background: transparent; color: inherit; cursor: pointer;
 }
-.slist {
-  list-style: none; margin: 0; padding: 0;
-  border: 1px solid var(--border); border-radius: 5px; overflow: hidden; background: var(--card);
-}
-.slist li + li button { border-top: 1px solid var(--border); }
+.slist { list-style: none; margin: 0; padding: 0; }
 .slist button {
-  display: flex; align-items: baseline; gap: 8px; width: 100%; text-align: left;
-  font: inherit; font-size: 11px; padding: 5px 9px; border: 0; background: transparent;
+  display: flex; align-items: baseline; gap: 6px; width: 100%; text-align: left;
+  font: inherit; font-size: 11px; line-height: 1.55; padding: 1px 6px;
+  border: 0; border-left: 2px solid transparent; background: transparent;
   color: var(--muted-foreground); cursor: pointer;
 }
-.slist button:hover { background: var(--accent); }
-.slist button.on { background: var(--primary); color: #fff; font-weight: 600; }
+.slist button:hover { color: var(--foreground); background: var(--accent); }
+.slist button.on {
+  border-left-color: var(--primary); color: var(--foreground); font-weight: 700;
+}
 .slist .sname { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.slist .scount { font-size: 10px; opacity: 0.75; font-variant-numeric: tabular-nums; }
+.slist .scount {
+  font-size: 10px; opacity: 0.55; font-variant-numeric: tabular-nums;
+}
+/* Topics are the one facet that can run to 25 rows. It scrolls inside itself so the rail
+   never outgrows the results it filters. */
+.slist.tall { max-height: 172px; overflow-y: auto; }
 
 .shopbar {
   display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
-  padding-bottom: 10px; margin-bottom: 12px; border-bottom: 1px solid var(--border);
+  padding-bottom: 9px; margin-bottom: 13px; border-bottom: 1px solid var(--border);
 }
 .shopcount { font-size: 12px; margin-right: auto; font-variant-numeric: tabular-nums; }
 .shopcount .of { color: var(--muted-foreground); font-weight: 400; }
 .shopsearch {
-  font: inherit; font-size: 11px; width: 220px; padding: 4px 9px;
+  font: inherit; font-size: 11px; width: 210px; padding: 4px 9px;
   border: 1px solid var(--border); border-radius: 4px; background: var(--card);
 }
+.shopsearch:focus-visible { outline: 2px solid var(--primary); outline-offset: 1px; }
 .shopreset {
   font: inherit; font-size: 11px; padding: 4px 11px; cursor: pointer;
   border: 1px solid var(--border); border-radius: 4px; background: var(--secondary);
@@ -903,6 +921,11 @@ select.chip:hover { border-color: var(--muted-foreground); }
    number wears vendor colours instead of borrowing this board's verdict green. */
 /* The same badge, out of the thumbnail and into a table cell. */
 .ymult.inline { position: static; display: inline-block; }
+/* A video vidIQ did not measure. It reads as a caption rather than as a score, because it is
+   not one — but it occupies the same corner, so the absence is visible. */
+.ynoscore {
+  background: rgba(0,0,0,0.55); font-weight: 500; font-size: 9px; letter-spacing: 0.04em;
+}
 .ymult { background: #2f6fed; }
 .ymult.t5 { background: #4f5ae8; }
 .ymult.t3 { background: #6b5ce0; }

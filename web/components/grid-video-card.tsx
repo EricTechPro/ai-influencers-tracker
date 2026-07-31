@@ -57,7 +57,17 @@ export function GridVideoCard({
           decoding="async"
         />
         {v.type === "short" && <span className="yshort">SHORT</span>}
-        {v.breakout_score !== null && (
+        {/* The unscored case wears a badge of its own rather than leaving the corner empty. The
+            page used to carry a sentence saying a video with no score is unmeasured and not low;
+            an empty corner is what made that sentence necessary. */}
+        {v.breakout_score === null ? (
+          <span
+            className="ymult ynoscore"
+            title="vidIQ returned no breakout score for this video. Unmeasured, which is not the same as low."
+          >
+            unmeasured
+          </span>
+        ) : (
           <span
             className={`ymult ${SCORE_CLASS[tierIndex(v.breakout_score)]}`}
             title={`vidIQ breakout score ${v.breakout_score}. How far past this channel's normal performance at this age the video ran. Measured by vidIQ, not by us.`}

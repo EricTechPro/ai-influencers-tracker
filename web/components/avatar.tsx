@@ -59,16 +59,6 @@ export function Avatar({
   )
 }
 
-/**
- * An Avatar that blows up on hover into a face you can actually identify.
- *
- * The roster is 72 people whose names are mostly "<First Last> | AI
- * Automation", so the inline face is small enough to scan a table with and
- * useless for recognising anyone. This gives the second reading without a
- * click or a page change. CSS-only and no popover library: the project ships
- * none, and `:focus-within` on the tabbable wrapper hands the keyboard the
- * same affordance the mouse gets.
- */
 /** One line in the peek card. `value` is already formatted; `null` renders as
  *  the two-character unmeasured state rather than as a zero. */
 export interface PeekStat {
@@ -78,46 +68,9 @@ export interface PeekStat {
   note?: string | null
 }
 
-export function AvatarPeek({
-  src,
-  name,
-  handle,
-  size = 20,
-  isSelf = false,
-  stats,
-}: {
-  src: string | null
-  name: string
-  handle?: string | null
-  size?: number
-  isSelf?: boolean
-  /** The basics worth having without leaving the row: how big this channel is,
-   *  and how much of it we have actually pulled. */
-  stats?: PeekStat[]
-}) {
-  return (
-    <span className="avpeek" tabIndex={0} aria-label={name}>
-      <Avatar src={src} name={name} size={size} isSelf={isSelf} />
-      <span className="avpop" aria-hidden="true">
-        <Avatar src={src} name={name} size={132} isSelf={isSelf} className="avpop-face" />
-        <span className="avpop-meta">
-          <b>{name}</b>
-          {handle && <span className="mono10">@{handle}</span>}
-        </span>
-        {stats && stats.length > 0 && (
-          <span className="avpop-stats">
-            {stats.map((s) => (
-              <span className="avpop-stat" key={s.label}>
-                <span className="k">{s.label}</span>
-                <span className="v num">
-                  {s.value ?? "--"}
-                  {s.note && <span className="n2"> {s.note}</span>}
-                </span>
-              </span>
-            ))}
-          </span>
-        )}
-      </span>
-    </span>
-  )
-}
+/**
+ * `AvatarPeek` lives in its own file because it needs state and a portal, and this one does not:
+ * `Avatar` is rendered from server components on four routes and stays there. Re-exported rather
+ * than moved so the call sites keep importing one avatar module.
+ */
+export { AvatarPeek } from "./avatar-peek"

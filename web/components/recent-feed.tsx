@@ -163,7 +163,7 @@ export function RecentFeed({
     <section>
       <SectionKicker
         label={HEADING[window]}
-        cap={<>{freshness(bundle)} · {fmtInt(bundle.videos.length)} outliers swept</>}
+        cap={<>{freshness(bundle)} · {fmtInt(bundle.videos.length)} scanned</>}
       />
 
       {bundle.fetched_at === null ? (
@@ -173,12 +173,11 @@ export function RecentFeed({
         </p>
       ) : (
         <>
-          <p className="note">
-            vidIQ&apos;s breakout score, highest first · <b>climbing</b> is still outrunning its
-            own lifetime views/hour, <b>spent</b> took its views in a burst and went flat · nothing
-            vidIQ returned is discarded, and a video with no score is unmeasured, not low
-          </p>
-
+          {/* The legend that used to sit here — two lines defining the breakout score, climbing,
+              spent, and the no-score rule — is gone. Every term it defined already carries the
+              same sentence as a tooltip on the badge that uses it, so the paragraph was a glossary
+              printed above a page whose words are each self-explaining on hover. It cost four
+              lines of the first screen, which is the screen the feed exists to fill with videos. */}
           {failed > 0 && (
             <p className="note">
               ⚠ {failed} of {failed + bundle.coverage.batches_ok} batches failed.{" "}
@@ -240,7 +239,7 @@ export function RecentFeed({
 
               {topicFacets.length > 0 && (
                 <Facet label="topic">
-                  <ul className="slist">
+                  <ul className="slist tall">
                     <Choice
                       on={topicId === NO_TOPIC}
                       onClick={() => setTopicId(NO_TOPIC)}
@@ -382,7 +381,15 @@ function Choice({
 }) {
   return (
     <li>
-      <button type="button" aria-pressed={on} className={on ? "on" : undefined} onClick={onClick}>
+      {/* title as well as the visible label: a 158px rail ellipsises the longer topic names,
+          and the hover is where the rest of the name has to live. */}
+      <button
+        type="button"
+        title={label}
+        aria-pressed={on}
+        className={on ? "on" : undefined}
+        onClick={onClick}
+      >
         <span className="sname">{label}</span>
         {n !== undefined && <span className="scount num">{fmtInt(n)}</span>}
       </button>
