@@ -116,7 +116,7 @@ export function RecentFeed({
     if (!windows.includes(window)) setWindow(windows[0])
   }, [windows, window])
   const { feed } = useMemo(
-    () => selectRecent(bundle, { window, format, perChannelCap: cap, floor }, now),
+    () => selectRecent(bundle, { window, format, perChannelCap: cap, floor, lang: "all" }, now),
     [bundle, window, format, cap, floor, now]
   )
 

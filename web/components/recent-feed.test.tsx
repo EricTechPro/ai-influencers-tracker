@@ -28,6 +28,8 @@ function row(over: Partial<RecentRow> & { video_id: string }): RecentRow {
     views_gained_24h: 240,
     momentum: { state: "steady" as const, daily_share: 0.01, per_day: 240, vph: 10 },
     pattern_id: null,
+    lang: "en",
+    lang_tier: "derived",
     ...over,
   }
 }

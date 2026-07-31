@@ -45,6 +45,8 @@ export function windowsHeld(videos: { published_at: string }[], today: Date): Re
 export interface RecentOptions {
   window: RecentWindow
   format: FormatKey
+  /** which language scene to show; "all" lifts the filter entirely */
+  lang: string
   /** how many of one channel's rows reach the grid; null lifts the cap entirely */
   perChannelCap: number | null
   /** multiplier under which a row goes to the tail instead of the grid */
@@ -106,6 +108,11 @@ export function selectRecent(
   // future-dated rows exist in the live corpus today; the guard costs nothing
   // and stops that from being silently true tomorrow.
   const inWindow = bundle.videos.filter((v) => {
+    // Before the floor split and before the per-channel cap, deliberately. A cap spent across
+    // both scenes and then filtered would push a channel's Chinese rows to the tail on the
+    // strength of its English ones, which is a cap the viewer never set. Four channels on this
+    // board post in both scripts, so it is not a hypothetical.
+    if (opts.lang !== "all" && v.lang !== opts.lang) return false
     if (!matchesFormat(v, opts.format)) return false
     const age = ageDays(v.published_at, today)
     return age >= 0 && age <= opts.window
