@@ -204,7 +204,11 @@ export type TopicPage = LeafTopicPage | ParentTopicPage
 export interface TopicPagesBundle {
   generated_at: string
   version: number
+  /** only the leaves that cleared min_videos/min_creators; a topic can exist and have no page */
   topics: TopicPage[]
+  /** every topic id in the tree -> its human label, ungated. Naming a topic must not depend on
+   *  whether it qualified for a page. */
+  labels: Record<string, string>
 }
 
 export interface VideoRow {
@@ -335,7 +339,7 @@ export interface Meta {
   thresholds_version: number
   partial_run: boolean
   self_channel_id: string
-  channels: { total: number; ok: number; absent: number }
+  channels: { total: number; ok: number; corrupt: number; absent: number }
   snapshot_health: {
     /** days our own daily sweep recorded: "is the sweep running" */
     days_present: number

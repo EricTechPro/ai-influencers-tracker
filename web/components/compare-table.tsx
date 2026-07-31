@@ -8,7 +8,7 @@ import {
   type GapValue, type VideoFormat,
 } from "@/lib/compare"
 import { CADENCE_FORMULA, cadenceDays } from "@/lib/channel"
-import { bucketText, deltaText, fmtInt, pctText } from "@/lib/trust"
+import { bucketText, deltaText, fmtInt, pctText, stateExplain } from "@/lib/trust"
 import { WINDOWS, type StateCell, type VideoRow, type WindowKey } from "@/lib/types"
 import { Chip, Derived } from "./trust"
 import { GapCell } from "./gap-cell"
@@ -47,6 +47,11 @@ interface Row {
    *  quantity — either side missing, negative, or (`long vs shorts`) two
    *  counts rather than one. */
   share?: { them: number; you: number }
+  /** the visible window's own cell for each side, so a non-ok state can be styled and explained
+   *  as a state instead of sitting in the number column looking like a measurement. Present only
+   *  on the windowed rows; the flat totals below are always Oracle counts. */
+  themCell?: StateCell
+  youCell?: StateCell
   /** every window's cell for this metric, threaded straight from the bundle
    *  so the six-window expansion strip reads the exact source the visible
    *  cell resolved from — never a second pass over the row for a different
@@ -68,6 +73,13 @@ function shareOf(them: number | null, you: number | null): { them: number; you: 
   if (them === null || you === null) return undefined
   if (them < 0 || you < 0) return undefined
   return { them, you }
+}
+
+/** Uploads per day from days-between-uploads, so a lower-is-better row can use the same
+ *  proportional bar as every higher-is-better row above it. A zero or missing cadence has
+ *  no reciprocal and stays missing, which suppresses the bar exactly as it already did. */
+function inverted(days: number | null): number | null {
+  return days === null || days <= 0 ? null : 1 / days
 }
 
 /** One side's percentage of the pair. Split even when both sides are zero —
@@ -96,6 +108,16 @@ function ShareBar({ pct }: { pct: number }) {
  *  never collapsed to a bare "--" the way the table's own fmtCell used to. */
 function ratioText(cell: StateCell): string {
   return cell.state === "ok" ? (cell.value ?? 0).toFixed(1) : deltaText(cell)
+}
+
+/** A number cell drops out of the numeric column the moment it stops carrying a number.
+ *  "1 bad day" rendered as `r num` sat right-aligned in the same mono face as "+1,621,192",
+ *  which is an inference styled as a measurement — the one failure mode this project names.
+ *  `statecell` un-tabulates it; the title says why. A row with no cell (the flat Oracle totals)
+ *  keeps the numeric styling it has always had. */
+function cellClass(cell: StateCell | undefined, isLead: boolean): string {
+  const base = cell && cell.state !== "ok" ? "r statecell" : "r num"
+  return isLead ? `${base} lead` : base
 }
 
 /** A plain measured count, or the unmeasured glyph — the one guard repeated
@@ -206,6 +228,8 @@ export function CompareTable({
       gap: gap(okValue(them.subscriber_delta[win]), okValue(you.subscriber_delta[win])),
       share: shareOf(okValue(them.subscriber_delta[win]), okValue(you.subscriber_delta[win])),
       detail: windowDates(themLabel, youLabel, them.subscriber_delta[win], you.subscriber_delta[win]),
+      themCell: them.subscriber_delta[win],
+      youCell: you.subscriber_delta[win],
       windowed: { them: them.subscriber_delta, you: you.subscriber_delta, themLabel, youLabel, fmt: deltaText },
     },
     {
@@ -215,6 +239,8 @@ export function CompareTable({
       gap: gap(okValue(them.subscriber_growth_rate[win]), okValue(you.subscriber_growth_rate[win])),
       share: shareOf(okValue(them.subscriber_growth_rate[win]), okValue(you.subscriber_growth_rate[win])),
       detail: windowDates(themLabel, youLabel, them.subscriber_growth_rate[win], you.subscriber_growth_rate[win]),
+      themCell: them.subscriber_growth_rate[win],
+      youCell: you.subscriber_growth_rate[win],
       windowed: { them: them.subscriber_growth_rate, you: you.subscriber_growth_rate, themLabel, youLabel, fmt: pctText },
     },
   ]
@@ -234,6 +260,8 @@ export function CompareTable({
       gap: gap(okValue(them.view_delta[win]), okValue(you.view_delta[win])),
       share: shareOf(okValue(them.view_delta[win]), okValue(you.view_delta[win])),
       detail: windowDates(themLabel, youLabel, them.view_delta[win], you.view_delta[win]),
+      themCell: them.view_delta[win],
+      youCell: you.view_delta[win],
       windowed: { them: them.view_delta, you: you.view_delta, themLabel, youLabel, fmt: deltaText },
     },
     {
@@ -242,6 +270,8 @@ export function CompareTable({
       you: fmtCell(you.subs_per_1k_views[win]),
       gap: gap(okValue(them.subs_per_1k_views[win]), okValue(you.subs_per_1k_views[win])),
       share: shareOf(okValue(them.subs_per_1k_views[win]), okValue(you.subs_per_1k_views[win])),
+      themCell: them.subs_per_1k_views[win],
+      youCell: you.subs_per_1k_views[win],
       windowed: { them: them.subs_per_1k_views, you: you.subs_per_1k_views, themLabel, youLabel, fmt: ratioText },
     },
   ]
@@ -274,7 +304,9 @@ export function CompareTable({
       them: t.cadence === null ? "--" : `${t.cadence}d`,
       you: y.cadence === null ? "--" : `${y.cadence}d`,
       gap: gap(t.cadence, y.cadence, { lowerIsBetter: true, qualifier: "more often" }),
-      share: shareOf(t.cadence, y.cadence),
+      // Lower is better here, so the bar is drawn on the reciprocal: uploading every
+      // 1 day must read as the longer bar against every 4 days, not the shorter one.
+      share: shareOf(inverted(t.cadence), inverted(y.cadence)),
     },
   ]
 
@@ -335,11 +367,11 @@ function RowCells({ row }: { row: Row }) {
             </button>
           ) : row.label}
         </td>
-        <td className={lead === "them" ? "r num lead" : "r num"}>
+        <td className={cellClass(row.themCell, lead === "them")} title={row.themCell && stateExplain(row.themCell)}>
           {row.them}
           {row.share && <ShareBar pct={sharePct(row.share.them, row.share)} />}
         </td>
-        <td className={lead === "you" ? "r num lead" : "r num"}>
+        <td className={cellClass(row.youCell, lead === "you")} title={row.youCell && stateExplain(row.youCell)}>
           {row.you}
           {row.share && <ShareBar pct={sharePct(row.share.you, row.share)} />}
         </td>

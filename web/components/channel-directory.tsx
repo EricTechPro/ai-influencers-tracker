@@ -10,7 +10,10 @@ import { fmtInt } from "@/lib/trust"
 import { Avatar } from "./avatar"
 import { Chip } from "./trust"
 
-const CATS = ["all", "ai-creator", "company", "adjacent", "you"] as const
+// `unknown` is a real category in the roster and it used to have no tab, so the four visible
+// counts summed to 73 of 74 and the unclassified channel matched no filter at all. Unclassified
+// is a state, not an absence; it gets its own tab, hidden only when nothing is in it.
+const CATS = ["all", "ai-creator", "company", "adjacent", "unknown", "you"] as const
 type Cat = (typeof CATS)[number]
 
 /**
@@ -34,12 +37,11 @@ export function ChannelDirectory({ channels, win }: { channels: SlimChannel[]; w
       "ai-creator": 0,
       company: 0,
       adjacent: 0,
+      unknown: 0,
       you: 0,
     }
     for (const c of channels) {
-      if (c.category === "ai-creator" || c.category === "company" || c.category === "adjacent") {
-        out[c.category] += 1
-      }
+      if (c.category !== "own" && c.category in out) out[c.category as Cat] += 1
       if (c.is_self) out.you += 1
     }
     return out
@@ -69,7 +71,7 @@ export function ChannelDirectory({ channels, win }: { channels: SlimChannel[]; w
           onChange={(e) => setQ(e.target.value)}
         />
         <div className="cattabs" role="group" aria-label="category">
-          {CATS.map((c) => (
+          {CATS.filter((c) => c !== "unknown" || counts.unknown > 0).map((c) => (
             <button
               key={c}
               type="button"
@@ -117,6 +119,14 @@ function DirectoryRow({ c, win }: { c: SlimChannel; win: WindowKey }) {
           zeroed out) — the chip is what names the state so the numbers are
           not mistaken for current ones. */}
       {c.status === "absent" && <Chip variant="warn">absent</Chip>}
+      {/* Same reasoning one state over. A corrupt tail means the freshest reading failed the
+          view_count monotonicity check, so the figures above are the last trustworthy ones and
+          not today's — rendered without a chip they were styled identically to 73 measured rows. */}
+      {c.status === "corrupt" && (
+        <Chip variant="warn" title="The freshest snapshot for this channel failed the view_count monotonicity check, so the figures shown are the last trustworthy reading, not today's.">
+          corrupt
+        </Chip>
+      )}
       {c.is_self ? (
         <Chip variant="you">you</Chip>
       ) : (

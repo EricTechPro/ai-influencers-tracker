@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from .. import config, topics, util
 
-VERSION = 4
+VERSION = 5
 
 
 def build(ctx) -> dict:
@@ -62,7 +62,14 @@ def build(ctx) -> dict:
             "children": list(topic.children_ids),
         })
     pages.sort(key=lambda p: p["topic_id"])
-    return {"version": VERSION, "generated_at": ctx.generated_at, "topics": pages}
+    # `topics` is gated: a leaf needs min_videos and min_creators before it earns a page, so 28
+    # of the tree's ids survive it. /topics was reading its group headings out of that gated
+    # list and falling back to the raw id, which printed "n8n-agent-workflows" as a heading for
+    # a topic whose label config/topics.json has always carried. `labels` is the whole
+    # vocabulary, ungated, so naming a topic never depends on whether it qualified for a page.
+    labels = {t.id: t.label for t in ctx.topic_index.values()}
+    return {"version": VERSION, "generated_at": ctx.generated_at,
+            "topics": pages, "labels": labels}
 
 
 def write(ctx) -> None:

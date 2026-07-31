@@ -203,7 +203,8 @@ export function RecentFeed({
                 </div>
                 <div className="ostats">
                   <span>
-                    {fmtInt(g.videos.length)} videos · {fmtInt(g.creators)} creators
+                    {fmtInt(g.videos.length)} video{g.videos.length === 1 ? "" : "s"} ·{" "}
+                    {fmtInt(g.creators)} creator{g.creators === 1 ? "" : "s"}
                   </span>
                   {g.topic_id === null ? (
                     <span>

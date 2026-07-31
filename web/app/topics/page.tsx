@@ -55,10 +55,9 @@ export default function TopicsIndexPage() {
   // "Setting up MCP with Claude Code"), narrowed to the ids this feed
   // actually shows for the same reason the avatars map above is narrowed:
   // this crosses the RSC boundary on every render.
+  const allLabels = loadTopicPages().labels
   const topicLabels = Object.fromEntries(
-    loadTopicPages()
-      .topics.filter((t) => feedTopics.has(t.topic_id))
-      .map((t) => [t.topic_id, t.label])
+    Object.entries(allLabels).filter(([id]) => feedTopics.has(id))
   )
 
   const ownCoverage: Record<string, number> = {}

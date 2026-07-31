@@ -20,7 +20,11 @@ export default async function ChannelsPage({
         <span className="kicker">CHANNELS</span>
         <span className="rule" />
         <span className="cap">
-          {meta.channels.total} tracked · {meta.channels.absent} absent
+          {/* Every non-ok state gets a slot. The kicker used to print only `absent`, so a board
+              carrying a corrupt channel still read as a clean "74 tracked · 0 absent". */}
+          {meta.channels.total} tracked · {meta.channels.ok} ok
+          {meta.channels.corrupt > 0 ? ` · ${meta.channels.corrupt} corrupt` : ""}
+          {meta.channels.absent > 0 ? ` · ${meta.channels.absent} absent` : ""}
         </span>
       </div>
       <ChannelDirectory channels={channels} win={parseWindow(w)} />

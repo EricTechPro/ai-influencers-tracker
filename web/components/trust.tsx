@@ -31,10 +31,17 @@ export function VerdictBadge({ verdict }: { verdict: Verdict }) {
 
 export function Chip({
   variant,
+  title,
   children,
 }: {
   variant?: "warn" | "you" | "rank1"
+  /** why this state, for the chips that name one. Omit on purely decorative chips. */
+  title?: string
   children: ReactNode
 }) {
-  return <span className={variant ? `chip ${variant}` : "chip"}>{children}</span>
+  return (
+    <span className={variant ? `chip ${variant}` : "chip"} title={title}>
+      {children}
+    </span>
+  )
 }

@@ -7,7 +7,7 @@ from __future__ import annotations
 
 from .. import config, read, snapshot, topics, util
 
-VERSION = 3
+VERSION = 4
 BUILD_STEP = 8
 
 
@@ -23,6 +23,11 @@ def _exclusion_counts(ctx) -> dict:
         "topics": len(ctx.excluded_topic_ids & leaves),
         "videos": len(ctx.excluded_video_ids),
     }
+
+
+def _tail_status(series) -> str:
+    """The channel's own freshest-row verdict, spelled the same way channels.py spells it."""
+    return series[-1]["status"] if series else "insufficient_data"
 
 
 def build(ctx) -> dict:
@@ -57,8 +62,16 @@ def build(ctx) -> dict:
         "comment_health": {"channels_with_comments": ctx.extra.get("channels_with_comments", 0),
                            "ingested": ctx.extra.get("comments_ingested", 0),
                            "classified": ctx.extra.get("comments_classified", 0)},
+        # Three mutually exclusive buckets that sum to total. `ok` used to mean "has an ok row
+        # somewhere in its history", which counted a channel whose freshest reading the pipeline
+        # itself condemned as part of the all-clear the /channels header prints. absent keeps its
+        # own meaning (no ok reading has ever arrived) and is decided first, so a channel that is
+        # both never-ok and corrupt at the tail lands in exactly one bucket.
         "channels": {"total": len(ctx.roster),
-                     "ok": sum(1 for n in newest if n is not None),
+                     "ok": sum(1 for n, s in zip(newest, statuses, strict=True)
+                               if n is not None and _tail_status(s) == "ok"),
+                     "corrupt": sum(1 for n, s in zip(newest, statuses, strict=True)
+                                    if n is not None and _tail_status(s) != "ok"),
                      "absent": sum(1 for n in newest if n is None)},
         "target": config.targets().get("target"),
         "discovery": {"trending_ok": ctx.repos.get("trending_ok"),

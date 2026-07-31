@@ -283,9 +283,9 @@ def test_meta_reports_coverage_health_and_the_target(ait_root):
     seed_topic_corpus(ait_root)
     build_data.build(today=TODAY)
     meta = util.read_json(config.db_dir() / "meta.json")
-    assert meta["version"] == 3 and meta["thresholds_version"] == 4
+    assert meta["version"] == 4 and meta["thresholds_version"] == 4
     assert meta["self_channel_id"] == "UCself"
-    assert meta["channels"] == {"total": 3, "ok": 3, "absent": 0}
+    assert meta["channels"] == {"total": 3, "ok": 3, "corrupt": 0, "absent": 0}
     assert 0 <= meta["coverage_rate"] <= 1
     assert meta["target"] == {"mode": "growth", "window_days": 90, "rank": 6}
     assert meta["partial_run"] is False
