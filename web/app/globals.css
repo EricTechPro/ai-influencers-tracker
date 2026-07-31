@@ -478,18 +478,17 @@ body { margin: 0; }
 .pgnav button {
   font: inherit; font-size: 12px; font-variant-numeric: tabular-nums;
   min-width: 26px; height: 24px; padding: 0 6px;
-  border: 1px solid transparent; background: none; color: var(--muted-foreground);
+  border: 1px solid var(--border); background: var(--card); color: var(--foreground);
   cursor: pointer; transition: color 120ms ease, border-color 120ms ease, background 120ms ease;
 }
 .pgnav button:hover:not(:disabled) { color: var(--foreground); border-color: var(--border); }
+.pgnav button.on { font-weight: 600; }
+/* The wavy accent the nav links use does not survive being squeezed to one character wide: on a
+   "1" it rendered as a small hooked glyph hanging under the button and read as a broken icon.
+   The current page is marked by inverting the box instead, which is legible at any width. */
 .pgnav button.on {
-  color: var(--foreground); border-color: var(--border); background: var(--card);
-  font-weight: 600;
+  background: var(--foreground); color: var(--background); border-color: var(--foreground);
 }
-/* The current page is marked twice: the box says "you are here", the rule underneath is the
-   same wavy accent the active nav link uses, so the two "you are here" signals in the app
-   read as one idea rather than two conventions. */
-.pgnav button.on { text-decoration: underline 2px wavy var(--primary); text-underline-offset: 5px; }
 .pgnav button:disabled { opacity: 0.3; cursor: default; }
 .pggap { padding: 0 2px; color: var(--muted-foreground); }
 /* Sparkline with a readout.
