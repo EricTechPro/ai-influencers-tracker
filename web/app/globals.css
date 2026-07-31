@@ -808,6 +808,21 @@ body { margin: 0; }
 .cat-none { background: none; color: var(--muted-foreground); padding: 0; }
 
 
+/* The compare subject header — the two-channel counterpart of the identity card
+   `/channels/[id]` opens with, and the reason /compare no longer starts on a bare
+   row of selects. Each side is its own block so the pair wraps to one per line on a
+   narrow window instead of shrinking two selects into a shared one; `min-width: 0`
+   is what lets a long channel name in the select ellipsize rather than push the
+   card wider than the reading measure. */
+.comparehead {
+  margin-top: 1.2rem;
+  display: flex; align-items: center; gap: 14px 20px; flex-wrap: wrap;
+}
+.comparehead .who { display: flex; align-items: center; gap: 11px; flex: 1 1 15rem; min-width: 0; }
+.comparehead .whobody { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+/* The pivot, not a side: it keeps its own width when the two blocks grow. */
+.comparehead .vs { flex: 0 0 auto; }
+
 /* The compare pickers are chips that happen to be selects. Without this the
    platform control fights the pill and the terminal type. */
 select.chip {

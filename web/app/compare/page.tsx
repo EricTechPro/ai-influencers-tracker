@@ -42,14 +42,16 @@ export default async function ComparePage({
 
   return (
     <section>
-      <div style={{ display: "flex", gap: 10, alignItems: "center", marginTop: "1.2rem", fontSize: 13 }}>
-        <Avatar src={channelAvatarUrl(him.channel_id)} name={him.name} size={36} isSelf={him.is_self} />
-        <ComparePicker side="a" value={him.channel_id} options={options}
-          selfId={bundle.self_channel_id} />
-        <span className="mono10">vs</span>
-        <Avatar src={channelAvatarUrl(you.channel_id)} name={you.name} size={36} isSelf={you.is_self} />
-        <ComparePicker side="b" value={you.channel_id} options={options}
-          selfId={bundle.self_channel_id} />
+      {/* The subject header, in the same `.card pad` shape `/channels/[id]` opens with. This page
+          is about two channels the way that one is about one, and it was the only route on the
+          board that opened on nothing — a bare flex row of two selects, floated at the top with
+          no card, no kicker, and no rule under it. Identity only: subscribers and views are the
+          first two rows of the table below, and a header restating them is the same answer twice,
+          which is why the leaderboard dropped its top-5 summary. */}
+      <div className="card pad comparehead">
+        <Side channel={him} side="a" options={options} selfId={bundle.self_channel_id} />
+        <span className="mono10 vs">vs</span>
+        <Side channel={you} side="b" options={options} selfId={bundle.self_channel_id} />
       </div>
 
       <SectionKicker label="the numbers" />
@@ -67,5 +69,41 @@ export default async function ComparePage({
       <CompareTable them={toSide(him)} you={toSide(you)} initialWindow={parseWindow(w)}
         generatedAt={meta.generated_at} />
     </section>
+  )
+}
+
+/**
+ * One side of the header: the face, the picker that swaps it, and the same
+ * `@handle · niche · lang` line the channel page prints under a channel's name.
+ *
+ * The picker stays the naming element rather than sitting beside a printed
+ * name — the select already shows the channel's name and its "★ you" mark, so
+ * a heading above it would be that name twice.
+ */
+function Side({
+  channel,
+  side,
+  options,
+  selfId,
+}: {
+  channel: { channel_id: string; name: string; is_self: boolean; handle: string | null;
+    niche: string | null; lang: string | null }
+  side: "a" | "b"
+  options: { channel_id: string; name: string; is_self: boolean }[]
+  selfId: string
+}) {
+  return (
+    <div className="who">
+      <Avatar src={channelAvatarUrl(channel.channel_id)} name={channel.name} size={48}
+        isSelf={channel.is_self} />
+      <div className="whobody">
+        <ComparePicker side={side} value={channel.channel_id} options={options} selfId={selfId} />
+        <div className="mono10">
+          {channel.handle ? `@${channel.handle}` : "--"}
+          {channel.niche ? ` · ${channel.niche}` : ""}
+          {channel.lang ? ` · ${channel.lang}` : ""}
+        </div>
+      </div>
+    </div>
   )
 }

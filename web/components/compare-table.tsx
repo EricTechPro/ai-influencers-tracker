@@ -319,8 +319,16 @@ export function CompareTable({
 
   return (
     <>
-      <div className="section-kicker" style={{ gap: 12 }}>
-        <WindowTabs value={win} onChange={onWindow} />
+      {/* `.controls` is the board's one control row, and this was the single place that reached
+          for `.section-kicker` instead. That container exists to hold a label, a flex-grow
+          `.rule`, and a cap; given only a control it drops the rule, so the row lost the line
+          every other section header draws and kept the 2.2rem lead a section break wants — a
+          window picker sitting a third further down the page here than the identical one on the
+          leaderboard. */}
+      <div className="controls">
+        <div className="grp">
+          <WindowTabs value={win} onChange={onWindow} />
+        </div>
       </div>
       <div className="card tblwrap">
         <table className="tbl tbl-hover" style={{ fontSize: 12 }}>
