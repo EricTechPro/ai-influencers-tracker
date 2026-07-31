@@ -473,14 +473,98 @@ img.avatar { object-fit: cover; background: var(--secondary); }
   background: var(--foreground); border-color: var(--foreground); color: var(--background);
   font-weight: 700;
 }
+/* A tab that carries a count: the word is the label and the number is the data, so the number
+   takes the darker ink. On the filled tab it inverts with the button rather than staying dark
+   and disappearing into it. */
+.tabs button b { font-weight: 600; color: var(--foreground); font-variant-numeric: tabular-nums; }
+.tabs button.on b { color: inherit; }
 .cattabs { display: flex; flex-wrap: wrap; gap: 6px; font-size: 11px; }
 .cattabs .t { border: 1px solid var(--border); padding: 2px 9px; color: var(--muted-foreground); cursor: pointer; background: var(--card); font: inherit; font-size: 11px; }
 .cattabs .t.on { border-color: var(--foreground); color: var(--foreground); font-weight: 500; }
 .cattabs .t b { font-weight: 600; color: var(--foreground); }
 
+/* The board's one search field, on /channels and on /topics. It was two — a bordered box here and
+   a ruled underline there — and the same act looked like two controls on two pages of one board.
+   Boxed won: an underline carries no left edge, so on a filter row it read as placeholder text
+   floating between two groups rather than as a field, and nothing said where to click. A box the
+   size of a key, in the key's own border, radius and fill, is not a browser default here — it is
+   the row's own vocabulary at input size.
+   Everything the field needs sits inside its frame: the glyph that says what it is, and one
+   trailing slot that is the `/` shortcut until you type and the clear control after. */
+.srch { position: relative; display: inline-flex; align-items: center; flex: 0 1 15rem; min-width: 9rem; }
+.srch-input {
+  width: 100%; border: 1px solid var(--muted-foreground); border-radius: 3px;
+  background: var(--card);
+  color: var(--foreground); font: inherit; font-size: 13px; line-height: 1.5;
+  padding: 7px 32px 7px 32px;
+}
+.srch-input::placeholder { color: var(--muted-foreground); opacity: 0.9; }
+.srch-input:hover { border-color: var(--foreground); }
+/* The board's global :focus-visible rule already draws the primary outline. The border darkens
+   under it so the field still reads as the live one when the outline is suppressed. */
+.srch-input:focus { border-color: var(--foreground); }
+/* Typed-in is a state the row has to show at a glance, the same way a selected key is: this is
+   the only control here that can be holding a value you cannot see from across the line. */
+.srch:has(.srch-input:not(:placeholder-shown)) .srch-input { border-color: var(--foreground); }
+/* The one control on the board drawn a step darker than the hairlines around it. Everything else
+   here offers a fixed set of answers and can afford to recede; this one takes an answer, and it
+   has to be found before it can be used. At the key's own border weight it was a box in a wall of
+   boxes and read as a fifth facet. */
+.srch-glyph {
+  position: absolute; left: 10px; width: 14px; height: 14px;
+  color: var(--foreground); pointer-events: none;
+}
+/* One slot at the right edge, two occupants, so nothing shifts when the field goes from empty to
+   typed-in. The hint fades on focus: it has been obeyed by then. */
+.srch-key, .srch-clear {
+  position: absolute; right: 6px; display: inline-flex; align-items: center;
+  justify-content: center; width: 19px; height: 19px; font: inherit; font-size: 11px;
+}
+.srch-key {
+  border: 1px solid var(--border); border-radius: 3px; background: var(--secondary);
+  color: var(--muted-foreground); pointer-events: none;
+}
+.srch:focus-within .srch-key { opacity: 0; }
+/* A keyboard shortcut advertised to a device with no keyboard. */
+@media (hover: none) { .srch-key { display: none; } }
+.srch-clear {
+  border: 0; border-radius: 3px; background: none; color: var(--muted-foreground); cursor: pointer;
+}
+.srch-clear:hover { background: var(--accent); color: var(--foreground); }
+@media (prefers-reduced-motion: no-preference) {
+  .srch-input, .srch-glyph, .srch-key {
+    transition: border-color 120ms ease-out, color 120ms ease-out, opacity 120ms ease-out;
+  }
+}
+/* /topics: the full width of the board, on its own line, above the facets.
+   The 0-3-0 selector is deliberate: `.fbar:not(.tagbar)` below sets the 12px that clears the
+   section kicker, and it is declared later in the file, so an equal-specificity override here
+   would silently lose the cascade and leave a 12px gap the search line has already paid. */
+.srch-bar { display: flex; width: 100%; flex: 1 1 100%; margin: 12px 0 0; }
+.srch-bar + .fbar:not(.tagbar) { margin-top: 8px; }
+
 /* /channels: a directory row rather than a table row, so the roster reads as
    scannable cards, not a ninth copy of the leaderboard's grid. */
-.chsearch { border: 1px solid var(--border); background: var(--card); padding: 4px 9px; font: inherit; font-size: 12px; min-width: 16rem; }
+
+/* The directory's control row. Here the search is the page — 74 rows and the question is always
+   "where is this one" — so it takes the width it can get and the language group is pushed to the
+   far end, rather than the two sitting side by side at equal weight as one more box among boxes.
+   On /topics the same field stays narrow, because there it shares the line with four facets. */
+.dirbar { flex-wrap: nowrap; align-items: center; gap: 20px; }
+.dirbar .grp { margin-left: auto; }
+.srch-wide { flex: 0 1 26rem; min-width: 11rem; }
+/* The tabs are the board's, at the board's size, but this row pairs them with a text field rather
+   than with a table header, and 2px of vertical padding beside a 29px input reads as a leftover.
+   Height only — the type, the border and the fill are untouched, so it is still the same control. */
+.dirbar .tabs button { padding: 5px 10px; }
+/* Under the prose measure the two groups stop fitting on one line; the language row goes full
+   width beneath the field rather than each tab wrapping onto its own. */
+@media (max-width: 46rem) {
+  .dirbar { flex-wrap: wrap; gap: 8px 12px; }
+  .srch-wide { flex: 1 1 100%; }
+  .dirbar .grp { margin-left: 0; }
+}
+
 .dirlink { flex: 1; min-width: 0; }
 .dirmeta { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .dirmeta .chname { max-width: none; }
@@ -918,32 +1002,14 @@ select.chip:hover { border-color: var(--muted-foreground); }
   flex-wrap: wrap; overflow: visible; mask-image: none;
 }
 
+/* The readout closes the line, so it keeps the auto margin — but it is now the last thing on the
+   row rather than the thing that shoved the search off the end of it. */
 .shopcount { font-size: 12px; margin-left: auto; font-variant-numeric: tabular-nums; }
 .shopcount .of { color: var(--muted-foreground); font-weight: 400; }
-/* Not a boxed input. A bordered rounded field is the one control on this board that looked like
-   a browser default; the rest of the page is drawn in hairlines, so the search is a ruled line
-   that inks in when it has focus or content. */
-.qfield {
-  display: inline-flex; align-items: center; gap: 7px;
-  padding: 2px 2px 4px; border-bottom: 1px solid var(--border);
-}
-@media (prefers-reduced-motion: no-preference) {
-  .qfield { transition: border-color 140ms ease; }
-}
-.qfield:focus-within, .qfield.on { border-bottom-color: var(--foreground); }
-.qglyph { font-size: 13px; line-height: 1; color: var(--muted-foreground); }
-.qfield:focus-within .qglyph, .qfield.on .qglyph { color: var(--foreground); }
-.qfield input {
-  font: inherit; font-size: 11.5px; width: 172px; padding: 0;
-  border: 0; background: transparent; color: inherit;
-}
-.qfield input:focus { outline: none; }
-.qfield input::placeholder { color: var(--muted-foreground); opacity: 0.6; }
-.qfield button {
-  font: inherit; font-size: 13px; line-height: 1; padding: 0 1px;
-  border: 0; background: transparent; color: var(--muted-foreground); cursor: pointer;
-}
-.qfield button:hover { color: var(--foreground); }
+/* The field leads this row, and a facet's label is 9px micro-caps starting at the same left edge,
+   so it sits a hair tighter than the 16px that separates the facet groups from each other: the
+   search is what you reach for first, not a fifth facet. */
+.fbar > .srch { margin-right: -4px; }
 
 .prow { border-top: 1px solid var(--border); padding: 14px 0 4px; }
 .prow:first-of-type { border-top: 0; }

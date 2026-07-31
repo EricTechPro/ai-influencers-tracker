@@ -1,9 +1,10 @@
 "use client"
 
 import Link from "next/link"
-import { useCallback, useMemo, useState } from "react"
-import { filterDirectory } from "@/lib/directory"
+import { useCallback, useEffect, useMemo, useState } from "react"
+import { filterDirectory, langTabs } from "@/lib/directory"
 import { PagedTable } from "./paged-table"
+import { SearchField } from "./search-field"
 import type { SortColumn } from "./sortable-table"
 import type { SortValue } from "@/lib/sort"
 import type { SlimChannel } from "@/lib/growth"
@@ -12,12 +13,6 @@ import { withWindow } from "@/lib/window"
 import { fmtInt } from "@/lib/trust"
 import { Avatar } from "./avatar"
 import { Chip } from "./trust"
-
-// `unknown` is a real category in the roster and it used to have no tab, so the four visible
-// counts summed to 73 of 74 and the unclassified channel matched no filter at all. Unclassified
-// is a state, not an absence; it gets its own tab, hidden only when nothing is in it.
-const CATS = ["all", "ai-creator", "company", "adjacent", "unknown", "you"] as const
-type Cat = (typeof CATS)[number]
 
 type ColKey =
   | "name" | "subscriber_count" | "video_count" | "view_count" | "lang" | "status" | "compare"
@@ -50,27 +45,17 @@ const COLUMNS: SortColumn<ColKey>[] = [
  */
 export function ChannelDirectory({ channels, win }: { channels: SlimChannel[]; win: WindowKey }) {
   const [q, setQ] = useState("")
-  const [cat, setCat] = useState<Cat>("all")
+  const [lang, setLang] = useState("all")
 
-  // Counts read off the same roster the filters run against, so a tab's own
-  // number always agrees with what clicking it produces.
-  const counts = useMemo(() => {
-    const out: Record<Cat, number> = {
-      all: channels.length,
-      "ai-creator": 0,
-      company: 0,
-      adjacent: 0,
-      unknown: 0,
-      you: 0,
-    }
-    for (const c of channels) {
-      if (c.category !== "own" && c.category in out) out[c.category as Cat] += 1
-      if (c.is_self) out.you += 1
-    }
-    return out
-  }, [channels])
+  const tabs = useMemo(() => langTabs(channels, q), [channels, q])
+  const filtered = useMemo(() => filterDirectory(channels, q, lang), [channels, q, lang])
 
-  const filtered = useMemo(() => filterDirectory(channels, q, cat), [channels, q, cat])
+  // Typing narrows the roster under the selected tab, and a tab that now selects nothing would
+  // leave the page reading "no channels match" beside a language button still lit. Fall back to
+  // `all`, which by construction always has the query's own matches in it.
+  useEffect(() => {
+    if (lang !== "all" && !tabs.some((t) => t.key === lang)) setLang("all")
+  }, [tabs, lang])
 
   // A null count is unmeasured, and lib/sort's tiering already sinks it to the bottom in both
   // directions — so it is passed through as null rather than coerced to a zero it is not.
@@ -84,30 +69,32 @@ export function ChannelDirectory({ channels, win }: { channels: SlimChannel[]; w
 
   return (
     <>
-      <div className="controls">
-        <label htmlFor="chsearch" className="sr-only">
-          search channels by name or handle
-        </label>
-        <input
-          id="chsearch"
-          type="search"
-          className="chsearch"
-          placeholder="search name or @handle"
+      <div className="controls dirbar">
+        <SearchField
+          className="srch-wide"
           value={q}
-          onChange={(e) => setQ(e.target.value)}
+          onChange={setQ}
+          label="search channels by name or handle"
+          placeholder="search by name or @handle"
         />
-        <div className="cattabs" role="group" aria-label="category">
-          {CATS.filter((c) => c !== "unknown" || counts.unknown > 0).map((c) => (
-            <button
-              key={c}
-              type="button"
-              className={`t${cat === c ? " on" : ""}`}
-              aria-pressed={cat === c}
-              onClick={() => setCat(c)}
-            >
-              {c} <b>{fmtInt(counts[c])}</b>
-            </button>
-          ))}
+        <div className="grp">
+          <span className="note">lang</span>
+          {/* The board tracks an English scene and a Chinese one and they are read separately.
+              The tabs are derived from the roster's own lang readings, so this row can never
+              offer a language nothing on the board is in. */}
+          <div className="tabs" role="group" aria-label="language">
+            {tabs.map((t) => (
+              <button
+                key={t.key}
+                type="button"
+                className={lang === t.key ? "on" : undefined}
+                aria-pressed={lang === t.key}
+                onClick={() => setLang(t.key)}
+              >
+                {t.label} <b>{fmtInt(t.count)}</b>
+              </button>
+            ))}
+          </div>
         </div>
       </div>
       <PagedTable

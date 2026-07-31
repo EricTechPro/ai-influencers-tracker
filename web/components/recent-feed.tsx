@@ -9,6 +9,7 @@ import { agoText, fmtInt } from "@/lib/trust"
 import { GridVideoCard } from "./grid-video-card"
 import { Pager, usePager } from "./pager"
 import { PatternRows } from "./pattern-rows"
+import { SearchField } from "./search-field"
 import { SectionKicker } from "./section-kicker"
 
 /** The heading is the window. Saying "this week" over a 30-day list is a small lie that costs
@@ -195,6 +196,25 @@ export function RecentFeed({
             </p>
           )}
 
+          {/* Its own line, and the full width of the board.
+              It sat last on the facet line, after the count and pushed to the far right by the
+              count's own `margin-left: auto`, which detached it from its row by whatever gap the
+              viewport left. Moving it to the head of that line fixed the detachment and not the
+              real problem: a field the size of a key, in a key's border, standing in a line of
+              thirteen keys, is one box in a wall of boxes. Nothing about it said it was the way
+              in, and it is the only control here that takes an answer rather than offering a
+              fixed set of them.
+              Its own line costs this block about 30px of height, which is a real cost on a
+              header that was deliberately cut down from a rail to two lines — paid because the
+              alternative is a search nobody finds. */}
+          <SearchField
+            className="srch-bar"
+            value={query}
+            onChange={setQuery}
+            label="search videos by title or channel"
+            placeholder="search by title or channel"
+          />
+
           <div className="fbar">
             {/* How far back the sweep reaches is a fact about the window keys, so it rides on
                 them rather than as a footnote under a rail that no longer exists. */}
@@ -246,25 +266,6 @@ export function RecentFeed({
               <b>{fmtInt(rows.length)}</b> {rows.length === 1 ? "video" : "videos"}
               {rows.length !== feed.length && (
                 <span className="of"> of {fmtInt(feed.length)}</span>
-              )}
-            </span>
-
-            {/* Not a boxed input. The field is a ruled line that thickens on focus, which is
-                the same hairline vocabulary the rest of the board is drawn in. */}
-            <span className={query ? "qfield on" : "qfield"}>
-              <span className="qglyph" aria-hidden="true">⌕</span>
-              <input
-                type="text"
-                value={query}
-                placeholder="title or channel"
-                aria-label="search title or channel"
-                onChange={(e) => setQuery(e.target.value)}
-                onKeyDown={(e) => e.key === "Escape" && setQuery("")}
-              />
-              {query && (
-                <button type="button" aria-label="clear search" onClick={() => setQuery("")}>
-                  ×
-                </button>
               )}
             </span>
           </div>

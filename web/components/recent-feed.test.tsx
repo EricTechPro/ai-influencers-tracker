@@ -108,7 +108,7 @@ describe("RecentFeed", () => {
       row({ video_id: "keep", title: "Opus 5 review" }),
       row({ video_id: "drop", title: "Something else", channel_name: "B" }),
     ])
-    fireEvent.change(screen.getByLabelText("search title or channel"), {
+    fireEvent.change(screen.getByLabelText("search videos by title or channel"), {
       target: { value: "opus" },
     })
     expect(countText()).toBe("1 video of 2")
