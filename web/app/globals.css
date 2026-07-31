@@ -109,6 +109,12 @@ h1 { font-size: 1.6rem; line-height: 2.1rem; font-weight: 700; color: var(--prim
 .linklike:hover { text-decoration: underline; }
 .linklike:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
 .linklike.on { font-weight: 600; text-decoration: underline; }
+/* The same cascade trap the .tipbtn/.derived ordering above documents, one class further along.
+   A /compare row whose label both expands and names a Derived claim wears one control carrying
+   both jobs, so it is `.linklike .derived` — but .linklike's own `border: 0` is declared after
+   .derived and wins at equal specificity, which strips the dotted underline that IS the tier.
+   0-2-0 restores it, and unlike reordering the two it cannot be undone by a later edit to either. */
+.linklike.derived { border-bottom: 1px dotted var(--muted-foreground); }
 
 /* badges */
 .badge { display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 500; line-height: 16px; padding: 1px 8px; border: 1px solid; border-radius: 999px; white-space: nowrap; }

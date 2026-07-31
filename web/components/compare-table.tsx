@@ -12,6 +12,7 @@ import { bucketText, deltaText, fmtInt, pctText, ratioText, stateExplain } from 
 import { WINDOWS, type StateCell, type VideoRow, type WindowKey } from "@/lib/types"
 import { Chip, Derived } from "./trust"
 import { GapCell } from "./gap-cell"
+import { useTip } from "./tip"
 import { WindowTabs } from "./window-tabs"
 
 export interface CompareSide {
@@ -36,7 +37,14 @@ const FORMATS: { key: VideoFormat; label: string }[] = [
 ]
 
 interface Row {
-  label: ReactNode
+  /** the metric's name, as words. Deliberately not a ReactNode: a label used to arrive already
+   *  wrapped in its own <Derived>, which rendered its own disclosure button, and an expandable
+   *  row then put that button inside its expander. The formula travels beside the words instead,
+   *  and RowCells decides which single control carries it. */
+  label: string
+  /** present when the label names a Derived claim, which owes its formula a trigger a keyboard
+   *  and a touch screen can both reach */
+  formula?: string
   them: ReactNode
   you: ReactNode
   gap: GapValue
@@ -213,7 +221,8 @@ export function CompareTable({
       share: shareOf(them.subscriber_count, you.subscriber_count),
     },
     {
-      label: <Derived formula="Subscribers at the end of the window minus subscribers at the start.">subs gained</Derived>,
+      label: "subs gained",
+      formula: "Subscribers at the end of the window minus subscribers at the start.",
       them: deltaText(them.subscriber_delta[win]),
       you: deltaText(you.subscriber_delta[win]),
       gap: gap(okValue(them.subscriber_delta[win]), okValue(you.subscriber_delta[win])),
@@ -224,7 +233,8 @@ export function CompareTable({
       windowed: { them: them.subscriber_delta, you: you.subscriber_delta, themLabel, youLabel, fmt: deltaText },
     },
     {
-      label: <Derived formula="Subscribers gained, as a share of what the channel had when the window started.">growth rate</Derived>,
+      label: "growth rate",
+      formula: "Subscribers gained, as a share of what the channel had when the window started.",
       them: pctText(them.subscriber_growth_rate[win]),
       you: pctText(you.subscriber_growth_rate[win]),
       gap: gap(okValue(them.subscriber_growth_rate[win]), okValue(you.subscriber_growth_rate[win])),
@@ -245,7 +255,8 @@ export function CompareTable({
       share: shareOf(them.view_count, you.view_count),
     },
     {
-      label: <Derived formula="Total views at the end of the window minus total views at the start. Exact, never rounded.">views gained</Derived>,
+      label: "views gained",
+      formula: "Total views at the end of the window minus total views at the start. Exact, never rounded.",
       them: deltaText(them.view_delta[win]),
       you: deltaText(you.view_delta[win]),
       gap: gap(okValue(them.view_delta[win]), okValue(you.view_delta[win])),
@@ -256,7 +267,8 @@ export function CompareTable({
       windowed: { them: them.view_delta, you: you.view_delta, themLabel, youLabel, fmt: deltaText },
     },
     {
-      label: <Derived formula="How many subscribers each thousand views brought in. Higher means the audience converts better.">subs per 1,000 views</Derived>,
+      label: "subs per 1,000 views",
+      formula: "How many subscribers each thousand views brought in. Higher means the audience converts better.",
       them: fmtCell(them.subs_per_1k_views[win]),
       you: fmtCell(you.subs_per_1k_views[win]),
       gap: gap(okValue(them.subs_per_1k_views[win]), okValue(you.subs_per_1k_views[win])),
@@ -269,7 +281,8 @@ export function CompareTable({
 
   const output: Row[] = [
     {
-      label: <Derived formula="Videos posted inside the window. Their view counts are lifetime totals, not views earned during the window.">videos published</Derived>,
+      label: "videos published",
+      formula: "Videos posted inside the window. Their view counts are lifetime totals, not views earned during the window.",
       them: t.stats.videos,
       you: y.stats.videos,
       gap: gap(t.stats.videos, y.stats.videos),
@@ -278,20 +291,23 @@ export function CompareTable({
     // long vs shorts gets no share: it's two counts (long, short), not one
     // comparable quantity, so there is no single proportion to draw a bar of.
     ...(format === "all" ? [{
-      label: <Derived formula="How those videos split between long-form and Shorts.">long vs shorts</Derived>,
+      label: "long vs shorts",
+      formula: "How those videos split between long-form and Shorts.",
       them: formatMix(t.mix.long, t.mix.short),
       you: formatMix(y.mix.long, y.mix.short),
       gap: { kind: "unknown", magnitude: null, direction: null, qualifier: null } as GapValue,
     }] : []),
     {
-      label: <Derived formula="The middle value: half these videos did better, half did worse. Lifetime views, not views earned during the window.">typical views per video</Derived>,
+      label: "typical views per video",
+      formula: "The middle value: half these videos did better, half did worse. Lifetime views, not views earned during the window.",
       them: numOrDash(t.stats.medianViews),
       you: numOrDash(y.stats.medianViews),
       gap: gap(t.stats.medianViews, y.stats.medianViews),
       share: shareOf(t.stats.medianViews, y.stats.medianViews),
     },
     {
-      label: <Derived formula={CADENCE_FORMULA}>days between uploads</Derived>,
+      label: "days between uploads",
+      formula: CADENCE_FORMULA,
       them: t.cadence === null ? "--" : `${t.cadence}d`,
       you: y.cadence === null ? "--" : `${y.cadence}d`,
       gap: gap(t.cadence, y.cadence, { lowerIsBetter: true, qualifier: "more often" }),
@@ -344,6 +360,13 @@ function Group({ title, rows }: { title: string; rows: Row[] }) {
 function RowCells({ row }: { row: Row }) {
   const [open, setOpen] = useState(false)
   const expandable = Boolean(row.detail || row.windowed)
+  // One control per label, never two. A Derived label owes its formula a trigger a keyboard and a
+  // touch screen can reach, and an expandable row already has one — so when the row expands, the
+  // expander carries the formula too. That is what useTip is for: it hands an element that is
+  // already focusable a real disclosure, rather than wrapping one in a second button. <Derived>
+  // does wrap, so rendering it in here put a <button> inside a <button>: invalid HTML that React
+  // refused to hydrate, throwing away the whole table and rebuilding it on the client.
+  const { ref, triggerProps, tip } = useTip(expandable ? row.formula : undefined)
   // Who's ahead comes straight from the row's own gap, never recomputed here:
   // "ahead" means the you column leads, "behind" means them does, and
   // even/unknown (the ones GapCell also renders with no glyph) mark neither.
@@ -353,9 +376,24 @@ function RowCells({ row }: { row: Row }) {
       <tr>
         <td>
           {expandable ? (
-            <button type="button" className="linklike" aria-expanded={open} onClick={() => setOpen(!open)}>
-              {row.label}
-            </button>
+            <>
+              <button
+                ref={ref}
+                type="button"
+                // .derived keeps the dotted underline that says "this claim shows its formula";
+                // .linklike is declared later, so the pointer cursor of a control wins over the
+                // help cursor of a bare disclosure, which is the right order here.
+                className={row.formula ? "linklike derived" : "linklike"}
+                aria-expanded={open}
+                onClick={() => setOpen(!open)}
+                {...triggerProps}
+              >
+                {row.label}
+              </button>
+              {tip}
+            </>
+          ) : row.formula ? (
+            <Derived formula={row.formula}>{row.label}</Derived>
           ) : row.label}
         </td>
         <td className={cellClass(row.themCell, lead === "them")} title={row.themCell && stateExplain(row.themCell)}>
