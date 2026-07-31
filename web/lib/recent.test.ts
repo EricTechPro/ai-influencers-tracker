@@ -27,6 +27,7 @@ function bundle(videos: RecentRow[]): RecentBundle {
     generated_at: "2026-07-29T00:00:00Z",
     source: "vidiq",
     fetched_at: "2026-07-29",
+    fetched_at_utc: null,
     window: "thisMonth",
     coverage: {
       channels_requested: 72,
@@ -122,6 +123,6 @@ describe("selectRecent floor and nulls", () => {
   })
 
   it("an empty window is empty, not an error", () => {
-    expect(selectRecent(bundle([]), OPTS, TODAY)).toEqual({ ranked: [], tail: [] })
+    expect(selectRecent(bundle([]), OPTS, TODAY)).toEqual({ ranked: [], tail: [], feed: [] })
   })
 })

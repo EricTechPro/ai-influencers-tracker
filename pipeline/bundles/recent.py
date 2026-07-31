@@ -59,6 +59,9 @@ def build(ctx) -> dict:
         "generated_at": ctx.generated_at,
         "source": "vidiq",
         "fetched_at": sweep.get("date") if sweep else None,
+        # None on every sweep written before outliers.py started stamping the clock. The page
+        # shows the day alone in that case rather than inventing a time for it.
+        "fetched_at_utc": sweep.get("fetched_at_utc") if sweep else None,
         "window": sweep.get("window") if sweep else None,
         "coverage": coverage,
         # The two numbers that decide what the grid shows, carried to the UI the one honest way

@@ -403,6 +403,9 @@ export interface RecentBundle {
   generated_at: string
   source: "vidiq"
   fetched_at: string | null
+  /** the same sweep, to the minute. Null on every sweep written before pipeline/outliers.py
+   *  started stamping the clock, so the page falls back to the day alone. */
+  fetched_at_utc: string | null
   window: string | null
   coverage: RecentCoverage
   /** breakout score under which a row goes to the tail; config/thresholds.json outliers.display_floor */

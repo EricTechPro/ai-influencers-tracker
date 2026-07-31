@@ -251,24 +251,40 @@ img.avatar { object-fit: cover; background: var(--secondary); }
    table, which is the row people hover first. Beside the avatar there is
    always room, and a table's own vertical rhythm keeps it clear of the rows
    above and below. */
+/* Fixed, not absolute, and portalled onto the body: an absolutely positioned panel is laid out
+   even while hidden, and inside `.tblwrap` — which is a scrollport under 90rem — ten of those
+   under the last row is 121px of empty scrollable band with nothing in it. Coordinates come from
+   avatar-peek.tsx, which measures the panel and clamps it into the window; the only thing set
+   here is what it looks like. `left`/`top` start off-screen so the first paint of a freshly
+   mounted panel cannot flash in the corner before the layout effect places it. */
 .avpop {
-  position: absolute; left: calc(100% + 12px); top: 50%; transform: translateY(-50%) scale(0.96);
+  position: fixed; left: -9999px; top: -9999px; visibility: hidden;
   z-index: 60; display: flex; flex-direction: column; align-items: center; gap: 8px;
   padding: 12px; width: 216px;
   background: var(--card); border: 1px solid var(--border);
   box-shadow: 0 12px 32px -8px rgba(40, 39, 40, 0.28);
-  opacity: 0; visibility: hidden; pointer-events: none;
-  transition: opacity 110ms ease-out, transform 110ms ease-out, visibility 110ms;
+  pointer-events: none;
+  animation: avpop-in 110ms ease-out;
 }
-.avpeek:hover .avpop, .avpeek:focus-within .avpop {
-  opacity: 1; visibility: visible; transform: translateY(-50%) scale(1);
+@keyframes avpop-in {
+  from { opacity: 0; transform: scale(0.96); }
 }
+@media (prefers-reduced-motion: reduce) { .avpop { animation: none; } }
 /* The panel's own little pointer, drawn as a rotated square so it inherits the
-   card fill and the hairline border on the two edges that show. */
+   card fill and the hairline border on the two edges that show.
+   `--arrow-top` is the face's centre in the panel's own coordinates, so a panel clamped against
+   the top or bottom of the window still points at the row it belongs to rather than at its own
+   middle. It flips sides with the panel. */
 .avpop::after {
-  content: ""; position: absolute; right: 100%; top: 50%; width: 9px; height: 9px;
-  margin: -4.5px -5px 0 0; transform: rotate(45deg);
-  background: var(--card); border-left: 1px solid var(--border); border-bottom: 1px solid var(--border);
+  content: ""; position: absolute; top: var(--arrow-top, 50%); width: 9px; height: 9px;
+  background: var(--card);
+  border-left: 1px solid var(--border); border-bottom: 1px solid var(--border);
+}
+.avpop[data-side="right"]::after {
+  right: 100%; margin: -4.5px -5px 0 0; transform: rotate(45deg);
+}
+.avpop[data-side="left"]::after {
+  left: 100%; margin: -4.5px 0 0 -5px; transform: rotate(-135deg);
 }
 .avpop-face { border-radius: 4px; box-shadow: none; }
 .avpop-meta { display: flex; flex-direction: column; align-items: center; gap: 2px; text-align: center; min-width: 0; max-width: 100%; }
@@ -284,7 +300,6 @@ img.avatar { object-fit: cover; background: var(--secondary); }
 .avpop-stat .k { font-size: 10px; color: var(--muted-foreground); white-space: nowrap; }
 .avpop-stat .v { font-size: 11px; font-weight: 600; white-space: nowrap; }
 .avpop-stat .n2 { font-size: 9px; font-weight: 400; color: var(--muted-foreground); }
-@media (prefers-reduced-motion: reduce) { .avpop { transition: none; } }
 
 /* Wider tracks than the mockup board's 14.5rem: the card now leads with a
    48px face, and a name like "Brock Mesarich | AI for Non Techies" needs the
@@ -686,8 +701,11 @@ select.chip:hover { border-color: var(--muted-foreground); }
    which is what YouTube does and what the eye is already trained on. */
 /* One grid, two users: the feed and the pattern rows. .pgrid only differs in its gap. */
 .ygrid, .pgrid { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 16px 14px; }
+/* Three across once the feed gave a column to its filters, and a page of nine is then exactly
+   the 3x3 block you are looking at. The pattern rows keep four: they have the full width. */
+.ygrid.g3 { grid-template-columns: repeat(3, minmax(0,1fr)); }
 @media (max-width: 60rem) {
-  .ygrid, .pgrid { grid-template-columns: repeat(2, minmax(0,1fr)); }
+  .ygrid, .pgrid, .ygrid.g3 { grid-template-columns: repeat(2, minmax(0,1fr)); }
 }
 
 .ycard { display: block; color: inherit; text-decoration: none; }
@@ -763,16 +781,81 @@ select.chip:hover { border-color: var(--muted-foreground); }
 /* format is the first decision, so it is the loudest control */
 .ctrls .seg.big button { font-size: 12px; padding: 4px 14px; font-weight: 600; }
 
-.tail {
-  margin-top: 20px; border: 1px dashed var(--border); border-radius: 6px; padding: 11px 14px;
-  display: flex; align-items: center; gap: 12px; flex-wrap: wrap; background: var(--card);
+/* ————— The shop layout: facets left, one toolbar, one result set —————
+   The feed used to carry its filters in a row above the grid and its low end in a second
+   collapsed grid below. Both are gone: filters stack down the left where a long list of topics
+   has room to be a list, and the low end is page two. */
+.shop { display: grid; grid-template-columns: 178px minmax(0, 1fr); gap: 24px; }
+@media (max-width: 60rem) {
+  .shop { grid-template-columns: minmax(0, 1fr); gap: 14px; }
+  .shopside { display: flex; flex-wrap: wrap; gap: 14px 22px; }
 }
-.tail .t1 { font-size: 12px; font-weight: 600; }
-.tail .t2 { font-size: 10px; color: var(--muted-foreground); }
-.tail button {
-  margin-left: auto; font: inherit; font-size: 11px; border: 1px solid var(--border);
-  background: var(--secondary); border-radius: 4px; padding: 2px 12px; cursor: pointer;
+.shopmain { min-width: 0; }
+
+.facet { margin-bottom: 18px; }
+.flabel {
+  display: block; font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em;
+  color: var(--muted-foreground); margin-bottom: 6px;
 }
+.shopsort {
+  font: inherit; font-size: 11px; width: 100%; padding: 4px 6px;
+  border: 1px solid var(--border); border-radius: 4px; background: var(--card);
+}
+.slist {
+  list-style: none; margin: 0; padding: 0;
+  border: 1px solid var(--border); border-radius: 5px; overflow: hidden; background: var(--card);
+}
+.slist li + li button { border-top: 1px solid var(--border); }
+.slist button {
+  display: flex; align-items: baseline; gap: 8px; width: 100%; text-align: left;
+  font: inherit; font-size: 11px; padding: 5px 9px; border: 0; background: transparent;
+  color: var(--muted-foreground); cursor: pointer;
+}
+.slist button:hover { background: var(--accent); }
+.slist button.on { background: var(--primary); color: #fff; font-weight: 600; }
+.slist .sname { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.slist .scount { font-size: 10px; opacity: 0.75; font-variant-numeric: tabular-nums; }
+
+.shopbar {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  padding-bottom: 10px; margin-bottom: 12px; border-bottom: 1px solid var(--border);
+}
+.shopcount { font-size: 12px; margin-right: auto; font-variant-numeric: tabular-nums; }
+.shopcount .of { color: var(--muted-foreground); font-weight: 400; }
+.shopsearch {
+  font: inherit; font-size: 11px; width: 220px; padding: 4px 9px;
+  border: 1px solid var(--border); border-radius: 4px; background: var(--card);
+}
+.shopreset {
+  font: inherit; font-size: 11px; padding: 4px 11px; cursor: pointer;
+  border: 1px solid var(--border); border-radius: 4px; background: var(--secondary);
+}
+.shopreset:disabled { opacity: 0.4; cursor: default; }
+/* .seg is scoped to .ctrls above, so the view toggle carries its own copy of that geometry
+   rather than widening that rule to every .seg on the board — .seg is also the meter's. */
+.seg.shopview {
+  display: inline-flex; border: 1px solid var(--border); border-radius: 4px;
+  overflow: hidden; background: var(--card);
+}
+.seg.shopview button {
+  font: inherit; font-size: 11px; padding: 3px 10px; border: 0; background: transparent;
+  color: var(--muted-foreground); cursor: pointer; border-right: 1px solid var(--border);
+}
+.seg.shopview button:last-child { border-right: 0; }
+.seg.shopview button.on { background: var(--primary); color: #fff; font-weight: 600; }
+
+/* The same rows as the grid, for the comparisons a grid is bad at. */
+.vtitle { font-size: 12px; font-weight: 600; color: inherit; text-decoration: none; }
+.vtitle:hover { color: var(--primary); }
+.vsub {
+  display: block; font-size: 10.5px; color: var(--muted-foreground); margin-top: 2px;
+}
+.vshort {
+  margin-left: 6px; padding: 0 4px; border-radius: 3px; font-size: 9px; font-weight: 700;
+  letter-spacing: 0.06em; background: var(--secondary);
+}
+.vnone { color: var(--muted-foreground); }
+.vtopic { font-size: 11px; color: var(--muted-foreground); }
 
 .prow { border-top: 1px solid var(--border); padding: 14px 0 4px; }
 .prow:first-of-type { border-top: 0; }
@@ -818,6 +901,8 @@ select.chip:hover { border-color: var(--muted-foreground); }
 
 /* The breakout badge in vidIQ's own ramp: their outlier UI runs blue into purple, so a vendor
    number wears vendor colours instead of borrowing this board's verdict green. */
+/* The same badge, out of the thumbnail and into a table cell. */
+.ymult.inline { position: static; display: inline-block; }
 .ymult { background: #2f6fed; }
 .ymult.t5 { background: #4f5ae8; }
 .ymult.t3 { background: #6b5ce0; }

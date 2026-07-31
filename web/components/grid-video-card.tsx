@@ -5,7 +5,7 @@ import { Avatar } from "./avatar"
 /** Louder the further past normal it ran. Bands only, never a recomputation. The ramp is
  *  vidIQ's own: their outlier UI runs blue into purple, so a vendor number wears vendor
  *  colours and stops competing with this board's verdict palette. */
-const SCORE_CLASS = ["t2", "t3", "t5", ""] as const
+export const SCORE_CLASS = ["t2", "t3", "t5", ""] as const
 
 /** Every state says its own word, in plain English. The one thing view count cannot tell you is
  *  whether a video is still getting views, and "unmeasured" is a state too — a video we cannot

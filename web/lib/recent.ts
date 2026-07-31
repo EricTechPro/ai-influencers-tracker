@@ -15,9 +15,29 @@ export interface RecentOptions {
 export interface RecentSelection {
   ranked: RecentRow[]
   tail: RecentRow[]
+  /**
+   * The two above, concatenated: one descending list, which is what the page renders.
+   *
+   * The split is still computed because it is what orders this list — a row the cap pushed out
+   * follows the grid rather than its own score, and a row under the floor follows both. It is no
+   * longer two grids: a 2.44x sitting behind a wall labelled "held back" read as a different kind
+   * of video than the 2.50x above it, when the only difference is which side of a config number
+   * they landed on. The score badge already dims down the ladder, so the ordering says it.
+   */
+  feed: RecentRow[]
 }
 
 const DAY_MS = 86_400_000
+
+/** Descending by score, unscored last. A null breakout_score is a video vidIQ did not measure,
+ *  so it sorts behind every measured one rather than ahead of them as a zero would. */
+function byScore(a: RecentRow, b: RecentRow): number {
+  if (a.breakout_score === null || b.breakout_score === null) {
+    if (a.breakout_score === b.breakout_score) return a.video_id.localeCompare(b.video_id)
+    return a.breakout_score === null ? 1 : -1
+  }
+  return b.breakout_score - a.breakout_score || a.video_id.localeCompare(b.video_id)
+}
 
 function ageDays(publishedAt: string, today: Date): number {
   return Math.floor((today.getTime() - Date.parse(publishedAt)) / DAY_MS)
@@ -59,13 +79,7 @@ export function selectRecent(
   const clears = (v: RecentRow): boolean =>
     v.breakout_score !== null && v.breakout_score >= opts.floor
 
-  const scored = inWindow
-    .filter(clears)
-    .sort(
-      (a, b) =>
-        (b.breakout_score ?? 0) - (a.breakout_score ?? 0) ||
-        a.video_id.localeCompare(b.video_id)
-    )
+  const scored = inWindow.filter(clears).sort(byScore)
 
   const belowFloor = inWindow.filter((v) => !clears(v))
 
@@ -82,5 +96,6 @@ export function selectRecent(
     ranked.push(v)
   }
 
-  return { ranked, tail: [...capped, ...belowFloor] }
+  const tail = [...capped, ...belowFloor].sort(byScore)
+  return { ranked, tail, feed: [...ranked, ...tail] }
 }

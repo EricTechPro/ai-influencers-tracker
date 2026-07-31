@@ -114,8 +114,14 @@ def sweep(roster: list[dict], client, guard, today: dt.date,
 
     formats = [fetch(client, guard, channel_ids, content_type=fmt, window=window)
                for fmt in FORMATS]
+    # The clock time as well as the day. "date" answers which day's scores these are; the page
+    # also has to answer how stale they are, and a bare date cannot tell a sweep that landed
+    # twenty minutes ago from one that landed twenty-three hours ago. Stamped at write, after the
+    # fetches returned, so it is when the data arrived rather than when the run started.
     util.write_json(config.synth_dir() / "outliers" / f"{util.date_str(today)}.json",
-                    {"date": util.date_str(today), "window": window, "formats": formats})
+                    {"date": util.date_str(today),
+                     "fetched_at_utc": util.iso_z(dt.datetime.now(dt.UTC)),
+                     "window": window, "formats": formats})
     return {"formats": len(formats), "credits": per_format * len(FORMATS),
             "spent": guard.spent, "dry_run": False}
 
