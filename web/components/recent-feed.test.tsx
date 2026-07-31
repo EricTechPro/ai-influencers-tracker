@@ -245,3 +245,51 @@ describe("RecentFeed", () => {
     expect(document.querySelector(".cap")?.textContent).not.toContain("0d")
   })
 })
+
+describe("the language row", () => {
+  const mixed = [
+    row({ video_id: "zh1", title: "矽谷大神筆記術", lang: "zh", multiplier: 9 }),
+    row({ video_id: "en1", title: "How I Use Claude Code", lang: "en", multiplier: 8 }),
+  ]
+
+  it("offers every language the window holds, and none it does not", () => {
+    feed(mixed)
+    const tabs = screen.getByRole("group", { name: "language" })
+    // all first, then the languages themselves, each naming itself and carrying its count
+    expect(within(tabs).getAllByRole("button").map((b) => b.textContent))
+      .toEqual(["all", "english1", "中文1"])
+    expect(within(tabs).queryByText("ja")).toBeNull()
+  })
+
+  it("selecting a language shows that language and nothing else", () => {
+    feed(mixed)
+    const tabs = screen.getByRole("group", { name: "language" })
+    fireEvent.click(within(tabs).getByRole("button", { name: /中文/ }))
+    expect(screen.getByText("矽谷大神筆記術")).toBeTruthy()
+    expect(screen.queryByText("How I Use Claude Code")).toBeNull()
+  })
+
+  it("marks the selected language pressed and leaves all unpressed", () => {
+    feed(mixed)
+    const tabs = screen.getByRole("group", { name: "language" })
+    fireEvent.click(within(tabs).getByRole("button", { name: /中文/ }))
+    expect(within(tabs).getByRole("button", { name: "all" }).getAttribute("aria-pressed"))
+      .toBe("false")
+    expect(within(tabs).getByRole("button", { name: /中文/ }).getAttribute("aria-pressed"))
+      .toBe("true")
+  })
+
+  it("hides itself entirely when the window holds only one language", () => {
+    feed([row({ video_id: "en1", lang: "en" })])
+    expect(screen.queryByRole("group", { name: "language" })).toBeNull()
+  })
+
+  it("counts over the window rather than over the current selection", () => {
+    feed(mixed)
+    const tabs = screen.getByRole("group", { name: "language" })
+    fireEvent.click(within(tabs).getByRole("button", { name: /中文/ }))
+    // english still reads 1 after filtering to Chinese; a facet that recounts itself as you
+    // click it can only ever read its own selection back.
+    expect(within(tabs).getByRole("button", { name: /english/ }).textContent).toContain("1")
+  })
+})
