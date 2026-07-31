@@ -781,11 +781,11 @@ select.chip:hover { border-color: var(--muted-foreground); }
    which is what YouTube does and what the eye is already trained on. */
 /* One grid, two users: the feed and the pattern rows. .pgrid only differs in its gap. */
 .ygrid, .pgrid { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 16px 14px; }
-/* Three across once the feed gave a column to its filters, and a page of nine is then exactly
-   the 3x3 block you are looking at. The pattern rows keep four: they have the full width. */
-.ygrid.g3 { grid-template-columns: repeat(3, minmax(0,1fr)); }
+/* Four across, and a page of twelve is then exactly the 4x3 block you are looking at. It was
+   three for as long as the feed paid a column to a left filter rail; the rail is two ruled lines
+   now (.fbar above) and the column came back. */
 @media (max-width: 60rem) {
-  .ygrid, .pgrid, .ygrid.g3 { grid-template-columns: repeat(2, minmax(0,1fr)); }
+  .ygrid, .pgrid { grid-template-columns: repeat(2, minmax(0,1fr)); }
 }
 
 .ycard { display: block; color: inherit; text-decoration: none; }
@@ -861,61 +861,57 @@ select.chip:hover { border-color: var(--muted-foreground); }
 /* format is the first decision, so it is the loudest control */
 .ctrls .seg.big button { font-size: 12px; padding: 4px 14px; font-weight: 600; }
 
-/* ————— The shop layout: facets left, one toolbar, one result set —————
-   The feed used to carry its filters in a row above the grid and its low end in a second
-   collapsed grid below. Both are gone: filters stack down the left where a long list of topics
-   has room to be a list, and the low end is page two. */
-/* The rail is 140px and hairline-quiet: five stacked bordered boxes read as five competing
-   panels next to a grid of photographs, and the filters are not the page. One vertical rule
-   separates them from the results instead, and the selected row is marked by a bar in the
-   margin rather than by a filled blue block. */
-.shop { display: grid; grid-template-columns: 158px minmax(0, 1fr); gap: 22px; margin-top: 14px; }
-/* Sticky: the filters are how you get back out of a long list, so they cannot scroll away
-   above it. align-self keeps the rail its own height rather than the row's. */
-.shopside {
-  position: sticky; top: 14px; align-self: start;
-  border-right: 1px solid var(--border); padding-right: 18px;
+/* ————— The filter bar: two ruled lines, then the results —————
+   These filters have been a row, then a 158px left rail, and are now a row again — but a row of
+   one-line facets rather than of stacked blocks, which is what made the first version tall. The
+   rail cost more than it bought: five labels stacked above their keys plus a boxed tag well sat
+   between the heading and the first thumbnail, taller than two rows of cards, and it took a
+   column off a grid that was drawn for four. Two lines now. Line one is the four short facets
+   with the count and the search pushed to its end; line two is the tag strip. Hairlines rather
+   than boxes, the same vocabulary the rest of the board is ruled in. */
+.fbar {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 7px 16px;
+  padding: 9px 0; border-bottom: 1px solid var(--border);
 }
-/* Narrow: the rail stops being a column and becomes a wrapped row above the grid, and with it
-   the sticky goes. A sticky full-width row pins itself over the results it sits above, and the
-   rail is drawn on nothing — so the thumbnails scrolled straight through the keys. This block
-   used to sit above the rule it overrides, which at equal specificity loses to it whatever the
-   media query says, so none of these three ever applied. */
-/* Wrapping the facets as blocks was not enough: four labelled stacks plus eighteen wrapped tag
-   keys filled the entire first screen above the words "27 videos", which is the same complaint
-   the old header paragraph earned, moved to a different place. Each facet is one line now — its
-   label beside its keys, the way the leaderboard's control row already reads — and the tags
-   become a single strip that scrolls sideways instead of a block that grows downward. */
-@media (max-width: 60rem) {
-  .shop { grid-template-columns: minmax(0, 1fr); gap: 12px; }
-  .shopside {
-    position: static; border-right: 0; padding-right: 0;
-    border-bottom: 1px solid var(--border); padding-bottom: 11px;
-    display: flex; flex-wrap: wrap; align-items: center; gap: 7px 18px;
-  }
-  /* Scoped rather than bare `.keys`, which is declared further down and would win the same way. */
-  .shopside .keys { display: flex; align-items: center; gap: 7px; margin-bottom: 0; }
-  .shopside .klabel { margin-bottom: 0; white-space: nowrap; }
-  /* Tags take their own full line and keep it: one row, scrolled, never a growing block. */
-  .shopside .keys:has(.krow.tags) { flex: 1 1 100%; min-width: 0; }
-  .shopside .krow.tags {
-    max-height: none; flex-wrap: nowrap; overflow-x: auto; overflow-y: hidden;
-    padding-bottom: 0;
-    mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent);
-  }
-  .shopside .krow.tags .key { flex: 0 0 auto; }
-  .shopside .sfoot { flex: 1 1 100%; margin: 0; }
+/* Only the first line clears the section kicker; the tag line sits directly under line one. */
+.fbar:not(.tagbar) { margin-top: 12px; }
+.fbar + .ygrid, .fbar + .note { margin-top: 14px; }
+/* The strip takes the leftover width so it can scroll inside it; the button and the coverage
+   note keep their own. */
+.tagbar .keys { flex: 1 1 0; min-width: 0; }
+.tagbar .krow { min-width: 0; }
+/* Open, the strip is a block several rows tall, and centring drops its label, its button and its
+   coverage note into the middle of that block with keys above and below them. They belong on the
+   first row, so the margin lifts them to sit on it rather than beside the whole thing. */
+/* The .keys wrapper needs it too: the label centres inside that box, and open the box is as tall
+   as the wrapped strip, so aligning only .tagbar's own children leaves the label behind. */
+.tagbar:has(.tags.open),
+.tagbar:has(.tags.open) .keys { align-items: flex-start; }
+.tagbar:has(.tags.open) .klabel,
+.tagbar:has(.tags.open) .kmore,
+.tagbar:has(.tags.open) .tcap { margin-top: 4px; }
+/* Says what it holds back, not that there is more. Underlined text rather than a bordered key:
+   it selects nothing, and it must not read as one more facet value in a row of them. */
+.kmore {
+  font: inherit; font-size: 10.5px; padding: 2px 0; flex: 0 0 auto;
+  border: 0; background: transparent; color: var(--primary);
+  text-decoration: underline; text-underline-offset: 2px; cursor: pointer;
 }
-.shopmain { min-width: 0; }
+.kmore:hover { color: var(--foreground); }
+.tcap {
+  font-size: 9.5px; color: var(--muted-foreground); opacity: 0.7; flex: 0 0 auto;
+  margin-left: auto; white-space: nowrap;
+}
 
 /* Keys, not lists and not dropdowns. Every facet here has two to six short values, and a row of
-   keys reads faster than a stack of sentences while keeping the whole rail inside one screen.
+   keys reads faster than a stack of sentences. The label sits beside its keys rather than above
+   them: four labels on their own lines were four lines of chrome for four words.
    Selected is ink-filled rather than brand-blue: blue is this board's link and primary colour,
-   and four blue blocks down the left competed with the thumbnails for the eye. */
-.keys { margin-bottom: 14px; }
+   and four blue blocks competed with the thumbnails for the eye. */
+.keys { display: inline-flex; align-items: center; gap: 7px; }
 .klabel {
-  display: block; font-size: 9px; text-transform: uppercase; letter-spacing: 0.1em;
-  color: var(--muted-foreground); opacity: 0.7; margin-bottom: 5px;
+  font-size: 9px; text-transform: uppercase; letter-spacing: 0.1em;
+  color: var(--muted-foreground); opacity: 0.7; white-space: nowrap;
 }
 .krow { display: flex; flex-wrap: wrap; gap: 4px; }
 .key {
@@ -933,25 +929,22 @@ select.chip:hover { border-color: var(--muted-foreground); }
 }
 .key .kn { font-size: 9.5px; opacity: 0.6; margin-left: 5px; font-variant-numeric: tabular-nums; }
 .key.on .kn { opacity: 0.75; }
-/* Tags run to dozens. The rail shows the heaviest and says how many it did not. The mask fades
-   the last row rather than slicing it, so a clipped key reads as "more below" and not as a
-   rendering fault. */
+/* Tags run to dozens, and the old well capped them twice: a 16-key slice inside a 142px box that
+   masked whatever the slice left. Six tags were then reachable by nothing on the page. Closed,
+   the strip is exactly one line at every width — nowrap and scrolled sideways, so it can never
+   quietly become two rows on a narrow screen. Open, it wraps to as many rows as the full list
+   needs, because the whole point of the button is that nothing is out of reach. */
 .krow.tags {
-  max-height: 142px; overflow-y: auto; padding-bottom: 2px;
-  mask-image: linear-gradient(to bottom, #000 calc(100% - 16px), transparent);
-  scrollbar-width: none;
+  flex-wrap: nowrap; overflow-x: auto; overflow-y: hidden; scrollbar-width: none;
+  mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent);
 }
 .krow.tags::-webkit-scrollbar { display: none; }
-.sfoot {
-  font-size: 9.5px; color: var(--muted-foreground); opacity: 0.7; margin: 16px 0 0;
-  line-height: 1.5;
+.krow.tags .key { flex: 0 0 auto; }
+.krow.tags.open {
+  flex-wrap: wrap; overflow: visible; mask-image: none;
 }
 
-.shopbar {
-  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
-  padding-bottom: 9px; margin-bottom: 13px; border-bottom: 1px solid var(--border);
-}
-.shopcount { font-size: 12px; margin-right: auto; font-variant-numeric: tabular-nums; }
+.shopcount { font-size: 12px; margin-left: auto; font-variant-numeric: tabular-nums; }
 .shopcount .of { color: var(--muted-foreground); font-weight: 400; }
 /* Not a boxed input. A bordered rounded field is the one control on this board that looked like
    a browser default; the rest of the page is drawn in hairlines, so the search is a ruled line
@@ -977,11 +970,6 @@ select.chip:hover { border-color: var(--muted-foreground); }
   border: 0; background: transparent; color: var(--muted-foreground); cursor: pointer;
 }
 .qfield button:hover { color: var(--foreground); }
-.shopreset {
-  font: inherit; font-size: 11px; padding: 4px 11px; cursor: pointer;
-  border: 1px solid var(--border); border-radius: 4px; background: var(--secondary);
-}
-.shopreset:disabled { opacity: 0.4; cursor: default; }
 /* .seg is scoped to .ctrls above, so the view toggle carries its own copy of that geometry
    rather than widening that rule to every .seg on the board — .seg is also the meter's. */
 .seg.shopview {

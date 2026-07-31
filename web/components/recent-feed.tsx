@@ -33,8 +33,9 @@ const SORTS = [
 ] as const
 type SortKey = (typeof SORTS)[number]["key"]
 
-/** How many tag keys the rail shows before it stops and says how many it left out. */
-const TAGS_SHOWN = 16
+/** How many tag keys the strip shows collapsed. The rest are one click away, not unreachable:
+ *  the button beside them says exactly how many it is holding back. */
+const TAGS_COLLAPSED = 12
 
 /** climbing first, then steady, then flat, then the ones vidIQ could not measure. Unmeasured
  *  sorts last rather than as a zero: a video we cannot judge is not a dead one. */
@@ -48,9 +49,11 @@ const MOMENTUM_RANK = { climbing: 0, steady: 1, flat: 2, unmeasured: 3 } as cons
  * the per-channel cap only decide *order* (lib/recent.ts), the score badge dims down the ladder,
  * and the low end is simply page two.
  *
- * The filters are a column of stamped keys rather than lists or dropdowns: every facet here has
- * two to six short values, which is the shape a row of keys reads fastest in, and it keeps the
- * whole rail under one screen so nothing about the filters ever scrolls. Every one of them is
+ * The filters are stamped keys rather than lists or dropdowns: every facet here has two to six
+ * short values, which is the shape a row of keys reads fastest in. They used to stack down a
+ * 158px rail, which put five labels and a boxed tag well between the heading and the first
+ * thumbnail — taller than two rows of cards, for controls that are not the page. They are two
+ * lines now: one for the four short facets, one for the tag strip. Every one of them is
  * client-side over one already-loaded bundle, so none costs a request or a vidIQ credit.
  */
 export function RecentFeed({
@@ -87,6 +90,10 @@ export function RecentFeed({
   // null is uncapped, and it is the default. The cap is a per-channel fairness rule, and with one
   // grid it no longer hides anything: it demotes a channel's later videos to the back of the list.
   const [cap, setCap] = useState<number | null>(null)
+  // Collapsed by default so the strip is one line. Open, it wraps to however many rows the whole
+  // facet list needs — the point of the button is that no tag is unreachable, not that the list
+  // is short.
+  const [tagsOpen, setTagsOpen] = useState(false)
 
   // meta.generated_at, not `new Date()`. This is a client component, so `new Date()` was the
   // viewer's own clock: _db anchors to midnight UTC of the build's day, and a browser reading
@@ -162,8 +169,8 @@ export function RecentFeed({
     return [...hits].sort((a, b) => by[sort](a) - by[sort](b))
   }, [feed, query, sort, tag, tagsByVideo])
 
-  // Nine is the 3x3 the grid is drawn as, so a page is exactly the block you see.
-  const { slice, props: pagerProps } = usePager(rows, 9)
+  // Twelve is the 4x3 the grid is drawn as, so a page is exactly the block you see.
+  const { slice, props: pagerProps } = usePager(rows, 12)
 
   const failed = bundle.coverage.batches_failed
 
@@ -188,137 +195,137 @@ export function RecentFeed({
             </p>
           )}
 
-          <div className="shop">
-            <aside className="shopside">
-              <Keys label="window">
-                {windows.map((w) => (
-                  <Key key={w} on={window === w} onClick={() => setWindow(w)} label={`${w}d`} />
-                ))}
-              </Keys>
+          <div className="fbar">
+            {/* How far back the sweep reaches is a fact about the window keys, so it rides on
+                them rather than as a footnote under a rail that no longer exists. */}
+            <Keys label="window" title={`sweep holds ${windows[windows.length - 1]} days`}>
+              {windows.map((w) => (
+                <Key key={w} on={window === w} onClick={() => setWindow(w)} label={`${w}d`} />
+              ))}
+            </Keys>
 
-              <Keys label="format">
-                {FORMATS.map((f) => (
-                  <Key
-                    key={f.key}
-                    on={format === f.key}
-                    onClick={() => setFormat(f.key)}
-                    label={f.label}
-                  />
-                ))}
-              </Keys>
+            <Keys label="format">
+              {FORMATS.map((f) => (
+                <Key
+                  key={f.key}
+                  on={format === f.key}
+                  onClick={() => setFormat(f.key)}
+                  label={f.label}
+                />
+              ))}
+            </Keys>
 
-              <Keys label="per channel">
-                <Key on={cap === null} onClick={() => setCap(null)} label="all" />
-                {capChoices.map((n) => (
-                  <Key
-                    key={n}
-                    on={cap === n}
-                    onClick={() => setCap(n)}
-                    label={`${n}`}
-                    title={`at most ${n} video${n === 1 ? "" : "s"} per channel before the rest fall to the back`}
-                  />
-                ))}
-              </Keys>
+            <Keys label="videos per channel">
+              <Key on={cap === null} onClick={() => setCap(null)} label="all" />
+              {capChoices.map((n) => (
+                <Key
+                  key={n}
+                  on={cap === n}
+                  onClick={() => setCap(n)}
+                  label={`${n}`}
+                  title={`at most ${n} video${n === 1 ? "" : "s"} per channel before the rest fall to the back`}
+                />
+              ))}
+            </Keys>
 
-              <Keys label="sort by">
-                {SORTS.map((s) => (
-                  <Key
-                    key={s.key}
-                    on={sort === s.key}
-                    onClick={() => setSort(s.key)}
-                    label={s.label}
-                    title={s.tip}
-                  />
-                ))}
-              </Keys>
+            {/* "sort by" shortened to "sort": the four key labels already say it is an order and
+                the line has four groups plus the count and the search to fit. */}
+            <Keys label="sort">
+              {SORTS.map((s) => (
+                <Key
+                  key={s.key}
+                  on={sort === s.key}
+                  onClick={() => setSort(s.key)}
+                  label={s.label}
+                  title={s.tip}
+                />
+              ))}
+            </Keys>
 
-              {tagFacets.length > 0 && (
-                <div className="keys" role="group" aria-label="tags">
-                  <span className="klabel">tags</span>
-                  <span className="krow tags">
-                    <Key on={tag === null} onClick={() => setTag(null)} label="any" />
-                    {tagFacets.slice(0, TAGS_SHOWN).map((t) => (
-                      <Key
-                        key={t.name}
-                        on={tag === t.name}
-                        onClick={() => setTag(tag === t.name ? null : t.name)}
-                        label={t.name}
-                        n={t.n}
-                      />
-                    ))}
-                  </span>
-                </div>
+            <span className="shopcount num">
+              <b>{fmtInt(rows.length)}</b> {rows.length === 1 ? "video" : "videos"}
+              {rows.length !== feed.length && (
+                <span className="of"> of {fmtInt(feed.length)}</span>
               )}
+            </span>
 
-              {/* Two limits the keys above cannot show on their own: how far back the sweep
-                  reaches, and how many of these videos were ever captured with tags. Filtering
-                  on a tag drops every untagged video, so that number belongs beside the tags. */}
-              <p className="sfoot">
-                sweep holds {windows[windows.length - 1]} days
-                {tagFacets.length > 0 && (
-                  <>
-                    <br />
-                    tags on {fmtInt(tagged)} of {fmtInt(feed.length)} videos
-                    {tagFacets.length > TAGS_SHOWN && (
-                      <>
-                        <br />
-                        {fmtInt(tagFacets.length - TAGS_SHOWN)} more tags
-                      </>
-                    )}
-                  </>
-                )}
-              </p>
-            </aside>
+            {/* Not a boxed input. The field is a ruled line that thickens on focus, which is
+                the same hairline vocabulary the rest of the board is drawn in. */}
+            <span className={query ? "qfield on" : "qfield"}>
+              <span className="qglyph" aria-hidden="true">⌕</span>
+              <input
+                type="text"
+                value={query}
+                placeholder="title or channel"
+                aria-label="search title or channel"
+                onChange={(e) => setQuery(e.target.value)}
+                onKeyDown={(e) => e.key === "Escape" && setQuery("")}
+              />
+              {query && (
+                <button type="button" aria-label="clear search" onClick={() => setQuery("")}>
+                  ×
+                </button>
+              )}
+            </span>
+          </div>
 
-            <div className="shopmain">
-              <div className="shopbar">
-                <span className="shopcount num">
-                  <b>{fmtInt(rows.length)}</b> {rows.length === 1 ? "video" : "videos"}
-                  {rows.length !== feed.length && (
-                    <span className="of"> of {fmtInt(feed.length)}</span>
-                  )}
-                </span>
-
-                {/* Not a boxed input. The field is a ruled line that thickens on focus, which is
-                    the same hairline vocabulary the rest of the board is drawn in. */}
-                <span className={query ? "qfield on" : "qfield"}>
-                  <span className="qglyph" aria-hidden="true">⌕</span>
-                  <input
-                    type="text"
-                    value={query}
-                    placeholder="title or channel"
-                    aria-label="search title or channel"
-                    onChange={(e) => setQuery(e.target.value)}
-                    onKeyDown={(e) => e.key === "Escape" && setQuery("")}
-                  />
-                  {query && (
-                    <button type="button" aria-label="clear search" onClick={() => setQuery("")}>
-                      ×
-                    </button>
-                  )}
+          {tagFacets.length > 0 && (
+            <div className="fbar tagbar">
+              <div className="keys" role="group" aria-label="tags">
+                <span className="klabel">tags</span>
+                <span className={tagsOpen ? "krow tags open" : "krow tags"}>
+                  <Key on={tag === null} onClick={() => setTag(null)} label="any" />
+                  {(tagsOpen ? tagFacets : tagFacets.slice(0, TAGS_COLLAPSED)).map((t) => (
+                    <Key
+                      key={t.name}
+                      on={tag === t.name}
+                      onClick={() => setTag(tag === t.name ? null : t.name)}
+                      label={t.name}
+                      n={t.n}
+                    />
+                  ))}
                 </span>
               </div>
 
-              {rows.length === 0 ? (
-                <p className="note">Nothing in this window matches that search.</p>
-              ) : (
-                <>
-                  <div className="ygrid g3">
-                    {slice.map((v) => (
-                      <GridVideoCard
-                        key={v.video_id}
-                        v={v}
-                        avatarUrl={avatars[v.channel_id] ?? null}
-                        isSelf={v.channel_id === selfChannelId}
-                        topicLabel={cardTopic(v.video_id)}
-                      />
-                    ))}
-                  </div>
-                  <Pager {...pagerProps} unit="videos" perPageOptions={[9, 18, 36]} />
-                </>
+              {/* Deliberately not a Key: it selects nothing, and a key that filters nothing
+                  sitting in a row of keys that do is the one thing this strip cannot afford. */}
+              {tagFacets.length > TAGS_COLLAPSED && (
+                <button
+                  type="button"
+                  className="kmore"
+                  aria-expanded={tagsOpen}
+                  onClick={() => setTagsOpen((v) => !v)}
+                >
+                  {tagsOpen ? "less" : `+ ${fmtInt(tagFacets.length - TAGS_COLLAPSED)} more`}
+                </button>
               )}
+
+              {/* Filtering on a tag silently drops every untagged video, so how many of these
+                  were ever captured with tags has to be visible before you click one. */}
+              <span className="tcap">
+                tags on {fmtInt(tagged)} of {fmtInt(feed.length)} videos
+              </span>
             </div>
-          </div>
+          )}
+
+          {rows.length === 0 ? (
+            <p className="note">Nothing in this window matches that search.</p>
+          ) : (
+            <>
+              <div className="ygrid">
+                {slice.map((v) => (
+                  <GridVideoCard
+                    key={v.video_id}
+                    v={v}
+                    avatarUrl={avatars[v.channel_id] ?? null}
+                    isSelf={v.channel_id === selfChannelId}
+                    topicLabel={cardTopic(v.video_id)}
+                  />
+                ))}
+              </div>
+              <Pager {...pagerProps} unit="videos" perPageOptions={[12, 24, 48]} />
+            </>
+          )}
 
           {bundle.patterns.length > 0 && (
             <>
@@ -358,9 +365,16 @@ function freshness(bundle: RecentBundle): string {
 }
 
 /** One facet: its name, then its keys. */
-function Keys({ label, children }: { label: string; children: React.ReactNode }) {
+function Keys({
+  label, children, title,
+}: {
+  label: string
+  children: React.ReactNode
+  /** a limit of the facet as a whole rather than of any one key, shown on hover */
+  title?: string
+}) {
   return (
-    <div className="keys" role="group" aria-label={label}>
+    <div className="keys" role="group" aria-label={label} title={title}>
       <span className="klabel">{label}</span>
       <span className="krow">{children}</span>
     </div>

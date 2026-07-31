@@ -133,7 +133,29 @@ describe("RecentFeed", () => {
 
   it("says how many of the videos were captured with tags at all", () => {
     feed([row({ video_id: "a" }), row({ video_id: "b" })], {}, {}, { a: ["agents"] })
-    expect(document.querySelector(".sfoot")?.textContent).toContain("tags on 1 of 2")
+    expect(document.querySelector(".tcap")?.textContent).toContain("tags on 1 of 2")
+  })
+
+  // The bug this strip was rebuilt for: a 16-key slice inside a masked 142px box left tags that
+  // nothing on the page could reach. Every facet has to be one click away, and the button has to
+  // say how many that is rather than that there are simply more.
+  it("reaches every tag once the strip is opened", () => {
+    // 14 videos, each carrying its own tag plus a shared one, so 15 facets clear the n > 1 gate
+    // and the closed strip's 12 leaves exactly 3 behind.
+    const ids = Array.from({ length: 14 }, (_, i) => `v${i}`)
+    const tagsByVideo: Record<string, string[]> = {}
+    ids.forEach((id, i) => {
+      tagsByVideo[id] = ["shared", `t${i % 14}`, `t${(i + 1) % 14}`]
+    })
+    feed(ids.map((video_id) => row({ video_id })), {}, {}, tagsByVideo)
+
+    expect(screen.queryByRole("button", { name: /^t13/ })).toBeNull()
+    const more = screen.getByRole("button", { name: /more$/ })
+    expect(more.textContent).toBe("+ 3 more")
+
+    fireEvent.click(more)
+    expect(screen.getByRole("button", { name: /^t13/ })).toBeTruthy()
+    expect(screen.getByRole("button", { name: "less" })).toBeTruthy()
   })
 
   it("puts a still-growing video first when asked, whatever its score", () => {
