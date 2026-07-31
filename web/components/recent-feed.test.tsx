@@ -38,6 +38,16 @@ function feed(
   over: Partial<RecentBundle> = {},
   tagsByVideo: Record<string, string[]> = {}
 ) {
+  return render(feedElement(videos, tagsByVideo, topicsByVideo, over))
+}
+
+/** the same tree without rendering it, for the tests that rerender the mounted component */
+function feedElement(
+  videos: RecentRow[],
+  tagsByVideo: Record<string, string[]> = {},
+  topicsByVideo: Record<string, string[]> = {},
+  over: Partial<RecentBundle> = {}
+) {
   const bundle: RecentBundle = {
     version: 1,
     generated_at: GENERATED_AT,
@@ -53,7 +63,7 @@ function feed(
     trust: {},
     ...over,
   }
-  return render(
+  return (
     <RecentFeed
       bundle={bundle}
       avatars={{}}
@@ -64,6 +74,17 @@ function feed(
       generatedAt={GENERATED_AT}
     />
   )
+}
+
+/** 14 videos yielding 15 facets, so the collapsed 12 leaves exactly 3 behind and t13 is the one
+ *  key that only exists once the strip is open. */
+function manyTags(): RecentRow[] {
+  return Array.from({ length: 14 }, (_, i) => row({ video_id: `v${i}` }))
+}
+function manyTagsByVideo(): Record<string, string[]> {
+  const out: Record<string, string[]> = {}
+  for (let i = 0; i < 14; i += 1) out[`v${i}`] = ["shared", `t${i}`, `t${(i + 1) % 14}`]
+  return out
 }
 
 /** the toolbar readout, whose "N videos of M" is split across elements */
@@ -142,14 +163,7 @@ describe("RecentFeed", () => {
   // nothing on the page could reach. Every facet has to be one click away, and the button has to
   // say how many that is rather than that there are simply more.
   it("reaches every tag once the strip is opened", () => {
-    // 14 videos, each carrying its own tag plus a shared one, so 15 facets clear the n > 1 gate
-    // and the closed strip's 12 leaves exactly 3 behind.
-    const ids = Array.from({ length: 14 }, (_, i) => `v${i}`)
-    const tagsByVideo: Record<string, string[]> = {}
-    ids.forEach((id, i) => {
-      tagsByVideo[id] = ["shared", `t${i % 14}`, `t${(i + 1) % 14}`]
-    })
-    feed(ids.map((video_id) => row({ video_id })), {}, {}, tagsByVideo)
+    feed(manyTags(), {}, {}, manyTagsByVideo())
 
     expect(screen.queryByRole("button", { name: /^t13/ })).toBeNull()
     const more = screen.getByRole("button", { name: /more$/ })
@@ -158,6 +172,44 @@ describe("RecentFeed", () => {
     fireEvent.click(more)
     expect(screen.getByRole("button", { name: /^t13/ })).toBeTruthy()
     expect(screen.getByRole("button", { name: "less" })).toBeTruthy()
+  })
+
+  // The strip is a ranked list that gets sliced, and a slice can drop the selected facet out from
+  // under the reader — by collapsing, or by a window switch that reorders it past the cut. The
+  // grid stays narrowed either way, so the tag has to keep its key or the page is filtering by
+  // something nothing on it names. That is the invisible state this strip was rebuilt to remove.
+  it("keeps the selected tag on screen after the strip is collapsed", () => {
+    feed(manyTags(), {}, {}, manyTagsByVideo())
+
+    fireEvent.click(screen.getByRole("button", { name: /more$/ }))
+    const late = screen.getByRole("button", { name: /^t13/ })
+    fireEvent.click(late)
+    expect(late.getAttribute("aria-pressed")).toBe("true")
+
+    fireEvent.click(screen.getByRole("button", { name: "less" }))
+    // still filtering, so it must still be here and still marked on
+    const after = screen.getByRole("button", { name: /^t13/ })
+    expect(after.getAttribute("aria-pressed")).toBe("true")
+    expect(screen.getByRole("button", { name: "any" }).getAttribute("aria-pressed")).toBe("false")
+  })
+
+  // A window a facet does not survive is the other way the key can vanish: t13 stops clearing the
+  // n > 1 gate, leaves tagFacets entirely, and the filter it is still applying would have had no
+  // control at all.
+  it("keeps a selected tag that has fallen out of the facet list entirely", () => {
+    const { rerender } = feed(manyTags(), {}, {}, manyTagsByVideo())
+    fireEvent.click(screen.getByRole("button", { name: /more$/ }))
+    fireEvent.click(screen.getByRole("button", { name: /^t13/ }))
+
+    // same component, a feed in which t13 is on nothing at all
+    rerender(feedElement([row({ video_id: "solo" })], { solo: ["shared", "other"] }))
+    expect(screen.getByRole("button", { name: /^t13/ }).getAttribute("aria-pressed")).toBe("true")
+  })
+
+  it("states how far the sweep reaches as text rather than as a hover", () => {
+    feed([row({ video_id: "a" })])
+    // a title on a non-focusable div is invisible to touch and to a keyboard
+    expect(document.querySelector(".kcap")?.textContent).toMatch(/^holds \d+d$/)
   })
 
   it("puts a still-growing video first when asked, whatever its score", () => {

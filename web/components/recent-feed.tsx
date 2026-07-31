@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useId, useMemo, useState } from "react"
 import {
   selectRecent, windowsHeld, type FormatKey, type RecentWindow,
 } from "@/lib/recent"
@@ -98,6 +98,8 @@ export function RecentFeed({
   // facet list needs — the point of the button is that no tag is unreachable, not that the list
   // is short.
   const [tagsOpen, setTagsOpen] = useState(false)
+  /** so the "+ N more" button can name the strip it opens */
+  const tagStripId = useId()
 
   // meta.generated_at, not `new Date()`. This is a client component, so `new Date()` was the
   // viewer's own clock: _db anchors to midnight UTC of the build's day, and a browser reading
@@ -129,7 +131,7 @@ export function RecentFeed({
   // itself as you click it can only ever read 1. Heaviest first, and the rail states both how
   // many tags it did not show and how many of these videos carry no tags at all — filtering on a
   // tag silently drops every untagged video, and that number has to be visible before you do it.
-  const { tagFacets, tagged } = useMemo(() => {
+  const { tagFacets, tagCounts, tagged } = useMemo(() => {
     const counts = new Map<string, number>()
     let tagged = 0
     for (const v of feed) {
@@ -148,8 +150,30 @@ export function RecentFeed({
     // A tag on one video is not a facet, it is that video's own title in another form. Kept only
     // when almost nothing clears 2, so a thin window still gets a usable list.
     const shared = facets.filter((t) => t.n > 1)
-    return { tagFacets: shared.length >= 6 ? shared : facets, tagged }
+    return { tagFacets: shared.length >= 6 ? shared : facets, tagCounts: counts, tagged }
   }, [feed, tagsByVideo])
+
+  /**
+   * The keys the strip draws, which is the ranked list plus one guarantee: whatever tag is
+   * filtering is always among them.
+   *
+   * The list is ranked and then sliced, and a slice can drop the selected facet out from under
+   * the reader in three ways — collapsing the strip, switching the window so the facet reorders
+   * past the cut, or narrowing the feed until the tag stops clearing the `n > 1` gate and leaves
+   * the facet list entirely. Every one of them left the grid narrowed by a tag that no key on the
+   * page named, with "any" reading unpressed too, which is precisely the invisible state this
+   * strip was rebuilt to remove. It never showed up in the browser because it needs a slice
+   * boundary to cross.
+   *
+   * A selected tag that has fallen out of the facet list is appended with whatever count it still
+   * has in this window, and with no count at all when that is zero: a key reading "0" is a number
+   * nobody measured, and the only job left for that key is to be unclicked.
+   */
+  const visibleTags = useMemo(() => {
+    const shown = tagsOpen ? tagFacets : tagFacets.slice(0, TAGS_COLLAPSED)
+    if (tag === null || shown.some((t) => t.name === tag)) return shown
+    return [...shown, tagFacets.find((t) => t.name === tag) ?? { name: tag, n: tagCounts.get(tag) ?? 0 }]
+  }, [tagFacets, tagCounts, tagsOpen, tag])
 
   // A video can carry several topics. The card has room for one, so it takes the first assigned
   // and the rest stay on the hover — the alternative is a card that grows with its assignments.
@@ -227,13 +251,23 @@ export function RecentFeed({
             placeholder="search by title or channel"
           />
 
+          {/* Sticky, because the filters are how you get back out of a long list. The rail was
+              sticky and the flat bar that replaced it was not, so at 48 per page a reader four
+              thousand pixels down had to scroll the whole way back up to change the window or
+              clear a tag. Both lines ride together, on the board's own background so the cards
+              cannot show through them. */}
+          <div className="fbars">
           <div className="fbar">
-            {/* How far back the sweep reaches is a fact about the window keys, so it rides on
-                them rather than as a footnote under a rail that no longer exists. */}
-            <Keys label="window" title={`sweep holds ${windows[windows.length - 1]} days`}>
+            {/* How far back the sweep reaches, as visible text. It spent one commit as a `title`
+                on this group, which is a tooltip: no touch device shows one, and the div is not
+                focusable so no keyboard reaches one either. It is a claim about the limit of what
+                is on disk — without it a key row that stops at 30d reads as a choice — so it is
+                worth its ~70px on the line. */}
+            <Keys label="window">
               {windows.map((w) => (
                 <Key key={w} on={window === w} onClick={() => setWindow(w)} label={`${w}d`} />
               ))}
+              <span className="kcap">holds {windows[windows.length - 1]}d</span>
             </Keys>
 
             <Keys label="format">
@@ -286,27 +320,40 @@ export function RecentFeed({
             <div className="fbar tagbar">
               <div className="keys" role="group" aria-label="tags">
                 <span className="klabel">tags</span>
-                <span className={tagsOpen ? "krow tags open" : "krow tags"}>
+                {/* Wraps in both states, and that is the whole difference between them: open
+                    renders more keys, it does not switch layout mode. The collapsed strip used to
+                    be one nowrap line scrolled sideways under a fade, which cost four separate
+                    defects — the overflow clipped every key's focus ring, the scrollbar was
+                    suppressed on an axis a wheel does not drive, the fade half-erased the last key
+                    even when nothing overflowed, and on a phone the row's other occupants squeezed
+                    it to about one key wide. Twelve keys still land on one line at the board's
+                    width; below it they wrap, which is the honest thing for a control whose whole
+                    contract is that nothing is hidden. */}
+                <span className="krow tags" id={tagStripId}>
                   <Key on={tag === null} onClick={() => setTag(null)} label="any" />
-                  {(tagsOpen ? tagFacets : tagFacets.slice(0, TAGS_COLLAPSED)).map((t) => (
+                  {visibleTags.map((t) => (
                     <Key
                       key={t.name}
                       on={tag === t.name}
                       onClick={() => setTag(tag === t.name ? null : t.name)}
                       label={t.name}
-                      n={t.n}
+                      n={t.n > 0 ? t.n : undefined}
                     />
                   ))}
                 </span>
               </div>
 
               {/* Deliberately not a Key: it selects nothing, and a key that filters nothing
-                  sitting in a row of keys that do is the one thing this strip cannot afford. */}
+                  sitting in a row of keys that do is the one thing this strip cannot afford.
+                  aria-controls names the strip because the keys it reveals are inserted before
+                  it — without the pointer a screen reader announces "expanded" and nothing about
+                  what expanded or where it went. */}
               {tagFacets.length > TAGS_COLLAPSED && (
                 <button
                   type="button"
                   className="kmore"
                   aria-expanded={tagsOpen}
+                  aria-controls={tagStripId}
                   onClick={() => setTagsOpen((v) => !v)}
                 >
                   {tagsOpen ? "less" : `+ ${fmtInt(tagFacets.length - TAGS_COLLAPSED)} more`}
@@ -320,6 +367,7 @@ export function RecentFeed({
               </span>
             </div>
           )}
+          </div>
 
           {rows.length === 0 ? (
             <p className="note">Nothing in this window matches that search.</p>
@@ -382,17 +430,15 @@ function freshness(bundle: RecentBundle): string {
   return ago === "0d" ? `swept ${clock}` : `swept ${clock}, ${ago}`
 }
 
-/** One facet: its name, then its keys. */
-function Keys({
-  label, children, title,
-}: {
-  label: string
-  children: React.ReactNode
-  /** a limit of the facet as a whole rather than of any one key, shown on hover */
-  title?: string
-}) {
+/** One facet: its name, then its keys.
+ *
+ *  No `title` prop. It carried the window group's "sweep holds N days" for one commit, which put
+ *  a fact about the corpus behind a hover on a non-focusable div — invisible to touch, to a
+ *  keyboard, and to most screen readers on a role="group". Anything the group as a whole has to
+ *  say goes in as a visible child instead. */
+function Keys({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="keys" role="group" aria-label={label} title={title}>
+    <div className="keys" role="group" aria-label={label}>
       <span className="klabel">{label}</span>
       <span className="krow">{children}</span>
     </div>

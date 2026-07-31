@@ -537,11 +537,12 @@ img.avatar { object-fit: cover; background: var(--secondary); }
   }
 }
 /* /topics: the full width of the board, on its own line, above the facets.
-   The 0-3-0 selector is deliberate: `.fbar:not(.tagbar)` below sets the 12px that clears the
-   section kicker, and it is declared later in the file, so an equal-specificity override here
-   would silently lose the cascade and leave a 12px gap the search line has already paid. */
+   The target is `.fbars`, the sticky block the two facet lines now ride in, and the two-class
+   selector is deliberate: `.fbars` below sets the 12px that clears the section kicker and is
+   declared later in the file, so an equal-specificity override here would silently lose the
+   cascade and leave a 12px gap the search line has already paid. */
 .srch-bar { display: flex; width: 100%; flex: 1 1 100%; margin: 12px 0 0; }
-.srch-bar + .fbar:not(.tagbar) { margin-top: 8px; }
+.srch-bar + .fbars { margin-top: 8px; }
 
 /* /channels: a directory row rather than a table row, so the roster reads as
    scannable cards, not a ninth copy of the leaderboard's grid. */
@@ -927,27 +928,31 @@ select.chip:hover { border-color: var(--muted-foreground); }
    column off a grid that was drawn for four. Two lines now. Line one is the four short facets
    with the count and the search pushed to its end; line two is the tag strip. Hairlines rather
    than boxes, the same vocabulary the rest of the board is ruled in. */
+/* Both lines ride in one sticky block. The rail this replaced was sticky, with a comment saying
+   the filters are how you get back out of a long list and so cannot scroll away above it; the
+   flat bar dropped that, and at 48 per page a reader four thousand pixels down had to scroll the
+   whole way back to change a window or clear a tag. The background is the board's, not the
+   card's: without it the thumbnails read straight through the keys. Static under the prose
+   measure, where the bars wrap to several rows and pinning them would eat the screen — which is
+   what the rail's own narrow-width rule did for the same reason. */
+.fbars {
+  position: sticky; top: 0; z-index: 20; margin-top: 12px;
+  background: #f2f0ef;
+}
+@media (max-width: 60rem) { .fbars { position: static; } }
+.fbars + .ygrid, .fbars + .note { margin-top: 14px; }
 .fbar {
   display: flex; flex-wrap: wrap; align-items: center; gap: 7px 16px;
   padding: 9px 0; border-bottom: 1px solid var(--border);
 }
-/* Only the first line clears the section kicker; the tag line sits directly under line one. */
-.fbar:not(.tagbar) { margin-top: 12px; }
-.fbar + .ygrid, .fbar + .note { margin-top: 14px; }
-/* The strip takes the leftover width so it can scroll inside it; the button and the coverage
-   note keep their own. */
-.tagbar .keys { flex: 1 1 0; min-width: 0; }
-.tagbar .krow { min-width: 0; }
-/* Open, the strip is a block several rows tall, and centring drops its label, its button and its
-   coverage note into the middle of that block with keys above and below them. They belong on the
-   first row, so the margin lifts them to sit on it rather than beside the whole thing. */
-/* The .keys wrapper needs it too: the label centres inside that box, and open the box is as tall
-   as the wrapped strip, so aligning only .tagbar's own children leaves the label behind. */
-.tagbar:has(.tags.open),
-.tagbar:has(.tags.open) .keys { align-items: flex-start; }
-.tagbar:has(.tags.open) .klabel,
-.tagbar:has(.tags.open) .kmore,
-.tagbar:has(.tags.open) .tcap { margin-top: 4px; }
+/* A basis rather than 0. At `flex: 1 1 0` the strip never forced a wrap of its own row, so it
+   simply absorbed whatever the label, the button and the coverage note left — on a 360px phone
+   that was 60-90px, about one tag key. A real basis makes the row wrap instead of crushing it. */
+.tagbar .keys { flex: 1 1 24rem; min-width: 0; align-items: flex-start; }
+.tagbar { align-items: flex-start; }
+/* The label, the button and the note sit on the strip's first row rather than in the middle of
+   it, now that the strip is a block that can be several rows tall in either state. */
+.tagbar .klabel, .kmore, .tcap { margin-top: 4px; }
 /* Says what it holds back, not that there is more. Underlined text rather than a bordered key:
    it selects nothing, and it must not read as one more facet value in a row of them. */
 .kmore {
@@ -959,6 +964,13 @@ select.chip:hover { border-color: var(--muted-foreground); }
 .tcap {
   font-size: 9.5px; color: var(--muted-foreground); opacity: 0.7; flex: 0 0 auto;
   margin-left: auto; white-space: nowrap;
+}
+/* A limit of the whole facet, stated beside its keys. Muted and unbordered so it does not read as
+   a thirteenth thing to click, but visible — it was a `title` for one commit and that put it out
+   of reach of every touch device and every keyboard. */
+.kcap {
+  font-size: 9.5px; color: var(--muted-foreground); opacity: 0.7; white-space: nowrap;
+  margin-left: 1px;
 }
 
 /* Keys, not lists and not dropdowns. Every facet here has two to six short values, and a row of
@@ -987,20 +999,17 @@ select.chip:hover { border-color: var(--muted-foreground); }
 }
 .key .kn { font-size: 9.5px; opacity: 0.6; margin-left: 5px; font-variant-numeric: tabular-nums; }
 .key.on .kn { opacity: 0.75; }
-/* Tags run to dozens, and the old well capped them twice: a 16-key slice inside a 142px box that
-   masked whatever the slice left. Six tags were then reachable by nothing on the page. Closed,
-   the strip is exactly one line at every width — nowrap and scrolled sideways, so it can never
-   quietly become two rows on a narrow screen. Open, it wraps to as many rows as the full list
-   needs, because the whole point of the button is that nothing is out of reach. */
-.krow.tags {
-  flex-wrap: nowrap; overflow-x: auto; overflow-y: hidden; scrollbar-width: none;
-  mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent);
-}
-.krow.tags::-webkit-scrollbar { display: none; }
-.krow.tags .key { flex: 0 0 auto; }
-.krow.tags.open {
-  flex-wrap: wrap; overflow: visible; mask-image: none;
-}
+/* .krow.tags has no rule of its own, and that is the fix rather than an omission.
+   Tags ran to dozens and the strip has now been three things. First a 16-key slice inside a 142px
+   masked well, which capped them twice and left six reachable by nothing. Then one nowrap line
+   scrolled sideways under a right-edge fade, which cost four defects at once: `overflow-y: hidden`
+   on a row exactly one key tall clipped the board's focus ring on every key, the suppressed
+   scrollbar sat on an axis a plain wheel does not drive in Firefox, the fade was unconditional so
+   it half-erased the last key even with nothing overflowing — and no scroll position ever made
+   that key legible, since a mask positions against the padding box and not the scrolled content.
+   Now it is plain `.krow`: wrapped, in both states. Open renders more keys, it does not switch
+   layout mode. Twelve still land on one line at the board's width, and below it they wrap, which
+   is the only honest behaviour for a control whose contract is that nothing is hidden. */
 
 /* The readout closes the line, so it keeps the auto margin — but it is now the last thing on the
    row rather than the thing that shoved the search off the end of it. */
