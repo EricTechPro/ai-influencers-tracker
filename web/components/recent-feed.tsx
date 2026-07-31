@@ -39,6 +39,7 @@ export function RecentFeed({
   topicsByVideo,
   ownCoverage,
   topicLabels,
+  generatedAt,
 }: {
   bundle: RecentBundle
   avatars: Record<string, string | null>
@@ -49,6 +50,8 @@ export function RecentFeed({
   ownCoverage: Record<string, number>
   /** topic id -> human label, narrowed server-side to only the ids this feed shows */
   topicLabels: Record<string, string>
+  /** meta.generated_at. The window anchors to the build, never to the viewer's clock. */
+  generatedAt: string
 }) {
   // Both come from config/thresholds.json via the bundle. They were JSX literals, which meant
   // the config block documented a decision it did not control and the copy below ("nothing
@@ -66,16 +69,20 @@ export function RecentFeed({
   // week sits behind. Collapse it with the same button.
   const [showTail, setShowTail] = useState(true)
 
-  // new Date() belongs inside the factory: built outside it, it is allocated on every render
-  // and is not a dependency, so it never actually re-runs the memo it appears to feed.
+  // meta.generated_at, not `new Date()`. This is a client component, so `new Date()` was the
+  // viewer's own clock: _db anchors to midnight UTC of the build's day, and a browser reading
+  // the page late in that day filtered against a `now` hours ahead of the data, quietly dropping
+  // the oldest day of a 7d window that the pipeline's own counts still include. Same reasoning,
+  // and same fix, as videosInWindow's generatedAt in lib/compare.ts.
+  const now = useMemo(() => new Date(generatedAt), [generatedAt])
   const { ranked, tail } = useMemo(
     () =>
       selectRecent(
         bundle,
         { window, format, perChannelCap: capped ? defaultCap : null, floor },
-        new Date()
+        now
       ),
-    [bundle, window, format, capped, defaultCap, floor]
+    [bundle, window, format, capped, defaultCap, floor, now]
   )
 
   // The unit for the grid used to be the video, paged 12 at a time. It is now the topic: the

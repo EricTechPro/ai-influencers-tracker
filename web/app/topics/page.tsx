@@ -79,6 +79,7 @@ export default function TopicsIndexPage() {
         topicsByVideo={topicsByVideo}
         ownCoverage={ownCoverage}
         topicLabels={topicLabels}
+        generatedAt={meta.generated_at}
       />
     </section>
   )
