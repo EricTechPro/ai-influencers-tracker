@@ -43,13 +43,25 @@ export default function TopicsIndexPage() {
   // above is narrowed to the feed's channels: this crosses the RSC boundary on every render, and
   // shipping all 11,820 videos' assignments would be a waste.
   const feedIds = new Set(recent.videos.map((v) => v.video_id))
+  const feedVideos = videosById([...feedIds])
   const topicsByVideo = Object.fromEntries(
-    videosById([...feedIds]).map((v) => [
+    feedVideos.map((v) => [
       v.video_id,
       (v.topic_assignments as { topic_id: string }[]).map((a) => a.topic_id),
     ])
   )
   const feedTopics = new Set(Object.values(topicsByVideo).flat())
+
+  // The uploader's own keywords, lowercased and de-duplicated per video so "Claude Code" and
+  // "claude code" are one facet. A video snapshotted before the ingest kept tags has none, which
+  // is why this is a sparse map rather than an entry per feed video: a missing key is "we never
+  // captured this video's tags", and the rail says how many that is rather than implying the
+  // uploader left them blank.
+  const tagsByVideo = Object.fromEntries(
+    feedVideos
+      .filter((v) => v.tags && v.tags.length > 0)
+      .map((v) => [v.video_id, [...new Set(v.tags!.map((t) => t.toLowerCase().trim()))]])
+  )
 
   // Human labels for the feed's own topic ids ("claude-code-mcp-setup" ->
   // "Setting up MCP with Claude Code"), narrowed to the ids this feed
@@ -67,6 +79,7 @@ export default function TopicsIndexPage() {
         avatars={avatars}
         selfChannelId={meta.self_channel_id}
         topicsByVideo={topicsByVideo}
+        tagsByVideo={tagsByVideo}
         topicLabels={topicLabels}
         generatedAt={meta.generated_at}
       />

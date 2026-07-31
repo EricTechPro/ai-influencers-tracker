@@ -1,7 +1,35 @@
 import type { RecentBundle, RecentRow } from "./types"
 
+const DAY_MS = 86_400_000
+
 export type FormatKey = "videos" | "shorts" | "all"
-export type RecentWindow = 7 | 14 | 30
+/** days back. Which of WINDOW_CHOICES the page offers depends on how far the sweep on disk
+ *  actually reaches — see windowsHeld below. */
+export type RecentWindow = number
+
+/** Every window the page will ever offer, shortest first. */
+export const WINDOW_CHOICES = [7, 14, 30, 45, 60, 90] as const
+
+/**
+ * The windows this bundle can honestly answer.
+ *
+ * The sweep fetches one vidIQ `publishedWithin` range, so the corpus stops dead at its edge —
+ * on a `thisMonth` sweep the oldest video is 30 days old, and a 90-day button would return the
+ * same 153 videos as the 30-day one while implying three months of coverage. Offering a window
+ * the data cannot fill is the "missing data rendered as a zero" failure in another costume.
+ *
+ * So: every choice up to and including the first one that covers the oldest video held.
+ */
+export function windowsHeld(videos: { published_at: string }[], today: Date): RecentWindow[] {
+  if (videos.length === 0) return [WINDOW_CHOICES[0]]
+  const oldest = Math.max(...videos.map((v) => ageDays(v.published_at, today)))
+  const out: RecentWindow[] = []
+  for (const w of WINDOW_CHOICES) {
+    out.push(w)
+    if (w >= oldest) break
+  }
+  return out
+}
 
 export interface RecentOptions {
   window: RecentWindow
@@ -26,8 +54,6 @@ export interface RecentSelection {
    */
   feed: RecentRow[]
 }
-
-const DAY_MS = 86_400_000
 
 /** Descending by score, unscored last. A null breakout_score is a video vidIQ did not measure,
  *  so it sorts behind every measured one rather than ahead of them as a zero would. */

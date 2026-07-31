@@ -33,7 +33,8 @@ function row(over: Partial<RecentRow> & { video_id: string }): RecentRow {
 function feed(
   videos: RecentRow[],
   topicsByVideo: Record<string, string[]> = {},
-  over: Partial<RecentBundle> = {}
+  over: Partial<RecentBundle> = {},
+  tagsByVideo: Record<string, string[]> = {}
 ) {
   const bundle: RecentBundle = {
     version: 1,
@@ -56,6 +57,7 @@ function feed(
       avatars={{}}
       selfChannelId="UCself"
       topicsByVideo={topicsByVideo}
+      tagsByVideo={tagsByVideo}
       topicLabels={{ frontier: "Frontier model launches", agents: "Multi-agent orchestration" }}
       generatedAt={GENERATED_AT}
     />
@@ -113,26 +115,33 @@ describe("RecentFeed", () => {
     expect(titles().some((t) => t.includes("Something else"))).toBe(false)
   })
 
-  it("narrows to one topic from the sidebar, counting the window not the selection", () => {
+  it("narrows to one tag, counting the window rather than the selection", () => {
     feed(
       [row({ video_id: "a" }), row({ video_id: "b" }), row({ video_id: "c" })],
-      { a: ["frontier"], b: ["frontier"], c: ["agents"] }
+      {},
+      {},
+      { a: ["agents"], b: ["agents"], c: ["n8n"] }
     )
-    const facet = screen.getByRole("button", { name: /Frontier model launches/ })
-    expect(within(facet).getByText("2")).toBeTruthy()
+    const key = screen.getByRole("button", { name: /^agents/ })
+    expect(within(key).getByText("2")).toBeTruthy()
 
-    fireEvent.click(facet)
+    fireEvent.click(key)
     expect(countText()).toBe("2 videos of 3")
-    // by title attribute, not by card text: every card's text carries its topic label too
+    // by title attribute, not by card text: a card's text carries its topic label too
     expect(screen.queryByTitle("c")).toBeNull()
   })
 
-  it("puts a climbing video first when asked, whatever its score", () => {
+  it("says how many of the videos were captured with tags at all", () => {
+    feed([row({ video_id: "a" }), row({ video_id: "b" })], {}, {}, { a: ["agents"] })
+    expect(document.querySelector(".sfoot")?.textContent).toContain("tags on 1 of 2")
+  })
+
+  it("puts a still-growing video first when asked, whatever its score", () => {
     feed([
       row({ video_id: "spent", breakout_score: 9, momentum: { state: "flat", daily_share: 0.001, per_day: 2, vph: 1 } }),
       row({ video_id: "rising", breakout_score: 2.6, momentum: { state: "climbing", daily_share: 0.05, per_day: 90, vph: 4 } }),
     ])
-    fireEvent.change(screen.getByLabelText("sort"), { target: { value: "climbing" } })
+    fireEvent.click(screen.getByRole("button", { name: "growing" }))
     expect(titles()[0]).toContain("rising")
   })
 

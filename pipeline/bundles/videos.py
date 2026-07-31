@@ -24,6 +24,12 @@ def build(ctx) -> dict:
             # A video the comment ledger has not reached yet is missing, never a zero.
             "comment_stats": ctx.comment_stats.get(video["video_id"]),
             "topic_assignments": topics.match_video(video, ctx.topic_index),
+            # The creator's own keywords, as YouTube returned them. Not a topic assignment and
+            # not derived from one: a topic is this project's taxonomy matched against a title,
+            # a tag is what the uploader typed. The feed facets on these because they are the
+            # vocabulary the niche actually uses. An older _raw row with no tags key is missing,
+            # never an empty list — [] would claim the uploader tagged nothing.
+            "tags": video.get("tags"),
         })
     rows.sort(key=lambda r: r["video_id"])
     return {"version": VERSION, "generated_at": ctx.generated_at, "videos": rows}

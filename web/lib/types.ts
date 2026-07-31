@@ -220,6 +220,9 @@ export interface VideoRow {
   view_count: number | null
   duration_s: number | null
   topic_assignments: unknown[]
+  /** the uploader's own YouTube keywords. null when the ingest never captured them for this
+   *  video, which is not the same as an uploader who tagged nothing. */
+  tags: string[] | null
   multiplier: {
     state: string
     value: number | null

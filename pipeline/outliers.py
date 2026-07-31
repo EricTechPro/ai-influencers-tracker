@@ -131,14 +131,24 @@ def latest() -> dict | None:
     return util.newest_json(config.synth_dir() / "outliers")
 
 
+# What vidIQ's publishedWithin accepts, and how many days back each one actually reaches. The
+# feed only offers a window the sweep can fill, so widening the sweep is what unlocks the longer
+# ones on the page. Same 5 credits per batch either way: the range is free, only the call is not.
+WINDOWS = {"thisWeek": 7, "thisMonth": 30, "threeMonths": 90,
+           "sixMonths": 180, "oneYear": 365, "allTime": None}
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="fetch vidIQ breakout scores for the roster")
     parser.add_argument("--no-dry-run", action="store_true", help="actually spend credits")
+    parser.add_argument("--window", default="thisMonth", choices=sorted(WINDOWS),
+                        help="how far back to fetch. threeMonths costs the same as thisMonth "
+                             "and lets the feed offer its 45, 60 and 90 day views")
     args = parser.parse_args()
     client = vidiq.client_from_env()
     guard = vidiq.CostGuard(vidiq.balance(client).get("totalCredits", 0))
     summary = sweep(config.roster(), client, guard, util.today(),
-                    dry_run=not args.no_dry_run)
+                    window=args.window, dry_run=not args.no_dry_run)
     for key, value in summary.items():
         print(f"{key}: {value}")
     return 0
