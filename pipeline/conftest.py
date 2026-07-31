@@ -33,6 +33,7 @@ FIXTURE_THRESHOLDS = {
     "outliers": {"per_channel_cap": 2, "display_floor": 2.5, "feed_window_days": 30},
     "momentum": {"climbing_min_daily_share": 0.02, "flat_max_daily_share": 0.005,
                  "min_age_hours": 48},
+    "language": {"zh_title_min_share": 0.10},
     "comments": {"roots_per_video": 100, "replies_per_root": 5, "top_n_per_channel": 50,
                  "page_size": 5, "classify_min_likes": 5, "classify_min_replies": 2,
                  "classify_max_per_run": 2000},
