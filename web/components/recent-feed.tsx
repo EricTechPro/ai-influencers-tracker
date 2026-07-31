@@ -5,6 +5,7 @@ import {
   selectRecent, windowsHeld, type FormatKey, type RecentWindow,
 } from "@/lib/recent"
 import type { RecentBundle, RecentRow } from "@/lib/types"
+import { langTabsFor } from "@/lib/language"
 import { agoText, fmtInt } from "@/lib/trust"
 import { GridVideoCard } from "./grid-video-card"
 import { Pager, usePager } from "./pager"
@@ -88,6 +89,7 @@ export function RecentFeed({
   const defaultCap = bundle.per_channel_cap
   const [window, setWindow] = useState<RecentWindow>(7)
   const [format, setFormat] = useState<FormatKey>("all")
+  const [lang, setLang] = useState("all")
   const [sort, setSort] = useState<SortKey>("breakout")
   const [query, setQuery] = useState("")
   const [tag, setTag] = useState<string | null>(null)
@@ -115,10 +117,27 @@ export function RecentFeed({
   useEffect(() => {
     if (!windows.includes(window)) setWindow(windows[0])
   }, [windows, window])
-  const { feed } = useMemo(
-    () => selectRecent(bundle, { window, format, perChannelCap: cap, floor }, now),
+  // Two passes, deliberately. The tabs count over the window's own videos rather than over the
+  // current selection, the same rule the tag facets below follow: a facet that recounts itself as
+  // you click it can only ever read its own selection back. This first pass is lang-agnostic and
+  // exists only to be counted; the second is what the grid renders.
+  const { feed: allLangs } = useMemo(
+    () => selectRecent(bundle, { window, format, perChannelCap: cap, floor, lang: "all" }, now),
     [bundle, window, format, cap, floor, now]
   )
+  const langs = useMemo(() => langTabsFor(allLangs), [allLangs])
+  const { feed } = useMemo(
+    () => selectRecent(bundle, { window, format, perChannelCap: cap, floor, lang }, now),
+    [bundle, window, format, cap, floor, lang, now]
+  )
+
+  // Narrowing the window can empty the selected language: a 1d window over a board whose Chinese
+  // channels did not post today holds no zh at all. Falling back to all beats leaving the page
+  // reading "no videos" beside a language button still lit, which is the same invisible state the
+  // tag strip was rebuilt to remove.
+  useEffect(() => {
+    if (lang !== "all" && !langs.some((t) => t.key === lang)) setLang("all")
+  }, [langs, lang])
 
   // Built from config rather than written 1, 2: changing outliers.per_channel_cap has to change
   // what the page offers, or the threshold is documentation for a decision it does not control.
@@ -280,6 +299,24 @@ export function RecentFeed({
                 />
               ))}
             </Keys>
+
+            {/* Only rendered once the window holds more than one language: "all" plus a single
+                key is two buttons that cannot change anything, and this line already carries four
+                groups, the count, and the search. On an all-English window it simply is not
+                there, which is the honest state — there is nothing to choose between. */}
+            {langs.length > 2 && (
+              <Keys label="language">
+                {langs.map((t) => (
+                  <Key
+                    key={t.key}
+                    on={lang === t.key}
+                    onClick={() => setLang(t.key)}
+                    label={t.label}
+                    n={t.key === "all" ? undefined : t.count}
+                  />
+                ))}
+              </Keys>
+            )}
 
             <Keys label="videos per channel">
               <Key on={cap === null} onClick={() => setCap(null)} label="all" />

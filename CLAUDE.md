@@ -49,6 +49,12 @@ a measurement is the failure mode.
 - `viewCount` is exact. `subscriberCount` is rounded to 3 significant figures and no vendor sells
   better. Deltas below 5x a channel's bucket width render `< N`, never a bare number.
 - GitHub repos key on numeric `id`. A rename forks the history and fakes a spike.
+- A video's `lang` is read per video by `pipeline/language.py` — the uploader's
+  `defaultAudioLanguage` where there is one, the CJK share of the title where there is not, and
+  `none`/`unread` where neither can answer. It is **not** the channel's hand-authored `lang` in
+  `config/channels.json`, which is what `/channels` filters on. The two answer different questions
+  and neither replaces the other; only the per-video one can place a Chinese video on an English
+  channel.
 - The pipeline never writes into hand-edited config.
 - The worked example must reproduce **71.9**.
 

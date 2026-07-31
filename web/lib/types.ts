@@ -370,6 +370,12 @@ export interface RecentRow {
   type: "short" | "long"
   channel_id: string
   channel_name: string
+  /** Which scene this video is from, read per video rather than inherited from its channel, so a
+   *  Chinese video on an English channel lands correctly. `"none"` is unread, never english. */
+  lang: string
+  /** Which signal produced `lang`: `"oracle"` is the uploader's own defaultAudioLanguage,
+   *  `"derived"` is this project's CJK-share rule over the title, `"unread"` is neither. */
+  lang_tier: string
   /** How far past this channel's own normal the video ran: its views over the median of the
    *  channel's last mature uploads of the same kind. Derived tier, computed from exact free
    *  view counts. Null is a channel with no baseline yet, never a video that underperformed. */

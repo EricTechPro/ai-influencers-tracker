@@ -19,9 +19,13 @@ prove it rather than assert it.
 """
 from __future__ import annotations
 
-from .. import config, exclusions, momentum, multiplier, patterns, snapshot, util
+from .. import config, exclusions, language, momentum, multiplier, patterns, snapshot, util
 
-VERSION = 2
+VERSION = 3
+# `lang` is deliberately absent. TRUST states one tier per field for the whole bundle, and lang
+# has two: oracle where the uploader declared one, derived where the title rule read it. Naming
+# either here would claim the wrong tier for the other half of the corpus, which is the blend the
+# three-tier rule forbids. Each row carries its own `lang_tier` instead.
 TRUST = {"multiplier": "derived", "views_gained_24h": "derived", "momentum": "derived",
          "pattern": "inference", "existing_leaf": "derived"}
 
@@ -50,6 +54,7 @@ def build(ctx) -> dict:
     rules = exclusions.load()
     now = util.parse_ts(ctx.generated_at)
     thresholds = ctx.thresholds["momentum"]
+    lang_threshold = ctx.thresholds["language"]["zh_title_min_share"]
 
     videos = []
     for video in ctx.videos:
@@ -65,6 +70,9 @@ def build(ctx) -> dict:
         # the honest state for a video nobody has watched change.
         gained = ctx.traction.get(video["video_id"], {}).get("views_gained", {}).get("24h", {})
         day = gained.get("value") if gained.get("state") == "ok" else None
+        lang, lang_tier = language.detect(video.get("title"),
+                                          video.get("default_audio_language"), lang_threshold,
+                                          video.get("description"))
         videos.append({
             **{k: video.get(k) for k in CARD_KEYS},
             "channel_name": names.get(video["channel_id"]),
@@ -76,6 +84,11 @@ def build(ctx) -> dict:
                                            video.get("view_count"),
                                            video.get("published_at"), now, thresholds),
             "pattern_id": None,
+            # The scene this video is from, and which signal read it. Per video, not inherited
+            # from the channel: this feed mixes every channel on the board into one grid, which is
+            # exactly where a channel-level language stops being able to answer.
+            "lang": lang,
+            "lang_tier": lang_tier,
         })
 
     videos.sort(key=_sort_key)

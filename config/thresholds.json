@@ -118,5 +118,9 @@
     "flat_max_daily_share": 0.005,
     "min_age_hours": 48,
     "_comment": "How much of its own total a video is still adding each day, from vidIQ's vph over 24 hours against the views it already has. At or above 2%/day it is still being found and is worth copying; under 0.5%/day nobody is watching it any more, which looks identical to a breakout on view count alone. 2% mirrors traction.still_growing_min_share_7d, which asks the same question of our own snapshots over a week. min_age_hours keeps day-one uploads out: a video's first day is all burst. Deliberately not vph against the lifetime average - every view curve is concave, so that called 124 of 169 outliers dead including one adding 3.6% of itself daily with a rising curve. All three change which videos the board tells you to make."
+  },
+  "language": {
+    "zh_title_min_share": 0.10,
+    "_comment": "Share of a title's alphanumeric characters that must be CJK before the title alone reads zh. Measured over the 11,859-video corpus on 2026-07-31: 1,157 titles sit at or above 0.10, 10,701 hold no CJK at all, and exactly one falls between 0.01 and 0.10. Raising it past ~0.5 starts dropping the mixed-script titles Chinese creators actually write, which pair a Latin product name with a Chinese sentence. This changes which videos the /topics language toggle shows, which is why it is a threshold and not a constant."
   }
 }

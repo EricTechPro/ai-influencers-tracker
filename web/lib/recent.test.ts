@@ -19,6 +19,8 @@ function row(over: Partial<RecentRow> & { video_id: string }): RecentRow {
     views_gained_24h: 240,
     momentum: { state: "steady" as const, daily_share: 0.01, per_day: 240, vph: 10 },
     pattern_id: null,
+    lang: "en",
+    lang_tier: "derived",
     ...over,
   }
 }
@@ -44,7 +46,8 @@ function bundle(videos: RecentRow[]): RecentBundle {
   }
 }
 
-const OPTS = { window: 30 as const, format: "videos" as const, perChannelCap: 2, floor: 2.5 }
+const OPTS = { window: 30 as const, format: "videos" as const, perChannelCap: 2, floor: 2.5,
+               lang: "all" }
 
 describe("selectRecent windows", () => {
   it("keeps a video exactly N days old and drops one at N+1", () => {
@@ -163,5 +166,41 @@ describe("windowsHeld offers only what the bundle can answer", () => {
 
   it("offers the shortest window rather than nothing for an empty bundle", () => {
     expect(windowsHeld([], TODAY)).toEqual([1])
+  })
+})
+
+describe("the language filter", () => {
+  const b = bundle([
+    row({ video_id: "zh1", lang: "zh", multiplier: 9 }),
+    row({ video_id: "en1", lang: "en", multiplier: 8 }),
+    row({ video_id: "un1", lang: "none", lang_tier: "unread", multiplier: 7 }),
+  ])
+
+  it("returns every language under all", () => {
+    expect(selectRecent(b, OPTS, TODAY).feed.map((v) => v.video_id))
+      .toEqual(["zh1", "en1", "un1"])
+  })
+
+  it("returns one language and nothing else", () => {
+    expect(selectRecent(b, { ...OPTS, lang: "zh" }, TODAY).feed.map((v) => v.video_id))
+      .toEqual(["zh1"])
+  })
+
+  it("treats unread as its own bucket rather than folding it into a real language", () => {
+    expect(selectRecent(b, { ...OPTS, lang: "none" }, TODAY).feed.map((v) => v.video_id))
+      .toEqual(["un1"])
+  })
+
+  it("applies the language before the cap, so the cap is spent on rows you can see", () => {
+    // All three share a channel and the cap is 2. Filtered after the cap, the two English rows
+    // would take both slots and the Chinese one would fall to the tail on their strength.
+    const shared = bundle([
+      row({ video_id: "en_a", channel_id: "same", lang: "en", multiplier: 9 }),
+      row({ video_id: "en_b", channel_id: "same", lang: "en", multiplier: 8 }),
+      row({ video_id: "zh_c", channel_id: "same", lang: "zh", multiplier: 7 }),
+    ])
+    const { ranked, tail } = selectRecent(shared, { ...OPTS, lang: "zh" }, TODAY)
+    expect(ranked.map((v) => v.video_id)).toEqual(["zh_c"])
+    expect(tail).toEqual([])
   })
 })
