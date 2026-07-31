@@ -4,6 +4,7 @@ import { fmtInt } from "@/lib/trust"
 import { Avatar } from "@/components/avatar"
 import { ComparePicker } from "@/components/compare-picker"
 import { CompareTable, type CompareSide } from "@/components/compare-table"
+import { SectionKicker } from "@/components/section-kicker"
 
 export default async function ComparePage({
   searchParams,
@@ -51,9 +52,7 @@ export default async function ComparePage({
           selfId={bundle.self_channel_id} />
       </div>
 
-      <div className="section-kicker">
-        <span className="kicker">the numbers</span><span className="rule" />
-      </div>
+      <SectionKicker label="the numbers" />
       {/* Both sides need a real bucket width for this comparison to mean anything; a null on
           either side is missing data, not a zero, so the callout stays silent rather than
           claiming a channel "rounds to 0". */}

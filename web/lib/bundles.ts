@@ -1,3 +1,4 @@
+import { slimChannel, type SlimChannel } from "./growth"
 // The only file in web/ that reads the JSON bundles. Reads _db/ and nothing
 // else: never _raw/, _synthesize/, config/, .env, or pipeline/. videos.json
 // (16.7 MB) is parsed once per process and served as id slices so it is never
@@ -171,4 +172,11 @@ export function loadTopicComments(topicId: string): TopicCommentsFile | null {
   const rel = path.join("comments", "topic", `${topicId}.json`)
   if (!existsSync(path.join(DB_DIR, rel))) return null
   return load<TopicCommentsFile>(rel)
+}
+
+/** The roster as the client tables want it: slimmed, each row already carrying its avatar URL.
+ *  Two routes built this identically, which made "a slim channel carries its avatar" a rule each
+ *  of them had to remember rather than a fact the loader guarantees. */
+export function loadSlimChannels(): SlimChannel[] {
+  return loadChannels().channels.map((c) => slimChannel(c, channelAvatarUrl(c.channel_id)))
 }

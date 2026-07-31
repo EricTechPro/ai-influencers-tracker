@@ -20,3 +20,7 @@ export function withWindow(href: string, w: WindowKey): string {
   params.set("w", w)
   return `${path}?${params.toString()}`
 }
+
+/** Every route takes the analysis window on the URL as `?w=`, so every route repeats this
+ *  three-line shape in its own props. It lives beside parseWindow, which is what reads it. */
+export type WindowSearch = { searchParams: Promise<{ w?: string }> }

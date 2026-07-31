@@ -7,6 +7,7 @@ import { fmtInt } from "@/lib/trust"
 import { GridVideoCard } from "./grid-video-card"
 import { Pager, usePager } from "./pager"
 import { PatternRows } from "./pattern-rows"
+import { SectionKicker } from "./section-kicker"
 
 const WINDOWS: RecentWindow[] = [7, 14, 30]
 
@@ -105,14 +106,15 @@ export function RecentFeed({
 
   return (
     <section>
-      <div className="section-kicker">
-        <span className="kicker">{HEADING[window]}</span>
-        <span className="rule" />
-        <span className="cap">
-          {fmtInt(ranked.length)} shown · {fmtInt(bundle.videos.length)} outliers ·{" "}
-          {bundle.fetched_at ?? "never fetched"}
-        </span>
-      </div>
+      <SectionKicker
+        label={HEADING[window]}
+        cap={
+          <>
+            {fmtInt(ranked.length)} shown · {fmtInt(bundle.videos.length)} outliers ·{" "}
+            {bundle.fetched_at ?? "never fetched"}
+          </>
+        }
+      />
 
       {bundle.fetched_at === null ? (
         <p className="note">
@@ -230,11 +232,10 @@ export function RecentFeed({
 
           {bundle.patterns.length > 0 && (
             <>
-              <div className="section-kicker">
-                <span className="kicker">PATTERNS</span>
-                <span className="rule" />
-                <span className="cap">inference · over vidIQ&apos;s {bundle.videos.length}</span>
-              </div>
+              <SectionKicker
+                label="PATTERNS"
+                cap={<>inference · over vidIQ&apos;s {bundle.videos.length}</>}
+              />
               <PatternRows
                 patterns={bundle.patterns}
                 videos={bundle.videos}

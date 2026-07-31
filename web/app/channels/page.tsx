@@ -1,18 +1,13 @@
-import { channelAvatarUrl, loadChannels, loadMeta } from "@/lib/bundles"
-import { slimChannel } from "@/lib/growth"
-import { parseWindow } from "@/lib/window"
+import { loadMeta, loadSlimChannels } from "@/lib/bundles"
+import { parseWindow, type WindowSearch } from "@/lib/window"
 import { ChannelDirectory } from "@/components/channel-directory"
 
 export default async function ChannelsPage({
   searchParams,
-}: {
-  searchParams: Promise<{ w?: string }>
-}) {
+}: WindowSearch) {
   const { w } = await searchParams
   const meta = loadMeta()
-  const channels = loadChannels().channels.map((c) =>
-    slimChannel(c, channelAvatarUrl(c.channel_id))
-  )
+  const channels = loadSlimChannels()
 
   return (
     <section>

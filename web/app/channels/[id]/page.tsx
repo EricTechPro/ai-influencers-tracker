@@ -13,6 +13,7 @@ import { ChannelGrowth } from "@/components/channel-growth"
 import { CommentTable } from "@/components/comment-table"
 import { StillPulling } from "@/components/still-pulling"
 import { WindowTable } from "@/components/window-table"
+import { SectionKicker } from "@/components/section-kicker"
 
 export default async function ChannelPage({
   params,
@@ -101,10 +102,7 @@ export default async function ChannelPage({
         </div>
       </div>
 
-      <div className="section-kicker">
-        <span className="kicker">growth</span>
-        <span className="rule" />
-      </div>
+      <SectionKicker label="growth" />
       <WindowTable channel={channel} videos={uploads} generatedAt={meta.generated_at} />
       <ChannelGrowth
         series={snapshots}
@@ -114,19 +112,14 @@ export default async function ChannelPage({
         win={win}
       />
 
-      <div className="section-kicker">
-        <span className="kicker">still pulling views</span><span className="rule" />
-      </div>
+      <SectionKicker label="still pulling views" />
       <StillPulling rows={stillRows} channelClassified={comments?.channel.totals.classified ?? 0} />
 
       <details>
         <summary>
           comments{comments ? ` · ${fmtInt(comments.channel.totals.ingested)} ingested` : ""}
         </summary>
-        <div className="section-kicker">
-          <span className="kicker">what {channel.is_self ? "your" : "their"} viewers ask</span>
-          <span className="rule" />
-        </div>
+        <SectionKicker label={`what ${channel.is_self ? "your" : "their"} viewers ask`} />
         {comments ? (
           <CommentTable rows={comments.channel.top} byCategory={comments.channel.by_category}
             totals={comments.channel.totals} />
