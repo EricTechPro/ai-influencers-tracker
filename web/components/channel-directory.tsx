@@ -3,6 +3,7 @@
 import Link from "next/link"
 import { useMemo, useState } from "react"
 import { filterDirectory } from "@/lib/directory"
+import { Pager, usePager } from "./pager"
 import type { SlimChannel } from "@/lib/growth"
 import type { WindowKey } from "@/lib/types"
 import { withWindow } from "@/lib/window"
@@ -56,6 +57,11 @@ export function ChannelDirectory({ channels, win }: { channels: SlimChannel[]; w
     [channels, q, cat]
   )
 
+  // 74 rows is a 4,400px page, and the search box and category tabs scroll out of view about ten
+  // rows in — so narrowing a list whose controls you cannot see meant scrolling back to the top
+  // first. 25 a page keeps the directory about one screen tall with the filters still on it.
+  const { slice: page, props: pager } = usePager(filtered, 25)
+
   return (
     <>
       <div className="controls">
@@ -88,11 +94,12 @@ export function ChannelDirectory({ channels, win }: { channels: SlimChannel[]; w
         <div className="empty">no channels match these filters</div>
       ) : (
         <div className="directory">
-          {filtered.map((c) => (
+          {page.map((c) => (
             <DirectoryRow key={c.channel_id} c={c} win={win} />
           ))}
         </div>
       )}
+      <Pager {...pager} unit="channels" />
     </>
   )
 }

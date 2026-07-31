@@ -30,10 +30,15 @@ export function GridVideoCard({
   v,
   avatarUrl,
   isSelf = false,
+  topicLabel = null,
 }: {
   v: RecentRow
   avatarUrl: string | null
   isSelf?: boolean
+  /** what this video is about. The feed used to say it once per shelf heading; with the shelves
+   *  gone it rides the card, which is the only place it can go without regrouping the grid. Null
+   *  means no topic was assigned, which is a state and reads as one. */
+  topicLabel?: string | null
 }) {
   const len = durationText(v.duration_s)
   return (
@@ -86,6 +91,7 @@ export function GridVideoCard({
             {v.view_count === null ? "views --" : `${fmtInt(v.view_count)} views`} ·{" "}
             {agoText(v.published_at)}
           </span>
+          <span className="ytopic">{topicLabel ?? "no topic assigned"}</span>
         </span>
       </span>
     </a>

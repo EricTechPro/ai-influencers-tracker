@@ -60,15 +60,6 @@ export default function TopicsIndexPage() {
     Object.entries(allLabels).filter(([id]) => feedTopics.has(id))
   )
 
-  const ownCoverage: Record<string, number> = {}
-  for (const v of channelVideos(meta.self_channel_id)) {
-    for (const a of v.topic_assignments as { topic_id: string }[]) {
-      if (feedTopics.has(a.topic_id)) {
-        ownCoverage[a.topic_id] = (ownCoverage[a.topic_id] ?? 0) + 1
-      }
-    }
-  }
-
   return (
     <section className="breakout">
       <RecentFeed
@@ -76,7 +67,6 @@ export default function TopicsIndexPage() {
         avatars={avatars}
         selfChannelId={meta.self_channel_id}
         topicsByVideo={topicsByVideo}
-        ownCoverage={ownCoverage}
         topicLabels={topicLabels}
         generatedAt={meta.generated_at}
       />

@@ -912,3 +912,8 @@ select.chip:hover { border-color: var(--muted-foreground); }
 .ymom.steady { background: var(--secondary); color: var(--muted-foreground); }
 .ymom.flat { background: color-mix(in srgb, var(--v-crowded) 12%, transparent); color: #c0343a; }
 .ymom.unmeasured { background: transparent; color: var(--muted-foreground); font-weight: 500; }
+
+/* The topic each card carries. The feed used to say this once per shelf heading; with the
+   shelves gone it belongs on the card, quiet enough not to compete with the title. */
+.ytopic { font-size: 11px; opacity: 0.6; overflow: hidden; text-overflow: ellipsis;
+  white-space: nowrap; }

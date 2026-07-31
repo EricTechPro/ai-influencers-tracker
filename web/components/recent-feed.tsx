@@ -1,14 +1,12 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useCallback, useMemo, useState } from "react"
 import { selectRecent, type FormatKey, type RecentWindow } from "@/lib/recent"
-import { groupFeedByTopic } from "@/lib/topic-groups"
 import type { RecentBundle } from "@/lib/types"
 import { fmtInt } from "@/lib/trust"
 import { GridVideoCard } from "./grid-video-card"
 import { Pager, usePager } from "./pager"
 import { PatternRows } from "./pattern-rows"
-import { Derived } from "./trust"
 
 const WINDOWS: RecentWindow[] = [7, 14, 30]
 
@@ -37,7 +35,6 @@ export function RecentFeed({
   avatars,
   selfChannelId,
   topicsByVideo,
-  ownCoverage,
   topicLabels,
   generatedAt,
 }: {
@@ -46,8 +43,6 @@ export function RecentFeed({
   selfChannelId: string
   /** video id -> topic ids, narrowed server-side to only the feed's own videos */
   topicsByVideo: Record<string, string[]>
-  /** topic id -> how many of the self channel's videos carry it */
-  ownCoverage: Record<string, number>
   /** topic id -> human label, narrowed server-side to only the ids this feed shows */
   topicLabels: Record<string, string>
   /** meta.generated_at. The window anchors to the build, never to the viewer's clock. */
@@ -85,19 +80,26 @@ export function RecentFeed({
     [bundle, window, format, capped, defaultCap, floor, now]
   )
 
-  // The unit for the grid used to be the video, paged 12 at a time. It is now the topic: the
-  // grouping itself is the chunking, so the ranked grid no longer pages. The tail is still a flat
-  // list (grouping the overflow would just reproduce the noise the cap and floor exist to cut),
-  // so it keeps its own pager.
-  const groups = useMemo(
-    () => groupFeedByTopic(ranked, (id) => topicsByVideo[id] ?? []),
-    [ranked, topicsByVideo]
-  )
-  const untopicedCount = groups.find((g) => g.topic_id === null)?.videos.length ?? 0
-
+  // One ranked grid, not a shelf per topic. Grouping made a video that carries three topics
+  // appear three times, so four near-identical one-card shelves could all be the same video and
+  // the page read as a stutter. The ordering that matters is the breakout multiplier inside the
+  // window you picked, which is exactly what selectRecent already returns, so the grid is that
+  // list in that order and the topic rides each card instead of heading a shelf.
+  //
   // 12 is three full rows at the widest grid and two at the common one, so a page always ends on
   // a complete row rather than one orphan card.
+  const { slice: rankedPage, props: rankedPager } = usePager(ranked, 12)
   const { slice: tailPage, props: tailPager } = usePager(tail, 12)
+
+  // A video can carry several topics. The card has room for one, so it takes the first assigned
+  // and the rest stay on the hover — the alternative is a card that grows with its assignments.
+  const cardTopic = useCallback(
+    (videoId: string) => {
+      const ids = topicsByVideo[videoId] ?? []
+      return ids.length === 0 ? null : topicLabels[ids[0]] ?? ids[0]
+    },
+    [topicsByVideo, topicLabels]
+  )
 
   const failed = bundle.coverage.batches_failed
 
@@ -176,57 +178,20 @@ export function RecentFeed({
           {ranked.length === 0 ? (
             <p className="note">Nothing cleared {floor}× in this window.</p>
           ) : (
-            groups.map((g) => (
-              <div
-                className={g.topic_id === null ? "oshelf untopiced" : "oshelf"}
-                key={g.topic_id ?? "__untopiced"}
-              >
-                <div className="ohead">
-                  {/* The label is what a reader can act on ("Setting up MCP with Claude Code");
-                      the raw topic id rides the hover for whoever needs to match it to a URL or
-                      a config entry. A group with no assignment states that directly instead of
-                      falling back to a slug that reads as a made-up topic. */}
-                  <span className="otitle" title={g.topic_id ?? undefined}>
-                    {g.topic_id === null
-                      ? `${fmtInt(g.videos.length)} videos have no topic assigned`
-                      : topicLabels[g.topic_id] ?? g.topic_id}
-                  </span>
-                  <span className="oscore">
-                    {g.avgBreakout === null ? (
-                      "no scores"
-                    ) : (
-                      <Derived formula="mean of the vidIQ breakout scores in this group">
-                        {g.avgBreakout.toFixed(2)}&times; avg breakout
-                      </Derived>
-                    )}
-                  </span>
-                </div>
-                <div className="ostats">
-                  <span>
-                    {fmtInt(g.videos.length)} video{g.videos.length === 1 ? "" : "s"} ·{" "}
-                    {fmtInt(g.creators)} creator{g.creators === 1 ? "" : "s"}
-                  </span>
-                  {g.topic_id === null ? (
-                    <span>
-                      {fmtInt(ranked.length - untopicedCount)} of {fmtInt(ranked.length)} shown
-                      here carry a topic assignment
-                    </span>
-                  ) : (
-                    <span>you: {fmtInt(ownCoverage[g.topic_id] ?? 0)} videos</span>
-                  )}
-                </div>
-                <div className="ygrid" style={{ marginTop: "10px" }}>
-                  {g.videos.map((v) => (
-                    <GridVideoCard
-                      key={v.video_id}
-                      v={v}
-                      avatarUrl={avatars[v.channel_id] ?? null}
-                      isSelf={v.channel_id === selfChannelId}
-                    />
-                  ))}
-                </div>
+            <>
+              <div className="ygrid" style={{ marginTop: "10px" }}>
+                {rankedPage.map((v) => (
+                  <GridVideoCard
+                    key={v.video_id}
+                    v={v}
+                    avatarUrl={avatars[v.channel_id] ?? null}
+                    isSelf={v.channel_id === selfChannelId}
+                    topicLabel={cardTopic(v.video_id)}
+                  />
+                ))}
               </div>
-            ))
+              <Pager {...rankedPager} unit="videos" />
+            </>
           )}
 
           {tail.length > 0 && (
