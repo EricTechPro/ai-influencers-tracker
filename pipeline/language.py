@@ -42,13 +42,31 @@ def cjk_share(title: str) -> float:
     return sum(1 for c in letters if _CJK.match(c)) / len(letters)
 
 
-def detect(title: str | None, default_audio_language: str | None,
-           threshold: float) -> tuple[str, str]:
-    """Returns (lang, tier). tier is one of "oracle", "derived", "unread"."""
+def detect(title: str | None, default_audio_language: str | None, threshold: float,
+           description: str | None = None) -> tuple[str, str]:
+    """Returns (lang, tier). tier is one of "oracle", "derived", "unread".
+
+    The description breaks a tie, and only a tie. A title carrying some CJK but not enough to
+    clear the threshold is the one case where the title genuinely cannot answer: a Chinese
+    sentence padded out by a long Latin product name and a run of hashtags reads as English on
+    character share alone. `Claude Code 一键切换到 DeepSeek (CC Switch) #Shorts #claudecode` is
+    0.09 of a threshold of 0.10, and its description is 0.44.
+
+    It is deliberately not consulted for an all-Latin title. Chinese creators put the same
+    Chinese membership boilerplate under every upload, including their genuinely English ones, so
+    a description-first rule would relabel a whole channel on the strength of a footer. Zero
+    all-Latin titles in the corpus currently have a Chinese description, and this keeps it that
+    way by construction rather than by luck.
+    """
     if default_audio_language:
         return _primary_subtag(default_audio_language), "oracle"
     if not title:
         return NO_LANG, "unread"
     if not any(c.isalnum() for c in title):
         return NO_LANG, "unread"
-    return ("zh" if cjk_share(title) >= threshold else "en"), "derived"
+    share = cjk_share(title)
+    if share >= threshold:
+        return "zh", "derived"
+    if share > 0 and description and cjk_share(description) >= threshold:
+        return "zh", "derived"
+    return "en", "derived"

@@ -12,7 +12,8 @@ def build(ctx) -> dict:
     for video in ctx.videos:
         baselines = ctx.baselines[video["channel_id"]]
         lang, lang_tier = language.detect(video.get("title"),
-                                          video.get("default_audio_language"), threshold)
+                                          video.get("default_audio_language"), threshold,
+                                          video.get("description"))
         rows.append({
             "video_id": video["video_id"],
             "channel_id": video["channel_id"],

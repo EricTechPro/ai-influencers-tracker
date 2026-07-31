@@ -71,7 +71,8 @@ def build(ctx) -> dict:
         gained = ctx.traction.get(video["video_id"], {}).get("views_gained", {}).get("24h", {})
         day = gained.get("value") if gained.get("state") == "ok" else None
         lang, lang_tier = language.detect(video.get("title"),
-                                          video.get("default_audio_language"), lang_threshold)
+                                          video.get("default_audio_language"), lang_threshold,
+                                          video.get("description"))
         videos.append({
             **{k: video.get(k) for k in CARD_KEYS},
             "channel_name": names.get(video["channel_id"]),

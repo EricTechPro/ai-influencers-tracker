@@ -41,3 +41,23 @@ def test_a_stray_cjk_character_below_the_threshold_stays_en():
 
 def test_an_empty_declaration_falls_through_to_the_title():
     assert language.detect("矽谷大神筆記術", "", T) == ("zh", "derived")
+
+
+def test_a_description_breaks_a_tie_the_title_cannot():
+    # The one video in the corpus that sits between 0 and the threshold: a Chinese sentence
+    # padded by a Latin product name and hashtags. Title 0.09, description 0.44.
+    title = "Claude Code 一键切换到 DeepSeek (CC Switch) #Shorts #claudecode #deepseek"
+    desc = "如果您想支持我的视频创作，可以考虑加入油管会员"
+    assert language.detect(title, None, T) == ("en", "derived")
+    assert language.detect(title, None, T, desc) == ("zh", "derived")
+
+
+def test_an_all_latin_title_ignores_a_chinese_description():
+    # Chinese creators put the same Chinese membership boilerplate under every upload, including
+    # their genuinely English ones. A description-first rule would relabel the whole channel.
+    assert language.detect("ChatGPT for Amazon", None, T,
+                           "如果您想支持我的视频创作，可以考虑加入油管会员") == ("en", "derived")
+
+
+def test_a_description_cannot_overturn_a_title_that_already_cleared_the_threshold():
+    assert language.detect("矽谷大神筆記術", None, T, "an english description") == ("zh", "derived")
