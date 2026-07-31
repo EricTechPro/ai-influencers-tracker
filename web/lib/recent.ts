@@ -8,27 +8,38 @@ export type FormatKey = "videos" | "shorts" | "all"
 export type RecentWindow = number
 
 /** Every window the page will ever offer, shortest first. */
-export const WINDOW_CHOICES = [7, 14, 30, 45, 60, 90] as const
+export const WINDOW_CHOICES = [1, 3, 7, 14, 30, 45, 60, 90] as const
 
 /**
  * The windows this bundle can honestly answer.
  *
- * The sweep fetches one vidIQ `publishedWithin` range, so the corpus stops dead at its edge —
- * on a `thisMonth` sweep the oldest video is 30 days old, and a 90-day button would return the
- * same 153 videos as the 30-day one while implying three months of coverage. Offering a window
- * the data cannot fill is the "missing data rendered as a zero" failure in another costume.
+ * The corpus stops dead at both edges, and offering a window the data cannot fill is the
+ * "missing data rendered as a zero" failure in another costume. Both ends need the guard:
  *
- * So: every choice up to and including the first one that covers the oldest video held.
+ * - Above: a 90-day button on a bundle carrying 30 days returns the same rows as the 30-day one
+ *   while implying three months of coverage.
+ * - Below: a 1-day button is empty whenever the newest video held is older than a day. That end
+ *   went unguarded while the feed read the paid vidIQ sweep, and it did not show, because the
+ *   shortest choice was 7 and the sweep was never more than a few days stale. `today` is a real
+ *   window now, so a feed that has not been swept since yesterday must not offer it.
+ *
+ * So: every choice from the first that reaches the newest video, up to and including the first
+ * that covers the oldest.
  */
 export function windowsHeld(videos: { published_at: string }[], today: Date): RecentWindow[] {
   if (videos.length === 0) return [WINDOW_CHOICES[0]]
-  const oldest = Math.max(...videos.map((v) => ageDays(v.published_at, today)))
+  const ages = videos.map((v) => ageDays(v.published_at, today))
+  const newest = Math.min(...ages)
+  const oldest = Math.max(...ages)
   const out: RecentWindow[] = []
   for (const w of WINDOW_CHOICES) {
+    if (w < newest) continue
     out.push(w)
     if (w >= oldest) break
   }
-  return out
+  // Every choice sat under the newest video held, which only happens when the whole bundle is
+  // older than 90 days. The longest window is the one that holds something.
+  return out.length > 0 ? out : [WINDOW_CHOICES[WINDOW_CHOICES.length - 1]]
 }
 
 export interface RecentOptions {
@@ -36,7 +47,7 @@ export interface RecentOptions {
   format: FormatKey
   /** how many of one channel's rows reach the grid; null lifts the cap entirely */
   perChannelCap: number | null
-  /** breakout score under which a row goes to the tail instead of the grid */
+  /** multiplier under which a row goes to the tail instead of the grid */
   floor: number
 }
 
@@ -55,14 +66,14 @@ export interface RecentSelection {
   feed: RecentRow[]
 }
 
-/** Descending by score, unscored last. A null breakout_score is a video vidIQ did not measure,
- *  so it sorts behind every measured one rather than ahead of them as a zero would. */
+/** Descending by multiplier, unscored last. A null multiplier is a channel we have no baseline
+ *  for, so it sorts behind every measured one rather than ahead of them as a zero would. */
 function byScore(a: RecentRow, b: RecentRow): number {
-  if (a.breakout_score === null || b.breakout_score === null) {
-    if (a.breakout_score === b.breakout_score) return a.video_id.localeCompare(b.video_id)
-    return a.breakout_score === null ? 1 : -1
+  if (a.multiplier === null || b.multiplier === null) {
+    if (a.multiplier === b.multiplier) return a.video_id.localeCompare(b.video_id)
+    return a.multiplier === null ? 1 : -1
   }
-  return b.breakout_score - a.breakout_score || a.video_id.localeCompare(b.video_id)
+  return b.multiplier - a.multiplier || a.video_id.localeCompare(b.video_id)
 }
 
 function ageDays(publishedAt: string, today: Date): number {
@@ -78,8 +89,8 @@ function matchesFormat(row: RecentRow, format: FormatKey): boolean {
  * The feed, as three filters over one bundle.
  *
  * Nothing is ever discarded: a row below the floor, over the per-channel cap, or carrying no
- * score at all lands in `tail` rather than vanishing. A null breakout_score means vidIQ did not
- * return one, which is not the same as a low one, so it is never sorted as a zero.
+ * score at all lands in `tail` rather than vanishing. A null multiplier means the channel has no
+ * baseline to divide by, which is not the same as a low one, so it is never sorted as a zero.
  *
  * The per-channel cap is the load-bearing one. On the live 2026-07-29 week a single channel held
  * 6 of the 28 outliers by posting a conference back-catalogue, which is exactly the subscriptions
@@ -103,7 +114,7 @@ export function selectRecent(
   // One predicate, used both ways. Written twice — once hand-negated — the two had to stay
   // exact complements by inspection, and a row that satisfied neither would vanish silently.
   const clears = (v: RecentRow): boolean =>
-    v.breakout_score !== null && v.breakout_score >= opts.floor
+    v.multiplier !== null && v.multiplier >= opts.floor
 
   const scored = inWindow.filter(clears).sort(byScore)
 

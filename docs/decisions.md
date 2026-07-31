@@ -617,6 +617,9 @@ Rejected alternatives:
 
 ## 0012 — The breakout score on the feed is vidIQ's, not ours
 
+**Superseded by 0013.** The reasoning below still holds on the merits; the vendor sweep stopped
+being run, which is what changed.
+
 ### Context
 
 `/topics` needed a "what went up this week" feed, and the sort key is the question: how far past
@@ -667,3 +670,70 @@ week", where age normalisation is the whole game.
 `web/components/grid-video-card.tsx`, `thresholds.outliers`. The sweep costs 30 credits
 (2 formats x 3 batches x `OUTLIER_COST` 5) and lands in `_synthesize/outliers/<date>.json` because
 it is metered; `_db/recent.json` is the free copy the web reads.
+
+## 0013 — The feed's number is ours again, because the vendor's stopped arriving
+
+Supersedes 0012.
+
+### Context
+
+0012 chose vidIQ's `breakoutScore` over `pipeline/multiplier.py` on the merits, and those merits
+have not changed: a median is still the wrong centre for a tail-heavy catalogue, our number still
+reads roughly 2x high, and we still cannot normalise by video age — the snapshot series holds 4
+days of our own sweep against the ~90 that correction needs.
+
+What changed is that the vendor number stopped arriving. Nothing automates the sweep: the launchd
+job runs `pipeline.snapshot` alone, `pipeline.outliers` is a manual metered command, and
+`.agents/skills/ait-refresh/SKILL.md` had already dropped `vidiq_outliers` on its own reasoning
+("the multiplier is computed from exact free view counts, and nothing paid can improve on exact").
+`_db/recent.json` was the last thing still reading it.
+
+Measured on 2026-07-31: the bundle's newest video was published 2026-07-29 while the free registry
+held 48 newer ones, 5 of them from that morning. `/topics` could not answer "what went up today" at
+all, and re-running the sweep would have cost 40 credits against a 215 balance and a 200 reserve —
+a breach the guard refuses, correctly.
+
+### Decision
+
+`recent.json` is built from the corpus the free daily sweep already fills, and ranks on
+`multiplier.py`. **Derived**, and it ships the divisor: each card carries `baseline` and
+`baseline_n`, so the tooltip states the median it divided by and how many uploads that came from.
+
+The trade is explicit. A feed whose entire job is recency is better served by a worse-calibrated
+number that is current than by a better-calibrated one that is two days stale and costs credits to
+refresh. 0012's own closing line anticipated a revisit; this is not the one it expected — our
+number did not catch up, the vendor's went away.
+
+The age-normalisation gap 0012 named is covered from a different direction rather than closed.
+`momentum` now reads our own 24-hour view deltas instead of vidIQ's `vph`, which is the same
+quantity measured rather than modelled, and "is this still climbing" is the question age
+normalisation was a proxy for. A video too fresh to have been observed twice reads `unmeasured`,
+never `flat`.
+
+`vendor` remains a live trust tier — `snapshots.json` still carries vidIQ backfill points tagged
+`source` — it is simply no longer used on this bundle.
+
+### Rejected alternatives
+
+- **Automate the outlier sweep.** It is the smaller change and it buys the better number. It also
+  spends credits daily on a path `ait-refresh` had already dropped, against a reserve floor the
+  balance is already near, to keep a second ranking rule alive beside `multiplier.py`.
+- **Raise the reserve floor so the sweep fits.** Moves a number so a guard stops objecting, which
+  is the guard working and being overruled rather than answered.
+- **Keep vidIQ and mark the feed stale.** Honest, and it leaves the page unable to answer its own
+  question. A dated banner over a two-day-old feed is a correct label on a broken surface.
+- **Trimmed mean instead of the median.** Still worth doing and still orthogonal: it closes most of
+  the 2x gap and nothing about it depends on this decision. Left where 0012 left it.
+
+### Scope
+
+`pipeline/bundles/recent.py` (now reads `ctx.videos` and `ctx.baselines`; imports neither
+`outliers` nor vidIQ), `thresholds.outliers.feed_window_days`, `web/lib/types.ts`,
+`web/lib/recent.ts`, `web/components/grid-video-card.tsx`, `web/components/recent-feed.tsx`.
+`pipeline/outliers.py` is untouched and still runs on demand; nothing in `_db/` reads it.
+The bundle carries `feed_window_days` (30) of card fields, ~300 KB against the corpus's 16.7 MB,
+and every window toggle stays a client-side filter over it.
+
+`WINDOW_CHOICES` gains 1 and 3, and `windowsHeld` grew a lower bound: a window shorter than the
+newest video held is not offered, because a `1d` key over a feed last swept yesterday is an empty
+grid. That end went unguarded while the shortest choice was 7 and the sweep was never far behind.

@@ -80,7 +80,8 @@
   "outliers": {
     "per_channel_cap": 2,
     "display_floor": 2.5,
-    "_comment": "per_channel_cap is how many of one channel's outliers reach the grid before the rest fall to the tail. On the live 2026-07-29 week AI Engineer alone held 6 of the 28 outliers, posting a conference back-catalogue, so uncapped the first screen is one channel. display_floor is the breakout score under which a row goes to the tail rather than the grid. Both change what the feed shows you, which is why they live here."
+    "_comment": "per_channel_cap is how many of one channel's outliers reach the grid before the rest fall to the tail. On the live 2026-07-29 week AI Engineer alone held 6 of the 28 outliers, posting a conference back-catalogue, so uncapped the first screen is one channel. display_floor is the multiplier under which a row goes to the tail rather than the grid: 2.5x its channel's own normal. feed_window_days is how much history recent.json carries; the corpus is 11,843 videos and 16.7 MB, the feed ships one month of card fields (~300 KB) and the page filters it client-side, so this is the ceiling on every window the feed can offer. All three change what the feed shows you, which is why they live here.",
+    "feed_window_days": 30
   },
   "comments": {
     "roots_per_video": 100,

@@ -370,12 +370,18 @@ export interface RecentRow {
   type: "short" | "long"
   channel_id: string
   channel_name: string
-  /** vidIQ's own breakout score. A vendor number: we never recompute or round it,
-   *  and null means vidIQ did not return one, not that the video underperformed. */
-  breakout_score: number | null
-  /** vidIQ's views-per-hour right now. A vendor number. */
-  vph: number | null
-  /** whether the video is still accelerating against its own lifetime average */
+  /** How far past this channel's own normal the video ran: its views over the median of the
+   *  channel's last mature uploads of the same kind. Derived tier, computed from exact free
+   *  view counts. Null is a channel with no baseline yet, never a video that underperformed. */
+  multiplier: number | null
+  /** The median the multiplier was divided by, and how many uploads it was taken from. A Derived
+   *  number on this board ships its working; these two are it. Null with the multiplier. */
+  baseline: number | null
+  baseline_n: number
+  /** Views added in the last 24 hours, from our own dated snapshots. Null when the video has
+   *  been observed once, which is not the same as a video that stopped moving. */
+  views_gained_24h: number | null
+  /** whether the video is still pulling views, as a share of the ones it already has */
   momentum: {
     state: "climbing" | "steady" | "flat" | "unmeasured"
     /** views added per day as a share of the views it already has */
@@ -399,25 +405,30 @@ export interface PatternRow {
 
 export interface RecentCoverage {
   channels_requested: number
-  batches_ok: number
-  batches_failed: number
-  missing_channel_ids: string[]
+  channels_scored: number
+  /** Channels with too few mature uploads to build a baseline from, so none of their videos can
+   *  carry a multiplier. Named rather than left to look like a channel that had a quiet month. */
+  unscored_channel_ids: string[]
 }
 
 export interface RecentBundle {
   version: number
   generated_at: string
-  source: "vidiq"
+  /** Our own video registry, filled free by the daily sweep. Was "vidiq" until the feed stopped
+   *  reading the paid outlier sweep — see pipeline/bundles/recent.py for why. */
+  source: "corpus"
+  /** The day the counts these multipliers were computed from last landed. */
   fetched_at: string | null
-  /** the same sweep, to the minute. Null on every sweep written before pipeline/outliers.py
-   *  started stamping the clock, so the page falls back to the day alone. */
+  /** the same sweep, to the minute. Null before the first sweep has ever run, so the page falls
+   *  back to the day alone. */
   fetched_at_utc: string | null
-  window: string | null
   coverage: RecentCoverage
-  /** breakout score under which a row goes to the tail; config/thresholds.json outliers.display_floor */
+  /** multiplier under which a row goes to the tail; config/thresholds.json outliers.display_floor */
   display_floor: number
   /** how many of one channel's rows reach the grid; config/thresholds.json outliers.per_channel_cap */
   per_channel_cap: number
+  /** how much history the bundle carries; the ceiling on every window the feed can offer */
+  feed_window_days: number
   videos: RecentRow[]
   patterns: PatternRow[]
   trust: Record<string, string>

@@ -21,9 +21,12 @@ rather than at the anonymous rate limit. The launchd agent (`scripts/ait-snapsho
 **installed and loaded** as `ca.erictech.ait-snapshot`, so the sweep runs itself at 09:00;
 `launchctl list | grep ait` confirms it and `scripts/install_ait_snapshot_launchd.sh` reinstalls it.
 
-`/topics` opens with the **recent feed**: vidIQ's breakout score over the roster, one sweep per
-day into `_synthesize/outliers/<date>.json`, read by `_db/recent.json`. The score is `vendor`
-tier — vidIQ's number, never recomputed (decision 0012). Pattern rows underneath read
+`/topics` opens with the **recent feed**: `multiplier.py` over the free video registry, rebuilt by
+`build_data` into `_db/recent.json` — a video's views over the median of its channel's last mature
+uploads of the same kind. `derived` tier, and the card ships the baseline it divided by. It read
+vidIQ's `breakout_score` at `vendor` tier until decision 0013 superseded 0012: nothing automated
+the paid sweep, so the feed drifted two days behind a registry that was already current. Nothing in
+`_db/` reads `_synthesize/outliers/` now. Pattern rows underneath read
 `_synthesize/patterns/<date>.json`, which no skill writes yet, so they render an honest empty
 state.
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { selectRecent } from "./recent"
+import { selectRecent, windowsHeld } from "./recent"
 import type { RecentBundle, RecentRow } from "./types"
 
 const TODAY = new Date("2026-07-29T00:00:00Z")
@@ -13,8 +13,10 @@ function row(over: Partial<RecentRow> & { video_id: string }): RecentRow {
     type: "long",
     channel_id: "UCa",
     channel_name: "A",
-    breakout_score: 5,
-    vph: 10,
+    multiplier: 5,
+    baseline: 200,
+    baseline_n: 20,
+    views_gained_24h: 240,
     momentum: { state: "steady" as const, daily_share: 0.01, per_day: 240, vph: 10 },
     pattern_id: null,
     ...over,
@@ -25,18 +27,17 @@ function bundle(videos: RecentRow[]): RecentBundle {
   return {
     version: 1,
     generated_at: "2026-07-29T00:00:00Z",
-    source: "vidiq",
+    source: "corpus",
     fetched_at: "2026-07-29",
     fetched_at_utc: null,
-    window: "thisMonth",
     coverage: {
       channels_requested: 72,
-      batches_ok: 3,
-      batches_failed: 0,
-      missing_channel_ids: [],
+      channels_scored: 72,
+      unscored_channel_ids: [],
     },
     display_floor: 2.5,
     per_channel_cap: 2,
+    feed_window_days: 30,
     videos,
     patterns: [],
     trust: {},
@@ -84,9 +85,9 @@ describe("selectRecent format", () => {
 describe("selectRecent per-channel cap", () => {
   it("keeps a channel's two highest and sends the rest to the tail", () => {
     const b = bundle([
-      row({ video_id: "a1", breakout_score: 9 }),
-      row({ video_id: "a2", breakout_score: 8 }),
-      row({ video_id: "a3", breakout_score: 7 }),
+      row({ video_id: "a1", multiplier: 9 }),
+      row({ video_id: "a2", multiplier: 8 }),
+      row({ video_id: "a3", multiplier: 7 }),
     ])
     const { ranked, tail } = selectRecent(b, OPTS, TODAY)
     expect(ranked.map((v) => v.video_id)).toEqual(["a1", "a2"])
@@ -95,9 +96,9 @@ describe("selectRecent per-channel cap", () => {
 
   it("lifting the cap restores them in score order", () => {
     const b = bundle([
-      row({ video_id: "a1", breakout_score: 9 }),
-      row({ video_id: "a2", breakout_score: 8 }),
-      row({ video_id: "a3", breakout_score: 7 }),
+      row({ video_id: "a1", multiplier: 9 }),
+      row({ video_id: "a2", multiplier: 8 }),
+      row({ video_id: "a3", multiplier: 7 }),
     ])
     const { ranked } = selectRecent(b, { ...OPTS, perChannelCap: null }, TODAY)
     expect(ranked.map((v) => v.video_id)).toEqual(["a1", "a2", "a3"])
@@ -107,8 +108,8 @@ describe("selectRecent per-channel cap", () => {
 describe("selectRecent floor and nulls", () => {
   it("sends a row under the floor to the tail rather than dropping it", () => {
     const b = bundle([
-      row({ video_id: "over", breakout_score: 3 }),
-      row({ video_id: "under", breakout_score: 1.2, channel_id: "UCb" }),
+      row({ video_id: "over", multiplier: 3 }),
+      row({ video_id: "under", multiplier: 1.2, channel_id: "UCb" }),
     ])
     const { ranked, tail } = selectRecent(b, OPTS, TODAY)
     expect(ranked.map((v) => v.video_id)).toEqual(["over"])
@@ -116,7 +117,7 @@ describe("selectRecent floor and nulls", () => {
   })
 
   it("a null score is never sorted as a zero: it goes to the tail", () => {
-    const b = bundle([row({ video_id: "unknown", breakout_score: null })])
+    const b = bundle([row({ video_id: "unknown", multiplier: null })])
     const { ranked, tail } = selectRecent(b, OPTS, TODAY)
     expect(ranked).toEqual([])
     expect(tail.map((v) => v.video_id)).toEqual(["unknown"])
@@ -124,5 +125,43 @@ describe("selectRecent floor and nulls", () => {
 
   it("an empty window is empty, not an error", () => {
     expect(selectRecent(bundle([]), OPTS, TODAY)).toEqual({ ranked: [], tail: [], feed: [] })
+  })
+})
+
+describe("windowsHeld offers only what the bundle can answer", () => {
+  const at = (daysAgo: number) => ({
+    published_at: new Date(TODAY.getTime() - daysAgo * 86_400_000).toISOString(),
+  })
+
+  it("offers today when the feed holds something from today", () => {
+    expect(windowsHeld([at(0), at(5)], TODAY)).toEqual([1, 3, 7])
+  })
+
+  it("does not offer today when the newest video is older than a day", () => {
+    // The guard the paid sweep never needed: its shortest choice was 7 and it was never more
+    // than a few days behind, so an empty short window could not be reached.
+    expect(windowsHeld([at(2), at(5)], TODAY)).toEqual([3, 7])
+  })
+
+  it("drops every window under the newest video, not just the first", () => {
+    expect(windowsHeld([at(20)], TODAY)).toEqual([30])
+  })
+
+  it("stops at the first window that covers the oldest video held", () => {
+    // A 90-day button over 30 days of corpus returns the 30-day list while implying three months.
+    expect(windowsHeld([at(0), at(28)], TODAY)).toEqual([1, 3, 7, 14, 30])
+  })
+
+  it("offers exactly one window when a single day is all that is held", () => {
+    expect(windowsHeld([at(0)], TODAY)).toEqual([1])
+  })
+
+  it("falls back to the longest window when everything held is older than all of them", () => {
+    // Not an empty rail: the page must always offer a window it can render something in.
+    expect(windowsHeld([at(400)], TODAY)).toEqual([90])
+  })
+
+  it("offers the shortest window rather than nothing for an empty bundle", () => {
+    expect(windowsHeld([], TODAY)).toEqual([1])
   })
 })

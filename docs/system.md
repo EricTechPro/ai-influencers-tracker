@@ -557,36 +557,42 @@ memory.
   "version": 1,
   "generated_at": "2026-07-29T00:00:00Z",
   "source": "vidiq",
-  "fetched_at": "2026-07-29",          // null when no sweep has run: a state, not zero outliers
-  "window": "thisMonth",
-  "coverage": { "channels_requested": 72, "batches_ok": 6,
-                "batches_failed": 0, "missing_channel_ids": [] },
+  "fetched_at": "2026-07-31",          // null before the first sweep: a state, not zero videos
+  "feed_window_days": 30,              // how much history the bundle carries
+  "coverage": { "channels_requested": 74, "channels_scored": 73,
+                "unscored_channel_ids": ["UCPjN..."] },
   "videos": [{
     "video_id": "IbFaY3xFpZM", "title": "...", "published_at": "2026-07-23T23:08:15Z",
     "view_count": 36869, "duration_s": 1045, "type": "long",
     "channel_id": "UC4Sg...", "channel_name": "Dubibubi",
-    "breakout_score": 9.59,            // vidIQ's, carried through untouched. null = not returned
+    "multiplier": 9.59,                // ours. null = channel has no baseline, never "did badly"
+    "baseline": 3843, "baseline_n": 20, // the divisor and its sample: a Derived number's working
+    "views_gained_24h": 1204,          // our own dated series. null = observed once, not flat
     "pattern_id": null                 // stamped by the grouping pass when one has run
   }],
   "patterns": [{ "pattern_id": "p1", "label": "...", "evidence": ["v1", "v2"],
                  "creator_count": 3, "existing_leaf": "claude-code-mcp-setup",
                  "action": "add_to_leaf" }],
-  "trust": { "breakout_score": "vendor", "pattern": "inference", "existing_leaf": "derived" }
+  "trust": { "multiplier": "derived", "views_gained_24h": "derived", "momentum": "derived",
+             "pattern": "inference", "existing_leaf": "derived" }
 }
 ```
 
-**Inputs.** `_synthesize/outliers/<date>.json`, written by `pipeline/outliers.py` (metered: 30
-credits, 2 formats x 3 batches of 24 x 5), and `_synthesize/patterns/<date>.json`, written by a
-skill that does the LLM grouping — `pipeline/` imports stdlib and never calls a model. Both are
-optional: missing outliers give an empty feed that says so, missing patterns give empty rows that
-say so.
+**Inputs.** `ctx.videos` and `ctx.baselines` — the free video registry the daily sweep fills, and
+`multiplier.py`'s per-channel medians over it — plus `_synthesize/patterns/<date>.json`, written by
+a skill that does the LLM grouping (`pipeline/` imports stdlib and never calls a model). Patterns
+are optional: missing ones give empty rows that say so. It read `_synthesize/outliers/<date>.json`
+until decision 0013; `pipeline/outliers.py` still runs on demand but nothing in `_db/` reads it.
 
-**`vendor` is a fourth trust tier**, beside Oracle / Derived / Inference: an exact number that is
-someone else's and that we cannot audit. `breakout_score` is never recomputed or rounded, and the
-card names vidIQ rather than printing a derivation. Decision 0012 has the why.
+**The number is Derived, so it ships its working.** `multiplier` is this video's views over
+`baseline`, the median of its channel's last `baseline_n` mature uploads of the same kind, and the
+card's tooltip states all three. Shorts and long-form carry separate baselines because mixing two
+distributions makes both wrong. `vendor` is still a live tier on this board — `snapshots.json`
+carries vidIQ backfill points — it is simply not used here any more.
 
-`coverage.batches_failed > 0` renders as a warning on the page. Returning 48 channels' outliers as
-if they were 72 would read as "nothing broke out on the other 24", which is a claim nobody made.
+`coverage.unscored_channel_ids` renders as a warning on the page. A channel with too few mature
+uploads has no baseline, so none of its videos can be measured; they appear marked `unmeasured`
+rather than scored zero, and the count is named rather than left to read as a quiet month.
 
 ### `meta.json`
 

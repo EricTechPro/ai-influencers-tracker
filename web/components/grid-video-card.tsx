@@ -20,11 +20,16 @@ const MOMENTUM_LABEL = {
 /**
  * One video in the recent feed, wearing YouTube's grid geometry.
  *
- * The number bottom-left is vidIQ's breakout score, not ours. Our own multiplier
- * (pipeline/multiplier.py) disagreed with it by roughly 2x on every shared video and cannot
- * normalise by video age, so this surface shows the vendor's figure and says so. That is why
- * the title attribute names vidIQ rather than showing a derivation: we did not compute it and
- * cannot show its working.
+ * The number bottom-left is our multiplier (pipeline/multiplier.py): this video's views over the
+ * median of its channel's last mature uploads of the same kind. It was vidIQ's breakout score,
+ * which could not show its working because we did not compute it — so the badge asserted a number
+ * and the tooltip could only name a vendor. Derived tier now, and it ships the divisor: the
+ * tooltip states the baseline and how many uploads it was taken from, which is the difference
+ * between a measurement and a claim on this board.
+ *
+ * The one thing the vendor's figure did that this does not is normalise by video age, so a
+ * six-hour-old video is compared against mature medians and reads low until it has run. The
+ * momentum line under the card is what covers that, and it is why it is on the card at all.
  */
 export function GridVideoCard({
   v,
@@ -60,19 +65,26 @@ export function GridVideoCard({
         {/* The unscored case wears a badge of its own rather than leaving the corner empty. The
             page used to carry a sentence saying a video with no score is unmeasured and not low;
             an empty corner is what made that sentence necessary. */}
-        {v.breakout_score === null ? (
+        {v.multiplier === null ? (
           <span
             className="ymult ynoscore"
-            title="vidIQ returned no breakout score for this video. Unmeasured, which is not the same as low."
+            title="This channel has too few mature uploads to build a baseline from, so there is nothing to measure this video against. Unmeasured, which is not the same as low."
           >
             unmeasured
           </span>
         ) : (
           <span
-            className={`ymult ${SCORE_CLASS[tierIndex(v.breakout_score)]}`}
-            title={`vidIQ breakout score ${v.breakout_score}. How far past this channel's normal performance at this age the video ran. Measured by vidIQ, not by us.`}
+            className={`ymult ${SCORE_CLASS[tierIndex(v.multiplier)]}`}
+            title={
+              `${v.multiplier.toFixed(2)}x this channel's own normal. ` +
+              `${v.view_count === null ? "--" : fmtInt(v.view_count)} views over a baseline of ` +
+              `${v.baseline === null ? "--" : fmtInt(v.baseline)}, the median of its last ` +
+              `${v.baseline_n} mature ` +
+              `${v.type === "short" ? "shorts" : "long-form uploads"}. ` +
+              `Computed from exact view counts, not bought.`
+            }
           >
-            {v.breakout_score.toFixed(2)}&times;
+            {v.multiplier.toFixed(2)}&times;
           </span>
         )}
         {len && <span className="ylen">{len}</span>}

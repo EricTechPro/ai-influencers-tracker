@@ -30,7 +30,7 @@ FIXTURE_THRESHOLDS = {
     "traction": {"still_growing_min_views_7d": 500, "still_growing_min_share_7d": 0.02,
                  "recent_daily_n": 50, "tail_sweep_days": 7},
     "multiplier": {"baseline_n": 20, "baseline_min_videos": 5, "maturity_days": 14},
-    "outliers": {"per_channel_cap": 2, "display_floor": 2.5},
+    "outliers": {"per_channel_cap": 2, "display_floor": 2.5, "feed_window_days": 30},
     "momentum": {"climbing_min_daily_share": 0.02, "flat_max_daily_share": 0.005,
                  "min_age_hours": 48},
     "comments": {"roots_per_video": 100, "replies_per_root": 5, "top_n_per_channel": 50,

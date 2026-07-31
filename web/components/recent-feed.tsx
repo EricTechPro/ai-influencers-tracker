@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import {
   selectRecent, windowsHeld, type FormatKey, type RecentWindow,
 } from "@/lib/recent"
@@ -13,8 +13,11 @@ import { SearchField } from "./search-field"
 import { SectionKicker } from "./section-kicker"
 
 /** The heading is the window. Saying "this week" over a 30-day list is a small lie that costs
- *  nothing to avoid, and the number is the one thing the reader is filtering on. */
+ *  nothing to avoid, and the number is the one thing the reader is filtering on. The 1-day case
+ *  is named rather than numbered: the window exists so the board can answer "what went up
+ *  today", and "IN 1 DAYS" is both ungrammatical and a worse answer to it. */
 function heading(window: RecentWindow): string {
+  if (window === 1) return "WHAT WENT UP TODAY"
   return window === 7 ? "WHAT WENT UP THIS WEEK" : `WHAT WENT UP IN ${window} DAYS`
 }
 
@@ -27,7 +30,7 @@ const FORMATS: { key: FormatKey; label: string }[] = [
 /** Sorts the rail offers. "breakout" is the list selectRecent already returns, so it is the
  *  default and costs nothing; the other three reorder it. */
 const SORTS = [
-  { key: "breakout", label: "breakout", tip: "how far past its channel's normal each video ran, as vidIQ measured it" },
+  { key: "breakout", label: "breakout", tip: "how far past its channel's own normal each video ran: its views over the median of that channel's last mature uploads of the same kind" },
   { key: "growing", label: "growing", tip: "videos still gaining fastest first: share of its own view count a video is adding each day. 2%/day or more is climbing, under 0.5% is flat" },
   { key: "views", label: "views", tip: "most views first, whatever the channel's size" },
   { key: "newest", label: "newest", tip: "most recently published first" },
@@ -38,7 +41,7 @@ type SortKey = (typeof SORTS)[number]["key"]
  *  the button beside them says exactly how many it is holding back. */
 const TAGS_COLLAPSED = 12
 
-/** climbing first, then steady, then flat, then the ones vidIQ could not measure. Unmeasured
+/** climbing first, then steady, then flat, then the ones we have only observed once. Unmeasured
  *  sorts last rather than as a zero: a video we cannot judge is not a dead one. */
 const MOMENTUM_RANK = { climbing: 0, steady: 1, flat: 2, unmeasured: 3 } as const
 
@@ -102,6 +105,14 @@ export function RecentFeed({
   // the oldest day of a 7d window that the pipeline's own counts still include.
   const now = useMemo(() => new Date(generatedAt), [generatedAt])
   const windows = useMemo(() => windowsHeld(bundle.videos, now), [bundle.videos, now])
+
+  // The default is 7, and until windowsHeld guarded its lower bound every rail contained it.
+  // It no longer must: a feed whose newest video is ten days old offers 14 upward, and 7 would
+  // then be a heading reading "IN 7 DAYS" over an empty grid with no key lit to say why.
+  // windows[0] is the shortest window that actually holds something.
+  useEffect(() => {
+    if (!windows.includes(window)) setWindow(windows[0])
+  }, [windows, window])
   const { feed } = useMemo(
     () => selectRecent(bundle, { window, format, perChannelCap: cap, floor }, now),
     [bundle, window, format, cap, floor, now]
@@ -173,7 +184,7 @@ export function RecentFeed({
   // Twelve is the 4x3 the grid is drawn as, so a page is exactly the block you see.
   const { slice, props: pagerProps } = usePager(rows, 12)
 
-  const failed = bundle.coverage.batches_failed
+  const unscored = bundle.coverage.unscored_channel_ids.length
 
   return (
     <section>
@@ -189,10 +200,11 @@ export function RecentFeed({
         </p>
       ) : (
         <>
-          {failed > 0 && (
+          {unscored > 0 && (
             <p className="note">
-              ⚠ {failed} of {failed + bundle.coverage.batches_ok} batches failed.{" "}
-              {bundle.coverage.missing_channel_ids.length} channels are missing from this list.
+              ⚠ {unscored} of {bundle.coverage.channels_requested} channels have too few mature
+              uploads to build a baseline from, so their videos cannot be measured against a
+              normal. They are in this list, marked unmeasured, never as a low score.
             </p>
           )}
 
@@ -362,7 +374,12 @@ function freshness(bundle: RecentBundle): string {
   const clock = t.toLocaleString(undefined, {
     month: "short", day: "numeric", hour: "numeric", minute: "2-digit",
   })
-  return `swept ${clock}, ${agoText(iso)}`
+  // The age rides along only once it is one. agoText floors to whole days, so a sweep from this
+  // morning read "swept Jul 31, 5:52 AM, 0d" — and now that the feed is built from the free daily
+  // sweep rather than a paid one nobody automated, same-day is the normal case, so that "0d"
+  // would be permanent furniture. The clock already says when.
+  const ago = agoText(iso)
+  return ago === "0d" ? `swept ${clock}` : `swept ${clock}, ${ago}`
 }
 
 /** One facet: its name, then its keys. */

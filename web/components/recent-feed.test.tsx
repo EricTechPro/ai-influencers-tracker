@@ -22,8 +22,10 @@ function row(over: Partial<RecentRow> & { video_id: string }): RecentRow {
     type: "long",
     channel_id: "UCa",
     channel_name: "A",
-    breakout_score: 5,
-    vph: 10,
+    multiplier: 5,
+    baseline: 200,
+    baseline_n: 20,
+    views_gained_24h: 240,
     momentum: { state: "steady" as const, daily_share: 0.01, per_day: 240, vph: 10 },
     pattern_id: null,
     ...over,
@@ -39,13 +41,13 @@ function feed(
   const bundle: RecentBundle = {
     version: 1,
     generated_at: GENERATED_AT,
-    source: "vidiq",
+    source: "corpus",
     fetched_at: "2026-07-29",
     fetched_at_utc: null,
-    window: "thisMonth",
-    coverage: { channels_requested: 72, batches_ok: 3, batches_failed: 0, missing_channel_ids: [] },
+    coverage: { channels_requested: 72, channels_scored: 72, unscored_channel_ids: [] },
     display_floor: 2.5,
     per_channel_cap: 2,
+    feed_window_days: 30,
     videos,
     patterns: [],
     trust: {},
@@ -77,8 +79,8 @@ function titles(): string[] {
 describe("RecentFeed", () => {
   it("keeps the under-floor video in the one grid, behind the ones that cleared it", () => {
     feed([
-      row({ video_id: "low", breakout_score: 2.01 }),
-      row({ video_id: "high", breakout_score: 5 }),
+      row({ video_id: "low", multiplier: 2.01 }),
+      row({ video_id: "high", multiplier: 5 }),
     ])
     expect(countText()).toBe("2 videos")
     const shown = titles()
@@ -89,8 +91,8 @@ describe("RecentFeed", () => {
 
   it("sorts an unscored video last rather than as a zero", () => {
     feed([
-      row({ video_id: "unscored", breakout_score: null }),
-      row({ video_id: "low", breakout_score: 2.01 }),
+      row({ video_id: "unscored", multiplier: null }),
+      row({ video_id: "low", multiplier: 2.01 }),
     ])
     const shown = titles()
     expect(shown.findIndex((t) => t.includes("low"))).toBeLessThan(
@@ -99,7 +101,7 @@ describe("RecentFeed", () => {
   })
 
   it("names the topic on a card that landed under the floor", () => {
-    feed([row({ video_id: "low", breakout_score: 2.01 })], { low: ["frontier"] })
+    feed([row({ video_id: "low", multiplier: 2.01 })], { low: ["frontier"] })
     expect(screen.getAllByText("Frontier model launches").length).toBeGreaterThan(0)
   })
 
@@ -160,8 +162,8 @@ describe("RecentFeed", () => {
 
   it("puts a still-growing video first when asked, whatever its score", () => {
     feed([
-      row({ video_id: "spent", breakout_score: 9, momentum: { state: "flat", daily_share: 0.001, per_day: 2, vph: 1 } }),
-      row({ video_id: "rising", breakout_score: 2.6, momentum: { state: "climbing", daily_share: 0.05, per_day: 90, vph: 4 } }),
+      row({ video_id: "spent", multiplier: 9, momentum: { state: "flat", daily_share: 0.001, per_day: 2, vph: 1 } }),
+      row({ video_id: "rising", multiplier: 2.6, momentum: { state: "climbing", daily_share: 0.05, per_day: 90, vph: 4 } }),
     ])
     fireEvent.click(screen.getByRole("button", { name: "growing" }))
     expect(titles()[0]).toContain("rising")
@@ -172,5 +174,20 @@ describe("RecentFeed", () => {
     // Rendered in the viewer's own zone, so this pins that a clock time appears at all rather
     // than which zone the test runner is in.
     expect(document.querySelector(".cap")?.textContent).toMatch(/swept .*\d{1,2}:\d{2}/)
+  })
+
+  it("names the one-day window rather than numbering it", () => {
+    // "WHAT WENT UP IN 1 DAYS" is both ungrammatical and a worse answer to the question the
+    // window exists for.
+    feed([row({ video_id: "a", published_at: GENERATED_AT })])
+    fireEvent.click(screen.getByRole("button", { name: "1d" }))
+    expect(document.querySelector(".kicker")?.textContent).toBe("WHAT WENT UP TODAY")
+  })
+
+  it("drops the redundant age from a sweep that landed today", () => {
+    // Same-day is the normal case now that the feed is built from the free daily sweep, so a
+    // permanent ", 0d" beside a clock that already says the time is furniture.
+    feed([row({ video_id: "a" })], {}, { fetched_at_utc: GENERATED_AT })
+    expect(document.querySelector(".cap")?.textContent).not.toContain("0d")
   })
 })
