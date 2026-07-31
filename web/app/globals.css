@@ -609,12 +609,6 @@ body { margin: 0; }
 }
 .overlay { position: fixed; inset: 0; background: rgba(40, 39, 40, 0.35); display: flex; align-items: center; justify-content: center; z-index: 50; }
 .dialogbox { background: var(--card); border: 1px solid var(--border); max-width: 28rem; width: calc(100% - 2rem); max-height: 85vh; overflow-y: auto; padding: 1.2rem 1.4rem; }
-details.sect > summary { cursor: pointer; list-style: none; }
-details.sect > summary::-webkit-details-marker { display: none; }
-details.sect > summary .kicker::before { content: "\25B8  "; }
-details.sect[open] > summary .kicker::before { content: "\25BE  "; }
-.topichead h1 { font-size: 1.3rem; margin: 0 0 2px; }
-.trow { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 /* Your own row, and it has to outrank the zebra.
    `.tbl tr.youcard td` (0-2-1) lost to `.tbl-zebra tbody tr:nth-child(even) td` (0-2-3), so
    whether your row was marked at all depended on whether it landed on an even index — which the
@@ -735,11 +729,6 @@ select.chip {
 }
 select.chip:hover { border-color: var(--muted-foreground); }
 
-/* An empty lead section still has to say what it means. */
-.tbl td.stateline {
-  color: var(--muted-foreground); font-size: 12px; padding: 1.1rem 10px; text-align: center;
-}
-
 /* Sortable headers.
    Every column here sorts, which was not discoverable: the indicator was a
    character glued to the label, so it sat in a different spot in each column
@@ -839,27 +828,6 @@ select.chip:hover { border-color: var(--muted-foreground); }
   font-size: 11px; color: var(--muted-foreground); font-variant-numeric: tabular-nums;
 }
 .yself { color: var(--primary); font-weight: 700; }
-
-.ctrls { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; margin: 0 0 14px; }
-.ctrl { display: flex; align-items: center; gap: 6px; }
-.ctrl > .lbl {
-  font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em;
-  color: var(--muted-foreground);
-}
-/* Scoped to .ctrls on purpose: .seg is already the meter's segment class above, and an
-   unscoped rule here puts a 1px border around all nine segments of every gauge in the app. */
-.ctrls .seg {
-  display: inline-flex; border: 1px solid var(--border); border-radius: 4px;
-  overflow: hidden; background: var(--card);
-}
-.ctrls .seg button {
-  font: inherit; font-size: 11px; padding: 3px 10px; border: 0; background: transparent;
-  color: var(--muted-foreground); cursor: pointer; border-right: 1px solid var(--border);
-}
-.ctrls .seg button:last-child { border-right: 0; }
-.ctrls .seg button.on { background: var(--primary); color: #fff; font-weight: 600; }
-/* format is the first decision, so it is the loudest control */
-.ctrls .seg.big button { font-size: 12px; padding: 4px 14px; font-weight: 600; }
 
 /* ————— The filter bar: two ruled lines, then the results —————
    These filters have been a row, then a 158px left rail, and are now a row again — but a row of
@@ -970,31 +938,6 @@ select.chip:hover { border-color: var(--muted-foreground); }
   border: 0; background: transparent; color: var(--muted-foreground); cursor: pointer;
 }
 .qfield button:hover { color: var(--foreground); }
-/* .seg is scoped to .ctrls above, so the view toggle carries its own copy of that geometry
-   rather than widening that rule to every .seg on the board — .seg is also the meter's. */
-.seg.shopview {
-  display: inline-flex; border: 1px solid var(--border); border-radius: 4px;
-  overflow: hidden; background: var(--card);
-}
-.seg.shopview button {
-  font: inherit; font-size: 11px; padding: 3px 10px; border: 0; background: transparent;
-  color: var(--muted-foreground); cursor: pointer; border-right: 1px solid var(--border);
-}
-.seg.shopview button:last-child { border-right: 0; }
-.seg.shopview button.on { background: var(--primary); color: #fff; font-weight: 600; }
-
-/* The same rows as the grid, for the comparisons a grid is bad at. */
-.vtitle { font-size: 12px; font-weight: 600; color: inherit; text-decoration: none; }
-.vtitle:hover { color: var(--primary); }
-.vsub {
-  display: block; font-size: 10.5px; color: var(--muted-foreground); margin-top: 2px;
-}
-.vshort {
-  margin-left: 6px; padding: 0 4px; border-radius: 3px; font-size: 9px; font-weight: 700;
-  letter-spacing: 0.06em; background: var(--secondary);
-}
-.vnone { color: var(--muted-foreground); }
-.vtopic { font-size: 11px; color: var(--muted-foreground); }
 
 .prow { border-top: 1px solid var(--border); padding: 14px 0 4px; }
 .prow:first-of-type { border-top: 0; }
@@ -1028,14 +971,6 @@ select.chip:hover { border-color: var(--muted-foreground); }
   border-top: 1px solid var(--border); margin-top: 6px; padding-top: 10px;
 }
 
-/* What to make next, as shelves. The numbers that used to be table columns sit in the header
-   above the videos they were computed from. */
-/* The untopiced shelf is a state, not a topic, so its title reads as one: muted rather than the
-   primary-colored topic name every other shelf gets. */
-.ctrls select {
-  font: inherit; font-size: 11px; padding: 2px 6px;
-  border: 1px solid var(--border); border-radius: 4px; background: var(--card);
-}
 .sparkdate { color: var(--muted-foreground); }
 
 /* The breakout badge in vidIQ's own ramp: their outlier UI runs blue into purple, so a vendor
