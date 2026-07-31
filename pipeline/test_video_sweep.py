@@ -92,3 +92,22 @@ def test_rewriting_the_same_video_snapshot_is_byte_identical(ait_root):
                    "source": "youtube_api"}}
     first = snapshot.write_video_snapshot(rows, TODAY).read_bytes()
     assert snapshot.write_video_snapshot(rows, TODAY).read_bytes() == first
+
+
+def test_observation_keeps_the_uploaders_declared_audio_language():
+    item = {"id": "v1",
+            "snippet": {"title": "t", "publishedAt": "2026-07-01T00:00:00Z",
+                        "defaultAudioLanguage": "zh-Hant"},
+            "contentDetails": {"duration": "PT10M"},
+            "statistics": {"viewCount": "5"}}
+    row = snapshot._observation("UC1", item, "2026-07-27T00:00:00Z")
+    assert row["default_audio_language"] == "zh-Hant"
+
+
+def test_observation_records_an_absent_declaration_as_none_not_empty_string():
+    item = {"id": "v2",
+            "snippet": {"title": "t", "publishedAt": "2026-07-01T00:00:00Z"},
+            "contentDetails": {"duration": "PT10M"},
+            "statistics": {"viewCount": "5"}}
+    row = snapshot._observation("UC1", item, "2026-07-27T00:00:00Z")
+    assert row["default_audio_language"] is None

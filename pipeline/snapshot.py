@@ -111,6 +111,11 @@ def _observation(channel_id: str, item: dict, seen_at: str) -> dict:
     return {"video_id": item["id"], "channel_id": channel_id,
             "title": snippet.get("title"), "description": snippet.get("description") or "",
             "tags": snippet.get("tags") or [], "published_at": snippet.get("publishedAt"),
+            # The uploader's own declaration, Oracle tier, in the snippet we already pay for and
+            # discarded until now. Most uploaders never set it, so it is absent far more often
+            # than not — absent is None, which language.detect reads as "fall through to the
+            # title", never as a claim that the video has no language.
+            "default_audio_language": snippet.get("defaultAudioLanguage"),
             "duration_s": duration_s, "type": kind,
             "view_count": int(views) if views is not None else None,
             "seen_at": seen_at}
