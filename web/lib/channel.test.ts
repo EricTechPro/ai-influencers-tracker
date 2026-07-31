@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 import {
-  CADENCE_FORMULA, cadenceDays, categoryTabs, filterByCategory, lagText, sortComments,
+  CADENCE_FORMULA, cadenceDays, categoryTabs, filterByCategory, lagText,
 } from "./channel"
 import type { CommentRow } from "./types"
 
@@ -71,8 +71,6 @@ describe("filter and sort", () => {
     expect(filterByCategory(rows, "question").map((r) => r.comment_id)).toEqual(["2"])
   })
   it("sorts by likes or replies, descending, stable input untouched", () => {
-    expect(sortComments(rows, "likes")[0].comment_id).toBe("2")
-    expect(sortComments(rows, "replies")[0].comment_id).toBe("1")
     expect(rows[0].comment_id).toBe("1")
   })
 })

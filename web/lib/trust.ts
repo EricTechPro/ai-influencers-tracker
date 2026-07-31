@@ -188,6 +188,20 @@ export function pctText(cell: StateCell): string {
 }
 
 /** The sentence behind a stateful cell, for a tooltip. */
+/**
+ * subs_per_1k_views' own "ok" formatting: one decimal, no sign, because it is a ratio rather
+ * than a delta. Every non-ok state falls straight through to deltaText, which is what makes a
+ * building or blocked window read here exactly as it reads in every other windowed cell.
+ *
+ * It lived as `ratioText` in compare-table and `per1kText` in window-table, byte-identical, and
+ * inline again in leaderboard-table and growth-card. Four copies of the rule that decides
+ * whether a state renders as a number, none of them tested, beside a trust.ts where every other
+ * formatter is. That is the failure this file exists to prevent.
+ */
+export function ratioText(cell: StateCell): string {
+  return cell.state === "ok" ? (cell.value ?? 0).toFixed(1) : deltaText(cell)
+}
+
 export function stateExplain(cell: StateCell): string | undefined {
   if (cell.state === "building") {
     return `Collecting: ${cell.have ?? 0} of the ${cell.need ?? 0} days this window needs have been ` +

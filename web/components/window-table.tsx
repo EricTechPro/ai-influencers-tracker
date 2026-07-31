@@ -1,5 +1,5 @@
 import { videosInWindow } from "@/lib/compare"
-import { deltaText, fmtInt, pctText, stateExplain } from "@/lib/trust"
+import { deltaText, fmtInt, pctText, ratioText, stateExplain } from "@/lib/trust"
 import type { ChannelRow, StateCell, VideoRow } from "@/lib/types"
 import { WINDOWS } from "@/lib/types"
 
@@ -11,12 +11,6 @@ type WindowedChannel = Pick<
   "subscriber_delta" | "subscriber_growth_rate" | "view_delta" | "subs_per_1k_views"
 >
 
-/** subs_per_1k_views has no dedicated formatter elsewhere: an ok cell is a
- *  plain ratio, everything else is a state and renders exactly as deltaText
- *  would render it (never a bare number, never blank). */
-function per1kText(cell: StateCell): string {
-  return cell.state === "ok" ? (cell.value ?? 0).toFixed(1) : deltaText(cell)
-}
 
 /**
  * One row per window (the shared six), the same metric set /compare uses —
@@ -65,7 +59,7 @@ export function WindowTable({ channel, videos, generatedAt }: {
                   {deltaText(dviews)}
                 </td>
                 <td className="r num" title={stateExplain(per1k)}>
-                  {per1kText(per1k)}
+                  {ratioText(per1k)}
                 </td>
                 <td className="r num">{fmtInt(videosInWindow(videos, w, now).length)}</td>
               </tr>

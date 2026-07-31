@@ -85,8 +85,6 @@ h1 { font-size: 1.6rem; line-height: 2.1rem; font-weight: 700; color: var(--prim
 .badge { display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 500; line-height: 16px; padding: 1px 8px; border: 1px solid; border-radius: 999px; white-space: nowrap; }
 .v-make { --vc: var(--v-make); } .v-unserved { --vc: var(--v-unserved); } .v-early { --vc: var(--v-early); } .v-crowded { --vc: var(--v-crowded); } .v-none { --vc: var(--v-none); }
 .b-filled { color: var(--vc); border-color: color-mix(in srgb, var(--vc) 40%, transparent); background: color-mix(in srgb, var(--vc) 5%, transparent); }
-.b-outline { color: var(--vc); border-color: var(--vc); background: transparent; }
-.b-bar { color: var(--vc); border: 0; border-radius: 0; border-left: 3px solid var(--vc); padding: 1px 6px; background: var(--secondary); }
 
 .chip { display: inline-flex; align-items: center; font-size: 10px; line-height: 16px; border: 1px solid var(--border); border-radius: 999px; padding: 0 6px; color: var(--muted-foreground); white-space: nowrap; }
 .chip.warn { border-color: color-mix(in srgb, var(--warning) 50%, transparent); color: var(--warning); }
@@ -96,8 +94,6 @@ h1 { font-size: 1.6rem; line-height: 2.1rem; font-weight: 700; color: var(--prim
 /* cards, tables, misc */
 .card { background: var(--card); border: 1px solid var(--border); }
 .pad { padding: 1rem; }
-.code-surface, .codechip { border-radius: var(--radius-code); }
-.codechip { font-size: 12px; background: var(--secondary); padding: 2px 8px; }
 table.tbl { width: 100%; border-collapse: collapse; font-size: 13px; }
 .tbl th { text-align: left; font-size: 11px; font-weight: 500; color: var(--muted-foreground); padding: 8px 10px; border-bottom: 1px solid var(--border); white-space: nowrap; }
 .tbl th.r, .tbl td.r { text-align: right; }
@@ -295,7 +291,6 @@ img.avatar { object-fit: cover; background: var(--secondary); }
    room left over to say more than "Brock Mesa...". */
 /* Wider tracks than the mockup board's 14.5rem: the card now leads with a
    48px face and carries two headline figures side by side. */
-.cardgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(17.5rem, 1fr)); gap: 0.75rem; }
 
 /* The card is a button to the channel page.
    It used to mark rank 1 with a green border, which spent the palette's
@@ -400,8 +395,6 @@ img.avatar { object-fit: cover; background: var(--secondary); }
 .chain .dim { color: var(--muted-foreground); }
 .chain .verb-alt { color: var(--primary); }
 .chain .verb-con { color: var(--v-crowded); }
-.campbox { border: 1px solid var(--border); padding: 0.6rem 0.8rem; background: var(--card); }
-.campbox .n { font-size: 1.05rem; font-weight: 600; }
 
 .quote { border-left: 2px solid var(--border); padding-left: 12px; margin: 10px 0; }
 .quote p { margin: 0; font-style: italic; font-size: 13px; line-height: 1.55; }
@@ -418,17 +411,12 @@ img.avatar { object-fit: cover; background: var(--secondary); }
 /* /channels: a directory row rather than a table row, so the roster reads as
    scannable cards, not a ninth copy of the leaderboard's grid. */
 .chsearch { border: 1px solid var(--border); background: var(--card); padding: 4px 9px; font: inherit; font-size: 12px; min-width: 16rem; }
-.directory { display: flex; flex-direction: column; gap: 1px; margin-top: 0.6rem; }
-.dirrow { display: flex; align-items: center; gap: 10px; padding: 8px 10px; background: var(--card); border: 1px solid var(--border); border-top-width: 0; }
-.dirrow:first-child { border-top-width: 1px; }
-.dirrow.youcard { background: color-mix(in srgb, var(--primary) 3%, var(--card)); }
 .dirlink { flex: 1; min-width: 0; }
 .dirmeta { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .dirmeta .chname { max-width: none; }
 
 .callout { border: 1px solid; padding: 0.9rem 1.1rem; font-size: 13px; }
 .callout.warn { border-color: color-mix(in srgb, var(--warning) 55%, transparent); background: color-mix(in srgb, var(--warning) 5%, transparent); }
-.callout.inf { border-color: color-mix(in srgb, var(--inf) 40%, var(--border)); background: color-mix(in srgb, var(--inf) 3%, var(--card)); }
 .btn { display: inline-flex; align-items: center; gap: 5px; border: 1px solid var(--border); background: var(--card); font: inherit; font-size: 12px; padding: 4px 12px; cursor: pointer; }
 .btn:hover { background: var(--accent); }
 .btn.primary { background: var(--primary); border-color: var(--primary); color: #fff; }
@@ -437,11 +425,7 @@ img.avatar { object-fit: cover; background: var(--secondary); }
 svg text { font-family: inherit; }
 
 /* variant C: editorial, softened borders, more air, no fills */
-.vc .gcard, .vc .card, .vc .campbox { border-color: #f1eeec; }
-.vc .tbl th { font-size: 10px; letter-spacing: 0.05em; text-transform: uppercase; }
-.vc .tbl td { padding: 10px; }
 /* variant B: gamified, heavier section titles */
-.vb .bigsec { font-size: 1.15rem; font-weight: 700; letter-spacing: -0.01em; }
 
 /* picks bar + page nav */
 #picks { position: fixed; bottom: 0; left: 0; right: 0; z-index: 50; background: var(--card); border-top: 1px solid #d9d5d2; padding: 10px 1.5rem; font-size: 12px; display: flex; gap: 0.8rem; align-items: center; flex-wrap: wrap; }
@@ -643,7 +627,6 @@ details.sect[open] > summary .kicker::before { content: "\25BE  "; }
    text in it. */
 .cat-none { background: none; color: var(--muted-foreground); padding: 0; }
 
-.sortctl { display: inline-flex; gap: 8px; align-items: baseline; }
 
 /* The compare pickers are chips that happen to be selects. Without this the
    platform control fights the pill and the terminal type. */
@@ -692,79 +675,10 @@ select.chip:hover { border-color: var(--muted-foreground); }
    A topic is a pile of videos, so it is drawn as one. Horizontal rails rather
    than a grid: the shelf is a sample ranked best-first, and a rail says "there
    is more this way" where a grid would imply the set is complete. */
-.tgroup { margin-top: 2.2rem; }
-.tgroup-head {
-  display: flex; align-items: baseline; gap: 10px;
-  padding-bottom: 6px; border-bottom: 1px solid var(--border);
-}
-.tgroup-head h2 { margin: 0; font-size: 1.05rem; font-weight: 700; letter-spacing: -0.01em; }
 
-.shelf { margin-top: 1.1rem; }
-.shelf-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; }
-.shelf-title { font-size: 13px; font-weight: 600; color: var(--foreground); }
-.shelf-title:hover { color: var(--primary); }
-.shelf-all { margin-left: auto; font-size: 11px; white-space: nowrap; }
-
-/* Scroll-snap so a flick lands on a card edge rather than mid-thumbnail. */
-.shelf-rail {
-  display: grid; grid-auto-flow: column; grid-auto-columns: 15rem;
-  gap: 10px; overflow-x: auto; scroll-snap-type: x proximity;
-  padding-bottom: 6px;
-}
-.shelf-rail > * { scroll-snap-align: start; }
-
-.vcard { display: flex; flex-direction: column; gap: 7px; color: inherit; text-decoration: none; }
-.vcard:hover { text-decoration: none; }
-.vcard:hover .vtitle { color: var(--primary); }
-.vthumb {
-  position: relative; display: block; aspect-ratio: 16 / 9; overflow: hidden;
-  background: var(--muted); border: 1px solid var(--border);
-}
-.vthumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
-@media (prefers-reduced-motion: no-preference) {
-  .vthumb img { transition: transform 200ms ease-out; }
-  .vcard:hover .vthumb img { transform: scale(1.04); }
-}
-/* Duration and format sit on the image, so they carry their own backdrop
-   rather than relying on whatever the frame happens to be. */
-.vlen, .vshort {
-  position: absolute; bottom: 5px; font-size: 10px; line-height: 15px;
-  padding: 0 5px; border-radius: 3px; color: #fff; background: rgba(20, 19, 20, 0.82);
-}
-.vlen { right: 5px; }
-.vshort { left: 5px; background: rgba(229, 72, 77, 0.92); letter-spacing: 0.04em; }
-
-.vbody { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
-.vtitle {
-  font-size: 12px; font-weight: 500; line-height: 1.35;
-  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden;
-}
-.vchan { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--muted-foreground); min-width: 0; }
-.vmeta { font-size: 10px; color: var(--muted-foreground); }
-/* Our multiplier, banded on the same 3 / 5 / 10 boundaries as the feed's vidIQ badge so the two
-   read alike. It stays an outline chip while vidIQ's stays filled: same scale, different
-   provenance, and a Derived number must not wear a vendor number's badge.
-   The ramp climbs blue -> teal -> green -> green-filled. Red and purple are deliberately not on
-   it: red means "crowded" everywhere else on this board and purple is reserved for Inference,
-   so either one here would say something the number does not mean. */
-.vmult {
-  color: var(--primary); font-weight: 600;
-  border: 1px solid color-mix(in srgb, var(--primary) 35%, transparent);
-  border-radius: 3px; padding: 0 4px;
-}
-.vmult.m3 {
-  color: var(--v-unserved);
-  border-color: color-mix(in srgb, var(--v-unserved) 45%, transparent);
-}
-.vmult.m5 {
-  color: var(--v-make);
-  border-color: color-mix(in srgb, var(--v-make) 45%, transparent);
-}
-.vmult.m10 {
-  color: #fff; font-weight: 700;
-  background: var(--v-make); border-color: var(--v-make);
-}
-.vgrow { color: var(--primary); }
+/* The .shelf / .vcard family went with components/video-card.tsx: /topics dropped the
+   per-leaf video shelves for one ranked grid, and nothing has rendered these since.
+   The grid's own geometry is .ygrid below. */
 
 /* ————— The recent feed: YouTube's grid geometry, this app's tokens —————
    Deliberately not .vcard. The shelves stack title-then-channel because they
@@ -894,22 +808,8 @@ select.chip:hover { border-color: var(--muted-foreground); }
 
 /* What to make next, as shelves. The numbers that used to be table columns sit in the header
    above the videos they were computed from. */
-.oshelf { margin: 0 0 1.6rem; padding-bottom: 1.1rem; border-bottom: 1px solid var(--border); }
-.oshelf:last-child { border-bottom: 0; }
-.ohead { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-.otitle { font-size: 15px; font-weight: 700; color: var(--primary); }
 /* The untopiced shelf is a state, not a topic, so its title reads as one: muted rather than the
    primary-colored topic name every other shelf gets. */
-.oshelf.untopiced .otitle { color: var(--muted-foreground); font-weight: 600; }
-.oscore { margin-left: auto; font-size: 15px; font-weight: 700; }
-.ostats {
-  display: flex; gap: 16px; flex-wrap: wrap; margin: 5px 0 2px;
-  font-size: 11px; color: var(--muted-foreground);
-}
-.ostats b { color: var(--foreground); }
-.okw { font-style: italic; }
-.owhy { color: var(--v-make); }
-.owhy b { color: var(--v-make); font-weight: 600; }
 .ctrls select {
   font: inherit; font-size: 11px; padding: 2px 6px;
   border: 1px solid var(--border); border-radius: 4px; background: var(--card);

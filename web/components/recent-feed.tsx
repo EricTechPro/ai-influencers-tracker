@@ -140,6 +140,8 @@ export function RecentFeed({
                 {FORMATS.map((f) => (
                   <button
                     key={f.key}
+                    type="button"
+                    aria-pressed={format === f.key}
                     className={format === f.key ? "on" : undefined}
                     onClick={() => setFormat(f.key)}
                   >
@@ -154,6 +156,8 @@ export function RecentFeed({
                 {WINDOWS.map((w) => (
                   <button
                     key={w}
+                    type="button"
+                    aria-pressed={window === w}
                     className={window === w ? "on" : undefined}
                     onClick={() => setWindow(w)}
                   >

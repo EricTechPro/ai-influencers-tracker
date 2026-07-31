@@ -45,7 +45,8 @@ export function ChannelGrowth({
       <div className="controls" style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
         <span className="tabs">
           {(["subscribers", "views"] as const).map((m) => (
-            <button key={m} className={metric === m ? "on" : undefined}
+            <button key={m} type="button" aria-pressed={metric === m}
+              className={metric === m ? "on" : undefined}
               onClick={() => setMetric(m)}>{m}</button>
           ))}
         </span>

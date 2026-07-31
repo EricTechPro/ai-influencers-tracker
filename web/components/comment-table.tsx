@@ -118,10 +118,12 @@ export function CommentTable({
   return (
     <div>
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
-        <div className="cattabs">
+        <div className="cattabs" role="group" aria-label="comment category">
           {categoryTabs(byCategory, totals.ingested).map((t) => (
             <button
               key={t.key}
+              type="button"
+              aria-pressed={tab === t.key}
               className={`t${tab === t.key ? " on" : ""}`}
               disabled={t.key !== "all" && unclassified}
               onClick={() => setTab(t.key)}

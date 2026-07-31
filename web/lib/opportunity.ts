@@ -1,3 +1,4 @@
+import { fmtInt } from "./trust"
 // Row models for the opportunity table. The "who's on it" cluster is derived
 // server-side from the topic's video_ids so videos.json never reaches the
 // client; the client receives only names.
@@ -39,8 +40,6 @@ export function firedThreshold(fired: string[], metric: string): number | null {
   return null
 }
 
-const int = (n: number) => Math.round(n).toLocaleString("en-US")
-
 /**
  * The verdict restated as the comparison it actually is.
  *
@@ -59,13 +58,13 @@ export function verdictSentence(row: OpportunityRow): string {
   const signals: string[] = []
   if (demand.keyword_volume !== null) {
     signals.push(
-      `${int(demand.keyword_volume)} searches/mo${volBar !== null ? ` against a ${int(volBar)} bar` : ""}`
+      `${fmtInt(demand.keyword_volume)} searches/mo${volBar !== null ? ` against a ${fmtInt(volBar)} bar` : ""}`
     )
   }
   if (demand.repo_velocity !== null) {
     signals.push(
-      `${int(demand.repo_velocity)} stars/day on the fastest repo${
-        velBar !== null ? ` against a ${int(velBar)} bar` : ""
+      `${fmtInt(demand.repo_velocity)} stars/day on the fastest repo${
+        velBar !== null ? ` against a ${fmtInt(velBar)} bar` : ""
       }`
     )
   }
@@ -75,9 +74,9 @@ export function verdictSentence(row: OpportunityRow): string {
       : `Demand is ${demand.band}: ${signals.join(", and ")}`
 
   const supplyPart =
-    `Supply is ${supply.band}: ${int(supply.videos)} videos from ${int(supply.creators)} ` +
+    `Supply is ${supply.band}: ${fmtInt(supply.videos)} videos from ${fmtInt(supply.creators)} ` +
     `creators in the last ${supply.window_days}d` +
-    (vidBar !== null ? `, where ${int(vidBar)} videos is the crowding line` : "")
+    (vidBar !== null ? `, where ${fmtInt(vidBar)} videos is the crowding line` : "")
 
   return `${demandPart}. ${supplyPart}.`
 }

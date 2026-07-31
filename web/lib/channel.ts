@@ -54,7 +54,3 @@ export function filterByCategory(
   return rows.filter((r) => r.category?.key === key)
 }
 
-export function sortComments(rows: CommentRow[], by: "likes" | "replies"): CommentRow[] {
-  const field = by === "likes" ? "like_count" : "reply_count"
-  return [...rows].sort((a, b) => b[field] - a[field] || a.comment_id.localeCompare(b.comment_id))
-}

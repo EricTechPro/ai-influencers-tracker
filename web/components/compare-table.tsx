@@ -8,7 +8,7 @@ import {
   type GapValue, type VideoFormat,
 } from "@/lib/compare"
 import { CADENCE_FORMULA, cadenceDays } from "@/lib/channel"
-import { bucketText, deltaText, fmtInt, pctText, stateExplain } from "@/lib/trust"
+import { bucketText, deltaText, fmtInt, pctText, ratioText, stateExplain } from "@/lib/trust"
 import { WINDOWS, type StateCell, type VideoRow, type WindowKey } from "@/lib/types"
 import { Chip, Derived } from "./trust"
 import { GapCell } from "./gap-cell"
@@ -100,15 +100,6 @@ function ShareBar({ pct }: { pct: number }) {
   )
 }
 
-/** subs_per_1k_views' own "ok" formatting (one decimal, no sign — it's a
- *  ratio, not a delta), but every non-ok state falls through to deltaText.
- *  deltaText and pctText render identical text for building/blocked/etc (both
- *  call the same state helpers) — reusing deltaText's fallback here means
- *  this row's states are worded exactly like every other windowed row's,
- *  never collapsed to a bare "--" the way the table's own fmtCell used to. */
-function ratioText(cell: StateCell): string {
-  return cell.state === "ok" ? (cell.value ?? 0).toFixed(1) : deltaText(cell)
-}
 
 /** A number cell drops out of the numeric column the moment it stops carrying a number.
  *  "1 bad day" rendered as `r num` sat right-aligned in the same mono face as "+1,621,192",
