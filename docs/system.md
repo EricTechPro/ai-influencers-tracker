@@ -254,12 +254,14 @@ stays distinguishable from one we snapshotted ourselves.
 
 ```jsonc
 {
-  "version": 2,
+  "version": 3,
   "videos": [{
     "video_id": "zbmuiaPuiNM",
     "channel_id": "UCMwVTLZIRRUyyVrkjDpn4pA",
     "published_at": "2026-06-25T00:00:05Z",
     "title": "Google Just Dropped a Masterclass on Agentic Engineering",
+    "lang": "en",                                 // "none" is unread, never english
+    "lang_tier": "derived",                       // "oracle" | "derived" | "unread"
     "duration_s": 1316,
     "type": "long",                       // long | short
     "view_count": 146102,
@@ -284,6 +286,14 @@ stays distinguishable from one we snapshotted ourselves.
 ```
 
 `multiplier.state: "no_baseline"` is required, not optional.
+
+`lang` is read per video by `pipeline/language.py`: the uploader's `defaultAudioLanguage` when the
+snippet carries one (`oracle`), the CJK share of the title against
+`thresholds.language.zh_title_min_share` when it does not (`derived`), and `"none"` / `unread` when
+neither can answer. It is re-derived on every build, so moving the threshold needs no re-sweep.
+This is **not** the channel's hand-authored `lang` in `config/channels.json`, which is what
+`/channels` filters on. `lang_tier` rides on the row rather than in a bundle-level `trust` map
+because the field has two tiers across the corpus and naming one would misstate the other.
 
 ### `channels.json`
 
@@ -554,9 +564,9 @@ memory.
 
 ```jsonc
 {
-  "version": 1,
+  "version": 3,
   "generated_at": "2026-07-29T00:00:00Z",
-  "source": "vidiq",
+  "source": "corpus",
   "fetched_at": "2026-07-31",          // null before the first sweep: a state, not zero videos
   "feed_window_days": 30,              // how much history the bundle carries
   "coverage": { "channels_requested": 74, "channels_scored": 73,
@@ -568,13 +578,16 @@ memory.
     "multiplier": 9.59,                // ours. null = channel has no baseline, never "did badly"
     "baseline": 3843, "baseline_n": 20, // the divisor and its sample: a Derived number's working
     "views_gained_24h": 1204,          // our own dated series. null = observed once, not flat
-    "pattern_id": null                 // stamped by the grouping pass when one has run
+    "pattern_id": null,                // stamped by the grouping pass when one has run
+    "lang": "en", "lang_tier": "derived"  // per video, not the channel's. drives the /topics toggle
   }],
   "patterns": [{ "pattern_id": "p1", "label": "...", "evidence": ["v1", "v2"],
                  "creator_count": 3, "existing_leaf": "claude-code-mcp-setup",
                  "action": "add_to_leaf" }],
   "trust": { "multiplier": "derived", "views_gained_24h": "derived", "momentum": "derived",
              "pattern": "inference", "existing_leaf": "derived" }
+  // no "lang" entry here on purpose: it is oracle on some rows and derived on others, so each
+  // row carries its own lang_tier instead of the bundle claiming one for all of them
 }
 ```
 
