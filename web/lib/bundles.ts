@@ -58,6 +58,30 @@ export function loadSnapshots(): SnapshotsBundle {
   return load("snapshots.json")
 }
 
+/**
+ * The first date any point in the series came from our own sweep rather than from vidIQ.
+ *
+ * `vendor` is an explicit trust tier here (decision 0012) and the schema keeps `source` precisely
+ * so a bought point stays distinguishable from one we recorded. The series is 24,922 backfill
+ * points against a few hundred of ours, cleanly split at one date, so a window whose baseline
+ * predates this is anchored on a vendor reconstruction — and every window of 7d or longer
+ * currently is. Nothing on the board said so; a Derived formula that names the field but not the
+ * tier reads as our own measurement.
+ *
+ * `null` means no own sweep has landed yet, which is a state and not a date.
+ */
+export function ownSweepFrom(): string | null {
+  const snaps = loadSnapshots()
+  let first: string | null = null
+  for (const ch of Object.values(snaps.channels)) {
+    for (const day of ch.series) {
+      if (day.source === "vidiq_backfill") continue
+      if (first === null || day.date < first) first = day.date
+    }
+  }
+  return first
+}
+
 // channel_id is always UC[A-Za-z0-9_-]+, topic_id is kebab-case; both fit this
 // shape. Rejecting anything else before it ever reaches path.join is what
 // keeps a URL-derived id (tasks 4-6 pass these straight from route params)

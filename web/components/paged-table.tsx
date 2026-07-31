@@ -1,6 +1,6 @@
 "use client"
 
-import { Fragment, type CSSProperties, type ReactNode } from "react"
+import { Fragment, useEffect, type CSSProperties, type ReactNode } from "react"
 import { Pager, usePager } from "./pager"
 import { SortableHeader, useTableSort, type SortColumn } from "./sortable-table"
 import type { SortDir, SortValue } from "@/lib/sort"
@@ -38,6 +38,7 @@ export function PagedTable<T, K extends string>({
   style,
   wrapClassName = "tblwrap",
   footnote,
+  resetKey,
 }: {
   rows: T[]
   columns: SortColumn<K>[]
@@ -46,8 +47,10 @@ export function PagedTable<T, K extends string>({
   initialKey: K
   initialDir?: SortDir
   /** the row's complete markup, `<tr>` included. Returning a fragment of several `<tr>`s is
-   *  how an expandable table renders its detail row under its summary row. */
-  row: (row: T) => ReactNode
+   *  how an expandable table renders its detail row under its summary row.
+   *  `sortKey` is handed back so a row can say when a column it renders is no longer what the
+   *  table is ordered by — the leaderboard's `#` is the case that matters. */
+  row: (row: T, sortKey: K) => ReactNode
   rowKey: (row: T) => string
   /** what one row is, for the pager's readout: "channels", "videos" */
   unit?: string
@@ -65,11 +68,27 @@ export function PagedTable<T, K extends string>({
   /** a sentence under the pager: what this table is a slice OF, when that is not the
    *  same question as which page you are on. */
   footnote?: ReactNode
+  /** Anything the caller changes that makes this a different question of the same rows — a
+   *  filter, a ranking mode, a window. Any change sends the reader back to page 1, for the same
+   *  reason a re-sort does. */
+  resetKey?: string
 }) {
   // Order the whole set...
   const { sorted, sortKey, sortDir, toggle } = useTableSort(rows, value, initialKey, initialDir)
   // ...then slice it. Never the other way round.
   const { slice, props: pager } = usePager(sorted, perPage)
+
+  // A new order has a new top, and page 8 of the old one is not it.
+  //
+  // usePager's own effect only clamps *down* when a filter shrinks the list past the current
+  // page, and a sort cannot change the row count, so it never fired here: clicking "subs" from
+  // page 8 of 8 re-sorted all 74 channels correctly and then showed you the four smallest, under
+  // a descending arrow, with nothing saying you were at the bottom of what you had just asked to
+  // see. Re-ranking, switching the window and filtering had the same shape.
+  const { onPage } = pager
+  useEffect(() => {
+    onPage(1)
+  }, [sortKey, sortDir, resetKey, onPage])
 
   if (rows.length === 0) return <div className="empty">{empty}</div>
 
@@ -87,7 +106,7 @@ export function PagedTable<T, K extends string>({
           />
           <tbody>
             {slice.map((r) => (
-              <Fragment key={rowKey(r)}>{row(r)}</Fragment>
+              <Fragment key={rowKey(r)}>{row(r, sortKey)}</Fragment>
             ))}
           </tbody>
         </table>

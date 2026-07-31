@@ -67,7 +67,36 @@ h1 { font-size: 1.6rem; line-height: 2.1rem; font-weight: 700; color: var(--prim
 .navrule { border-bottom: 1px solid var(--border); }
 
 /* trust tiers */
+
+/* The disclosure trigger under a Derived number or a state.
+   It has to be a button — a `title` is invisible to a keyboard and to every touch device, and a
+   tier whose definition is "shows its formula" cannot have a mouse-only formula. It has to look
+   like nothing, because there are ~40 of them on a page and a table of numbers is not a toolbar.
+   The trigger inherits the cell's alignment rather than centring itself, so a column of numbers
+   still reads as a column.
+   Declared before `.derived`, and that ordering is load-bearing: both are one class deep, so the
+   `border: 0` in this reset would otherwise win on the cascade and quietly strip the dotted
+   underline that IS the Derived tier's signature. */
+.tipbtn {
+  border: 0; background: none; padding: 0; font: inherit; color: inherit;
+  text-align: inherit; cursor: help;
+}
 .derived { border-bottom: 1px dotted var(--muted-foreground); cursor: help; }
+.tipbtn:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+/* Portalled onto the body at fixed coordinates by useAnchoredPanel, for the same reason the
+   avatar card is: a hidden absolute panel inside `.tblwrap` is still laid out, and forty of them
+   would give the table back the empty scroll band this pattern was built to remove. */
+.tipnote {
+  position: fixed; left: -9999px; top: -9999px; visibility: hidden;
+  z-index: 60; display: block; max-width: 22rem; padding: 7px 10px;
+  font-size: 11px; line-height: 1.45; font-variant-numeric: normal; font-style: normal;
+  text-align: left; color: var(--foreground);
+  background: var(--card); border: 1px solid var(--border);
+  box-shadow: 0 12px 32px -8px rgba(40, 39, 40, 0.28);
+  pointer-events: none;
+  animation: avpop-in 110ms ease-out;
+}
+@media (prefers-reduced-motion: reduce) { .tipnote { animation: none; } }
 .inference { background: color-mix(in srgb, var(--inf) 7%, transparent); border-left: 2px solid color-mix(in srgb, var(--inf) 45%, transparent); padding: 0.15rem 0.4rem; }
 .src-chip { display: inline-flex; align-items: center; gap: 3px; font-size: 10px; color: color-mix(in srgb, var(--inf) 80%, var(--foreground)); border: 1px solid color-mix(in srgb, var(--inf) 35%, transparent); border-radius: 999px; padding: 0 6px; line-height: 16px; white-space: nowrap; }
 .cat { font-size: 10px; background: color-mix(in srgb, var(--inf) 8%, transparent); color: color-mix(in srgb, var(--inf) 85%, var(--foreground)); padding: 0 5px; line-height: 16px; display: inline-block; }
@@ -244,7 +273,13 @@ img.avatar { object-fit: cover; background: var(--secondary); }
    one that lets you actually recognise someone, without a click or a page.
    No popover library in this project, so: a relative wrapper, an absolute
    panel, and :focus-within so the keyboard gets what the mouse gets. */
-.avpeek { position: relative; display: inline-flex; vertical-align: middle; border-radius: 999px; }
+/* A real button, not a tabindex span: it used to sit inside the row's <a>, which an anchor may
+   not contain, and which meant the avatar's pixels belonged to the link so a tap on a phone
+   navigated instead of opening the card. */
+.avpeek {
+  display: inline-flex; vertical-align: middle; border-radius: 999px;
+  border: 0; background: none; padding: 0; font: inherit; cursor: pointer;
+}
 .avpeek:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
 /* Opens to the side, not above.
    Above-placement clipped straight off the viewport on the first row of any
@@ -276,7 +311,7 @@ img.avatar { object-fit: cover; background: var(--secondary); }
    the top or bottom of the window still points at the row it belongs to rather than at its own
    middle. It flips sides with the panel. */
 .avpop::after {
-  content: ""; position: absolute; top: var(--arrow-top, 50%); width: 9px; height: 9px;
+  content: ""; position: absolute; top: var(--arrow-at, 50%); width: 9px; height: 9px;
   background: var(--card);
   border-left: 1px solid var(--border); border-bottom: 1px solid var(--border);
 }
@@ -415,9 +450,23 @@ img.avatar { object-fit: cover; background: var(--secondary); }
 .quote p { margin: 0; font-style: italic; font-size: 13px; line-height: 1.55; }
 .quote .cite { font-style: normal; font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted-foreground); margin-top: 4px; }
 
-.tabs { display: inline-flex; background: var(--secondary); padding: 3px; gap: 2px; font-size: 12px; }
-.tabs button { border: 0; background: none; font: inherit; font-size: 12px; padding: 3px 10px; color: var(--muted-foreground); cursor: pointer; }
-.tabs button.on { background: var(--card); color: var(--foreground); box-shadow: 0 0 0 1px var(--border); }
+/* The same keys the feed's rail is drawn in — see .key below. They were a grey tray of tabs,
+   which put a filled block behind every window picker on the board and read as chrome competing
+   with the table under it. One vocabulary for every "pick one of these" on the board. */
+.tabs { display: inline-flex; flex-wrap: wrap; gap: 4px; }
+.tabs button {
+  font: inherit; font-size: 11px; line-height: 1.5; padding: 2px 8px;
+  border: 1px solid var(--border); border-radius: 3px; background: var(--card);
+  color: var(--muted-foreground); cursor: pointer;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .tabs button { transition: border-color 120ms ease, color 120ms ease; }
+}
+.tabs button:hover { border-color: var(--muted-foreground); color: var(--foreground); }
+.tabs button.on {
+  background: var(--foreground); border-color: var(--foreground); color: var(--background);
+  font-weight: 700;
+}
 .cattabs { display: flex; flex-wrap: wrap; gap: 6px; font-size: 11px; }
 .cattabs .t { border: 1px solid var(--border); padding: 2px 9px; color: var(--muted-foreground); cursor: pointer; background: var(--card); font: inherit; font-size: 11px; }
 .cattabs .t.on { border-color: var(--foreground); color: var(--foreground); font-weight: 500; }
@@ -546,7 +595,18 @@ details.sect > summary .kicker::before { content: "\25B8  "; }
 details.sect[open] > summary .kicker::before { content: "\25BE  "; }
 .topichead h1 { font-size: 1.3rem; margin: 0 0 2px; }
 .trow { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-.tbl tr.youcard td { background: color-mix(in srgb, var(--primary) 3%, transparent); }
+/* Your own row, and it has to outrank the zebra.
+   `.tbl tr.youcard td` (0-2-1) lost to `.tbl-zebra tbody tr:nth-child(even) td` (0-2-3), so
+   whether your row was marked at all depended on whether it landed on an even index — which the
+   rank mode decides, so it changed every time you switched tabs. The left rule is there so the
+   mark survives the next row tint whatever its specificity, since the "★ YOU" chip is 1200px
+   away from the numbers. */
+.tbl tr.youcard td,
+.tbl-zebra tbody tr.youcard td,
+.tbl-hover tbody tr.youcard:hover td {
+  background: color-mix(in srgb, var(--primary) 6%, transparent);
+}
+.tbl tr.youcard td:first-child { box-shadow: inset 2px 0 0 var(--primary); }
 
 /* craft pass.
    Everything below exists because a long dense table is read differently from

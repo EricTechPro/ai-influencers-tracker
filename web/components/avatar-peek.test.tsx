@@ -1,7 +1,11 @@
 // @vitest-environment jsdom
-import { describe, expect, it } from "vitest"
-import { fireEvent, render, screen } from "@testing-library/react"
+import { afterEach, describe, expect, it } from "vitest"
+import { cleanup, fireEvent, render, screen } from "@testing-library/react"
 import { AvatarPeek } from "./avatar-peek"
+
+// The panel is portalled onto the body, so a leftover one from the previous case would be
+// indistinguishable from the one under test. Nothing unmounts on its own without vitest `globals`.
+afterEach(cleanup)
 
 function peek() {
   return render(
@@ -61,10 +65,7 @@ describe("AvatarPeek keeps its panel out of the table's layout", () => {
       <AvatarPeek src={null} name="Nobody" stats={[{ label: "comments", value: null }]} />
     )
     fireEvent.pointerEnter(container.querySelector(".avpeek")!)
-    // Scoped to the panel this render opened: the portal puts every panel on the same body, so a
-    // document-wide text query would happily match one left over from another case.
-    const panels = document.body.querySelectorAll(".avpop")
-    const stat = panels[panels.length - 1].querySelector(".avpop-stat .v")
+    const stat = document.body.querySelector(".avpop .avpop-stat .v")
     expect(stat?.textContent).toBe("--")
   })
 })

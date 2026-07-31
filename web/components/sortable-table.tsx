@@ -3,6 +3,7 @@
 import { useCallback, useMemo, useState } from "react"
 import type { ReactNode } from "react"
 import { compareSortValues, type SortDir, type SortValue } from "@/lib/sort"
+import { useTip } from "./tip"
 
 export interface SortColumn<K extends string> {
   key: K
@@ -85,29 +86,66 @@ export function SortableHeader<K extends string>({
           // numeric ones. Pinned, the whole row of them lines up.
           const arrow = !sortable ? "" : active ? (sortDir === -1 ? "▾" : "▴") : "↕"
           return (
-            <th
+            <SortableTh
               key={col.key}
-              aria-sort={ariaSort}
-              className={col.align === "right" ? "r" : undefined}
-              title={col.tip}
-            >
-              {sortable ? (
-                <button
-                  type="button"
-                  className={active ? "thsort on" : "thsort"}
-                  onClick={() => onSort(col.key)}
-                  title={`Sort by ${col.label}`}
-                >
-                  <span className="thlabel">{col.label}</span>
-                  <span className="tharrow" aria-hidden="true">{arrow}</span>
-                </button>
-              ) : (
-                col.label
-              )}
-            </th>
+              col={col}
+              ariaSort={ariaSort}
+              active={active}
+              arrow={arrow}
+              sortable={sortable}
+              onSort={onSort}
+            />
           )
         })}
       </tr>
     </thead>
+  )
+}
+
+/**
+ * One header cell. Its own component only because it needs a hook, and a hook cannot be called
+ * inside the columns loop.
+ *
+ * The tip used to sit on the `<th>` while a second `title` sat on the button inside it, and
+ * `.thsort { width: 100% }` makes that button fill the cell. A nested title wins, so hovering any
+ * header showed "Sort by Δsubs 90d" and never the definition — which silently killed the
+ * rounding-bucket disclosure, the growth denominator, the per-1k unit and the "always 30d" note on
+ * six of the eight columns. There is one disclosure per header now, it is the definition, and it
+ * is reachable by keyboard because it hangs off the button that was already focusable.
+ */
+function SortableTh<K extends string>({
+  col,
+  ariaSort,
+  active,
+  arrow,
+  sortable,
+  onSort,
+}: {
+  col: SortColumn<K>
+  ariaSort: "ascending" | "descending" | "none" | undefined
+  active: boolean
+  arrow: string
+  sortable: boolean
+  onSort: (key: K) => void
+}) {
+  const { ref, triggerProps, tip } = useTip(col.tip)
+  return (
+    <th aria-sort={ariaSort} className={col.align === "right" ? "r" : undefined}>
+      {sortable ? (
+        <button
+          ref={ref}
+          type="button"
+          className={active ? "thsort on" : "thsort"}
+          onClick={() => onSort(col.key)}
+          {...triggerProps}
+        >
+          <span className="thlabel">{col.label}</span>
+          <span className="tharrow" aria-hidden="true">{arrow}</span>
+        </button>
+      ) : (
+        col.label
+      )}
+      {tip}
+    </th>
   )
 }

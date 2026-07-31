@@ -36,16 +36,21 @@ export default function RootLayout({ children }: { children: ReactNode }) {
                   default window. True, and read by everyone as how much history the board has —
                   beside 90-day growth rates measured over a bought year. It now states the
                   history, and the sweep's own coverage rides the hover with the dot beside it. */}
+              {/* "369 days of history" read as 369 days of ours. Almost all of it is vidIQ
+                  backfill — our own sweep has recorded a handful of days — and `vendor` is a
+                  distinct trust tier here, so the readout names the split rather than letting the
+                  bought history pass as measured. */}
               <span
                 className="num"
                 title={
                   `daily sweep: ${meta.snapshot_health.days_present} of the last ` +
                   `${meta.snapshot_health.days_present + meta.snapshot_health.days_missing} days ` +
-                  `recorded. History since ${meta.snapshot_health.first_date ?? "--"}.`
+                  `recorded by us. Everything before that is vidIQ backfill. ` +
+                  `History since ${meta.snapshot_health.first_date ?? "--"}.`
                 }
               >
                 snapshot {meta.generated_at.slice(0, 10)} · {fmtInt(meta.snapshot_health.history_days)}{" "}
-                days of history
+                days of history ({fmtInt(meta.snapshot_health.days_present)} swept by us)
               </span>
               <span
                 className="livedot"

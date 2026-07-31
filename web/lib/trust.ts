@@ -203,13 +203,24 @@ export function ratioText(cell: StateCell): string {
 }
 
 export function stateExplain(cell: StateCell): string | undefined {
+  if (cell.state === "bounded") {
+    // Bounded is a measurement, not a hole, and it had no sentence at all — which left "< 48"
+    // rendering in the same grey as "--" with nothing to distinguish them. On a 7d window that is
+    // most of the table.
+    const w = cell.bucket ? ` ${bucketText(cell.bucket)}` : ""
+    return `Bounded, not missing: the change is smaller than five times this channel's${w} ` +
+      "rounding width, so only an upper bound can be measured. The real figure is under it."
+  }
   if (cell.state === "building") {
-    return `Collecting: ${cell.have ?? 0} of the ${cell.need ?? 0} days this window needs have been ` +
-      "snapshotted so far. The daily sweep fills the rest in."
+    return `Collecting: ${cell.have ?? 0} of the ${cell.need ?? 0} days this window needs are in ` +
+      "the series so far. The daily sweep fills the rest in."
   }
   if (cell.state === "blocked") {
     const n = cell.unusable ?? 0
-    return `Every day this ${cell.need ?? 0}-day window needs was snapshotted, but ${n} of them ` +
+    // "was snapshotted" claimed our own sweep for days that are almost entirely vidIQ backfill:
+    // the series holds 24,922 vendor points against a few hundred of ours. "is in the series" is
+    // the true statement and stays true whichever tier the day came from.
+    return `Every day this ${cell.need ?? 0}-day window needs is in the series, but ${n} of them ` +
       `failed the view-count check and cannot be used. That day has already happened, so waiting ` +
       "will not fix it; a window that avoids it will measure."
   }

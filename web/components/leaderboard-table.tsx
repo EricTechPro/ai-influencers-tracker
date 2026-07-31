@@ -13,6 +13,7 @@ import {
   deltaText,
   fmtInt,
   pctText,
+  ratioText,
   stateExplain,
 } from "@/lib/trust"
 import { withWindow } from "@/lib/window"
@@ -20,10 +21,39 @@ import { AvatarPeek } from "./avatar"
 import { CompareBar } from "./compare-bar"
 import { PagedTable } from "./paged-table"
 import type { SortColumn } from "./sortable-table"
-import { Chip, Derived } from "./trust"
+import { Chip, Derived, StateText } from "./trust"
 import { WindowTabs } from "./window-tabs"
+import type { StateCell } from "@/lib/types"
 
 type Key = "rank" | "channel" | "subs" | "dsubs" | "growth" | "dviews" | "per1k" | "vids"
+
+/**
+ * Column widths, in rem, in render order.
+ *
+ * The table was auto-layout with only a `minWidth`, so the widest string *on the current page*
+ * set every column: turning from page 1 to page 8 moved `growth` from 125px to 251px and swung
+ * the right edge of `subs` by ~98px. Scanning down a ranked list re-aimed the eye on every page
+ * turn. `channel` is the one column left unconstrained, because it is the only one that already
+ * truncates gracefully (`.chname` has an ellipsis) and so is the right place to put the slack.
+ *
+ * The numeric widths are sized for the widest *state* string a column can hold, not the widest
+ * number — under `table-layout: fixed` a column narrower than its content overflows onto its
+ * neighbour, and these cells must keep rendering `< N`, `125/180` and `3 bad days` rather than a
+ * zero. Headers grow with the window key too (`Δviews 365d`), so they are measured at 365d.
+ */
+const COL = {
+  pick: 2,
+  // wide enough for the longest label the header can take, "# subscribers", plus its sort arrow
+  rank: 7.5,
+  channel: 20,
+  subs: 6.5,
+  dsubs: 8,
+  growth: 7.5,
+  dviews: 8,
+  per1k: 8.5,
+  vids: 5.5,
+}
+const COL_TOTAL = Object.values(COL).reduce((a, b) => a + b, 0)
 
 const CATS = ["ai-creator", "company", "adjacent", "unknown"] as const
 type Cat = (typeof CATS)[number]
@@ -49,11 +79,14 @@ export function LeaderboardTable({
   coverage,
   selfId,
   initialWindow,
+  ownSweepFrom,
 }: {
   channels: SlimChannel[]
   coverage?: CoverageMap
   selfId: string
   initialWindow: WindowKey
+  /** the first date our own sweep recorded; any window baseline older than this is vidIQ's */
+  ownSweepFrom: string | null
 }) {
   const router = useRouter()
   const pathname = usePathname()
@@ -78,9 +111,12 @@ export function LeaderboardTable({
 
   const columns: SortColumn<Key>[] = [
     {
+      // The label names the mode it is counting down. Unlabelled, "#" reading 73, 21, 72 after a
+      // sort on another column is read as broken data long before it is read as a preserved
+      // ranking, and the only thing saying otherwise was a hover tip on a column nobody hovers.
       key: "rank",
-      label: "#",
-      tip: `Position by ${mode} over ${win}. Change it with "rank by" above; sorting a column does not change it.`,
+      label: `# ${mode}`,
+      tip: `Position by ${mode} over ${win}. Change it with "rank by" above; sorting a column does not change it, it only greys this one out.`,
     },
     { key: "channel", label: "channel" },
     { key: "subs", label: "subs", align: "right", tip: "subscriber count at the newest snapshot" },
@@ -162,17 +198,21 @@ export function LeaderboardTable({
           ))}
         </div>
         <WindowTabs value={win} onChange={onWindow} />
-        <select
-          value={niche}
-          onChange={(e) => setNiche(e.target.value)}
-          aria-label="filter by niche"
-          title={niches.length === 0 ? "no niche data in this build yet" : undefined}
-        >
-          <option value="all">all niches</option>
-          {niches.map((n) => (
-            <option key={n}>{n}</option>
-          ))}
-        </select>
+        {/* A dimension with no data is a missing state, not an empty filter. Every one of the 74
+            channels has `niche: null`, so this rendered as a fully enabled select holding one
+            option, indistinguishable from a working filter, with the explanation hidden in a
+            `title` that no phone and no keyboard can reach. It renders when there is something to
+            filter by and says so plainly when there is not. */}
+        {niches.length > 0 ? (
+          <select value={niche} onChange={(e) => setNiche(e.target.value)} aria-label="filter by niche">
+            <option value="all">all niches</option>
+            {niches.map((n) => (
+              <option key={n}>{n}</option>
+            ))}
+          </select>
+        ) : (
+          <span className="note">no niches tagged yet</span>
+        )}
         {/* These are the roster's own category tags, set by hand in
             config/channels.json: who is an independent creator, who is a
             company channel, who is adjacent to the niche, and who has not been
@@ -207,11 +247,33 @@ export function LeaderboardTable({
         rowKey={(c) => c.channel_id}
         unit="channels"
         empty="no channels match these filters"
-        className="tbl tbl-sticky tbl-hover tbl-zebra"
-        style={{ minWidth: "62rem" }}
+        className="tbl tbl-fixed tbl-sticky tbl-hover tbl-zebra"
+        style={{ minWidth: `${COL_TOTAL}rem` }}
+        colgroup={
+          <colgroup>
+            <col style={{ width: `${COL.pick}rem` }} />
+            <col style={{ width: `${COL.rank}rem` }} />
+            {/* Sized like the rest rather than left to absorb the slack. Unconstrained it took
+                624px of a 1440px table and pushed every number so far right that the name-to-number
+                handoff became the widest empty run on the board. Under `table-layout: fixed` a
+                table wider than the sum of its columns shares the excess out in proportion, so all
+                nine grow together and none of them move when the page turns. */}
+            <col style={{ width: `${COL.channel}rem` }} />
+            <col style={{ width: `${COL.subs}rem` }} />
+            <col style={{ width: `${COL.dsubs}rem` }} />
+            <col style={{ width: `${COL.growth}rem` }} />
+            <col style={{ width: `${COL.dviews}rem` }} />
+            <col style={{ width: `${COL.per1k}rem` }} />
+            <col style={{ width: `${COL.vids}rem` }} />
+          </colgroup>
+        }
+        // Re-ranking, switching the window and filtering all make this a different question of the
+        // same rows, so they all send you back to the top of the new order.
+        resetKey={`${mode}|${win}|${niche}|${[...cats].sort().join(",")}`}
         leadingHeader={<th className="pickcol"><span className="sr-only">select to compare</span></th>}
-        row={(c) => (
-          <LeaderRow c={c} mode={mode} win={win}
+        row={(c, sortKey) => (
+          <LeaderRow c={c} mode={mode} win={win} ranked={sortKey === "rank"}
+            ownSweepFrom={ownSweepFrom}
             cover={coverage?.[c.channel_id]}
             picked={picked.includes(c.channel_id)} onTogglePicked={() => togglePicked(c.channel_id)} />
         )}
@@ -222,27 +284,49 @@ export function LeaderboardTable({
   )
 }
 
-/** The same state, short enough for a numeric column. "building, 89 of 90 days"
- *  is right on a card and too wide here: it either wraps every second row to
- *  two lines or pushes the table out past the page. Still a state, still shows
- *  how far along it is, never a zero. */
 /** The cell's state, short enough not to set the column width on its own.
- *  "building 364/365" was the widest string in the table and every one of the
- *  72 rows paid for it; the fraction alone says the same thing, with the full
- *  sentence on hover. */
-function stateText(cell: SlimChannel["subscriber_delta"][WindowKey]): string {
+ *  "building, 364 of 365 days" was the widest string in the table and every one of the 74 rows
+ *  paid for it; the fraction alone says the same thing, with the full sentence on demand. */
+function stateText(cell: StateCell): string {
   if (cell.state === "building" && cell.have !== undefined && cell.need !== undefined) {
     return `${cell.have}/${cell.need}`
   }
   return deltaText(cell)
 }
 
-const stateTitle = stateExplain
+/**
+ * One shape for all four windowed cells.
+ *
+ * They had drifted into two. Δviews and subs/1k routed non-ok states through `stateText` with
+ * `stateExplain` on them; Δsubs and growth called `deltaText`/`pctText` straight and wrapped the
+ * result in `<Derived>`. So at 365d eleven rows printed the full "building, 359 of 365 days" into
+ * two numeric columns — 258px each, 37% of the table — under a dotted underline and a tooltip
+ * quoting a formula that had not run. A state dressed as a computed number is the exact failure
+ * this project names.
+ *
+ * `bounded` belongs on the measured side of that line and was on the wrong one: "< 48" is a real
+ * measurement with a real bound, and rendering it in the same grey as "--" made most of a 7d
+ * table read as missing data.
+ */
+function StateNum({ cell, formula, fmt }: {
+  cell: StateCell
+  /** the Derived formula, for the states that actually computed one */
+  formula: string
+  fmt: (cell: StateCell) => string
+}) {
+  if (cell.state === "ok" || cell.state === "bounded") {
+    return <Derived formula={formula}>{fmt(cell)}</Derived>
+  }
+  return <StateText text={stateText(cell)} explain={stateExplain(cell)} />
+}
 
-function LeaderRow({ c, mode, win, cover, picked, onTogglePicked }: {
+function LeaderRow({ c, mode, win, ranked, ownSweepFrom, cover, picked, onTogglePicked }: {
   c: SlimChannel
   mode: RankMode
   win: WindowKey
+  /** false once the reader sorts by another column: # is then a preserved ranking, not the order */
+  ranked: boolean
+  ownSweepFrom: string | null
   cover?: { videos: number; comments: number | null }
   picked: boolean
   onTogglePicked: () => void
@@ -282,16 +366,31 @@ function LeaderRow({ c, mode, win, cover, picked, onTogglePicked }: {
   const growth = c.subscriber_growth_rate[win]
   const views = c.view_delta[win]
   const per1k = c.subs_per_1k_views[win]
+  // 99% of this series is vidIQ backfill, and every window of 7d or longer currently anchors its
+  // oldest endpoint on one. Naming the field but not the tier let a vendor reconstruction render
+  // exactly like something we measured, which is the one thing `vendor` exists as a tier to stop.
+  const vendorBase =
+    ownSweepFrom !== null && delta.from !== undefined && delta.from < ownSweepFrom
+      ? `; the ${delta.from} baseline is vidIQ backfill, not our own sweep`
+      : ""
   return (
     <tr className={c.is_self ? "youcard" : undefined}>
       {pickCell}
-      <td className="num">{c.rank[mode][win] ?? "--"}</td>
+      {/* Greyed once another column is the order, so "73, 21, 72" reads as a ranking carried
+          along rather than as broken data. */}
+      <td className={ranked ? "num" : "num muted"}>{c.rank[mode][win] ?? "--"}</td>
       <td>
-        <Link href={withWindow(`/channels/${c.channel_id}`, win)} className="chcell">
+        {/* The peek sits beside the link, not inside it: an <a> may not contain interactive
+            content, and while it did, the avatar's pixels belonged to the link, so a tap on a
+            phone navigated away instead of opening the card. */}
+        <span className="chcell">
           <AvatarPeek src={c.avatarUrl} name={c.name} handle={c.handle} size={28}
             isSelf={c.is_self} stats={stats} />
-          <span className="chname" title={c.name}>{c.name}</span>
-        </Link>
+          <Link href={withWindow(`/channels/${c.channel_id}`, win)} className="chname"
+            title={c.name}>
+            {c.name}
+          </Link>
+        </span>
         {c.is_self && (
           <>
             {" ★ "}
@@ -299,36 +398,38 @@ function LeaderRow({ c, mode, win, cover, picked, onTogglePicked }: {
           </>
         )}
       </td>
-      <td className="r num">{c.subscriber_count !== null ? fmtInt(c.subscriber_count) : "--"}</td>
-      <td className="r num nowrap">
-        {/* The rounding width used to sit beside every number as "±100". It is
-            a real disclosure and it stays, but inline it gave each row a
-            different width and made a column of numbers impossible to scan
-            down. It now rides the hover, where the exact figure already is. */}
-        <Derived formula={`subscriber_count newest minus oldest, ${win}; YouTube rounds this channel to ${bucketText(c.subscriber_bucket)}`}>
-          {deltaText(delta)}
-        </Derived>
-      </td>
       <td className="r num">
-        <Derived formula="subscriber delta ÷ subscribers at window start">{pctText(growth)}</Derived>
-      </td>
-      <td className="r num nowrap">
-        {views.state === "ok" ? (
-          <Derived formula={`view_count newest minus oldest, ${win}`}>
-            {compactSignedAuto(views.value ?? 0)}
+        {/* Oracle-looking, Derived in fact: subscriber_count is rounded to three significant
+            figures at the source and no vendor sells better. */}
+        {c.subscriber_count !== null ? (
+          <Derived formula={`subscriber_count at the newest snapshot; YouTube rounds this channel to ${bucketText(c.subscriber_bucket)}`}>
+            {fmtInt(c.subscriber_count)}
           </Derived>
         ) : (
-          <span className="muted" title={stateTitle(views)}>{stateText(views)}</span>
+          "--"
         )}
       </td>
       <td className="r num nowrap">
-        {per1k.state === "ok" ? (
-          <Derived formula="subscriber delta ÷ (view delta ÷ 1000)">
-            {(per1k.value ?? 0).toFixed(1)}
-          </Derived>
-        ) : (
-          <span className="muted" title={stateTitle(per1k)}>{stateText(per1k)}</span>
-        )}
+        {/* The rounding width used to sit beside every number as "±100". It is a real disclosure
+            and it stays, but inline it gave each row a different width and made a column of
+            numbers impossible to scan down. It rides the disclosure now, with the exact figure. */}
+        <StateNum cell={delta} fmt={deltaText}
+          formula={`subscriber_count newest minus oldest, ${win}; YouTube rounds this channel to ${bucketText(c.subscriber_bucket)}${vendorBase}`} />
+      </td>
+      <td className="r num nowrap">
+        <StateNum cell={growth} fmt={pctText}
+          formula={`subscriber delta ÷ subscribers at window start, ${win}${vendorBase}`} />
+      </td>
+      <td className="r num nowrap">
+        {/* A bounded view delta has an `upper` and no `value`, so the compact formatter has to be
+            reached only for `ok` — `v.value ?? 0` on a bounded cell prints a confident 0. */}
+        <StateNum cell={views}
+          fmt={(v) => (v.state === "ok" ? compactSignedAuto(v.value ?? 0) : deltaText(v))}
+          formula={`view_count newest minus oldest, ${win}; exact, never rounded${vendorBase}`} />
+      </td>
+      <td className="r num nowrap">
+        <StateNum cell={per1k} fmt={ratioText}
+          formula={`subscriber delta ÷ (view delta ÷ 1000), ${win}: subscribers earned per thousand views`} />
       </td>
       <td className="r num">{c.videos_published["30d"] ?? "--"}</td>
     </tr>

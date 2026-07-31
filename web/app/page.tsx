@@ -1,4 +1,10 @@
-import { channelCoverage, loadChannels, loadMeta, loadSlimChannels } from "@/lib/bundles"
+import {
+  channelCoverage,
+  loadChannels,
+  loadMeta,
+  loadSlimChannels,
+  ownSweepFrom,
+} from "@/lib/bundles"
 import { parseWindow, type WindowSearch } from "@/lib/window"
 import { LeaderboardTable } from "@/components/leaderboard-table"
 import { SectionKicker } from "@/components/section-kicker"
@@ -26,7 +32,7 @@ export default async function LeaderboardPage({
     <section className="breakout">
       <SectionKicker label="ALL CHANNELS" cap={`${meta.channels.total} tracked`} />
       <LeaderboardTable channels={channels} coverage={coverage} selfId={bundle.self_channel_id}
-        initialWindow={parseWindow(w)} />
+        initialWindow={parseWindow(w)} ownSweepFrom={ownSweepFrom()} />
     </section>
   )
 }
