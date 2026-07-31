@@ -96,7 +96,39 @@ trust tokens, and its `chain-map.tsx` and `sortable-table.tsx` are the two highe
 
 ## Conventions
 
-Conventional commits: `feat` `fix` `docs` `refactor` `data` `chore` `test`.
+`/review` is the one trigger for both simplify and code review here (`.claude/commands/review.md`).
+It applies the invariants above and runs only the checks the change touched. Reach for the global
+`/simplify` or `/code-review` only when it is not enough.
+
 Python tests live beside the code as `test_*.py`. Web tests use vitest.
 `config/channels.json` is private and gitignored; never commit it. Reading it and `.env` is denied
 in `.claude/settings.json` — that denial is deliberate, not a misconfiguration.
+
+## Commits
+
+Same shape as `projects/social-invest/`, which is the reference history. Read a few of its commits
+before writing one here.
+
+`type(scope): subject` — types are `feat` `fix` `docs` `refactor` `data` `chore` `test`. Use `data`
+for a sweep's `_raw/`/`_synthesize/`/`_db/` churn; it is what the daily launchd run produces and it
+is not a `chore`.
+
+**Scope is the surface that owns the code, never the feature it implements.** One name per surface:
+`ait-web`, `pipeline`, the five skill names, or `ait` for the whole project. Not `(topics)`,
+`(growth)`, `(feed)` — those are features, and the same file ends up under three scopes. `(web)` is
+the old spelling of `ait-web`; use `ait-web`.
+
+Subject: lowercase, no trailing period, the outcome in domain terms rather than the files touched.
+
+**Every commit that changes code needs a body**, and the body carries the evidence:
+
+- What the mechanism actually was, not that something was wrong. Name the concrete row, value, or
+  date that exposed it (`ethanfinancenote:ASTS:2026-05-12 — entry 60, exit 57.375`).
+- Why this fix and not the obvious one, when they differ.
+- Prose paragraphs. Bullets only for genuinely parallel items.
+- A closing verification line: what ran and what passed (`484 pass, 216 in web`). Report a
+  pre-existing failure as pre-existing rather than omitting it. Never claim a check that did not run.
+
+`data:` bodies enumerate what landed, with counts and the handles or channels involved.
+
+Footer is `Co-Authored-By:` plus `Claude-Session:`, as in the sibling history.
