@@ -99,3 +99,28 @@ def test_a_field_absent_everywhere_stays_the_honest_none(ait_root, monkeypatch):
     assert row["subscriber_count"] is None
     assert row["subscriber_bucket"] is None
     assert row["view_count"] == 1100          # unaffected: present on every row
+
+
+def _video(video_id, published_at, view_count=1000, channel_id="UCcole"):
+    return {"video_id": video_id, "channel_id": channel_id, "published_at": published_at,
+            "view_count": view_count, "series": [], "topic_assignments": []}
+
+
+def test_a_future_dated_video_is_not_counted_as_published_in_the_window(
+        ait_root, monkeypatch):
+    """util.days_between goes negative when published_at is ahead of ctx.today, so a bare
+    `<= 30` accepts a future date in every window between now and then. web/lib/compare.ts
+    and web/lib/recent.ts already guard their own lower bound; without the same guard here
+    the pipeline's videos_published and the dashboard's own count disagree on exactly the
+    row the web-side guard exists to exclude."""
+    series = _daily_series(TODAY, 90, start_subs=2680, growth_per_day=213)
+    ctx = build_data.make_context(TODAY)
+    ctx.videos.extend([
+        _video("inside", (TODAY - dt.timedelta(days=5)).isoformat() + "T00:00:00Z"),
+        _video("future", (TODAY + dt.timedelta(days=3)).isoformat() + "T00:00:00Z",
+               view_count=999_999),
+    ])
+    row = _channel_row(ctx, series, monkeypatch, channel_id="UCcole")
+
+    assert row["videos_published"]["30d"] == 1
+    assert row["median_views_per_video"]["30d"] == 1000

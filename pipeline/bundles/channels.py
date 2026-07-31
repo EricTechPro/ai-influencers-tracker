@@ -82,9 +82,15 @@ def build(ctx) -> dict:
             per_1k[f"{window}d"] = growth.subs_per_1k_views(
                 subscriber_delta[f"{window}d"], view_delta[f"{window}d"])
 
+        # days_between is negative when published_at is ahead of today, so a bare `<= 30`
+        # would count a future-dated row in every window between now and then. The web's
+        # videosInWindow and selectRecent already guard their own lower bound; the same
+        # guard here keeps both surfaces counting the same set, which is the whole point of
+        # the null-view_count filter beside it.
         published = [v for v in channel_videos
-                     if util.days_between(util.parse_ts(v["published_at"]).date(), ctx.today)
-                     <= 30 and v["view_count"] is not None]
+                     if 0 <= util.days_between(util.parse_ts(v["published_at"]).date(),
+                                               ctx.today) <= 30
+                     and v["view_count"] is not None]
         rows.append({
             "channel_id": channel_id,
             "handle": roster_row.get("handle"), "name": roster_row.get("name"),
