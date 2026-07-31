@@ -870,17 +870,41 @@ select.chip:hover { border-color: var(--muted-foreground); }
    separates them from the results instead, and the selected row is marked by a bar in the
    margin rather than by a filled blue block. */
 .shop { display: grid; grid-template-columns: 158px minmax(0, 1fr); gap: 22px; margin-top: 14px; }
-@media (max-width: 60rem) {
-  .shop { grid-template-columns: minmax(0, 1fr); gap: 14px; }
-  .shopside { position: static; border-right: 0; padding-right: 0;
-    display: flex; flex-wrap: wrap; gap: 4px 26px; }
-  .facet { margin-bottom: 8px; }
-}
 /* Sticky: the filters are how you get back out of a long list, so they cannot scroll away
    above it. align-self keeps the rail its own height rather than the row's. */
 .shopside {
   position: sticky; top: 14px; align-self: start;
   border-right: 1px solid var(--border); padding-right: 18px;
+}
+/* Narrow: the rail stops being a column and becomes a wrapped row above the grid, and with it
+   the sticky goes. A sticky full-width row pins itself over the results it sits above, and the
+   rail is drawn on nothing — so the thumbnails scrolled straight through the keys. This block
+   used to sit above the rule it overrides, which at equal specificity loses to it whatever the
+   media query says, so none of these three ever applied. */
+/* Wrapping the facets as blocks was not enough: four labelled stacks plus eighteen wrapped tag
+   keys filled the entire first screen above the words "27 videos", which is the same complaint
+   the old header paragraph earned, moved to a different place. Each facet is one line now — its
+   label beside its keys, the way the leaderboard's control row already reads — and the tags
+   become a single strip that scrolls sideways instead of a block that grows downward. */
+@media (max-width: 60rem) {
+  .shop { grid-template-columns: minmax(0, 1fr); gap: 12px; }
+  .shopside {
+    position: static; border-right: 0; padding-right: 0;
+    border-bottom: 1px solid var(--border); padding-bottom: 11px;
+    display: flex; flex-wrap: wrap; align-items: center; gap: 7px 18px;
+  }
+  /* Scoped rather than bare `.keys`, which is declared further down and would win the same way. */
+  .shopside .keys { display: flex; align-items: center; gap: 7px; margin-bottom: 0; }
+  .shopside .klabel { margin-bottom: 0; white-space: nowrap; }
+  /* Tags take their own full line and keep it: one row, scrolled, never a growing block. */
+  .shopside .keys:has(.krow.tags) { flex: 1 1 100%; min-width: 0; }
+  .shopside .krow.tags {
+    max-height: none; flex-wrap: nowrap; overflow-x: auto; overflow-y: hidden;
+    padding-bottom: 0;
+    mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent);
+  }
+  .shopside .krow.tags .key { flex: 0 0 auto; }
+  .shopside .sfoot { flex: 1 1 100%; margin: 0; }
 }
 .shopmain { min-width: 0; }
 
