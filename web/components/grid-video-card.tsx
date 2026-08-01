@@ -36,6 +36,8 @@ export function GridVideoCard({
   avatarUrl,
   isSelf = false,
   topicLabel = null,
+  muted = false,
+  onToggleMute,
 }: {
   v: RecentRow
   avatarUrl: string | null
@@ -44,9 +46,18 @@ export function GridVideoCard({
    *  gone it rides the card, which is the only place it can go without regrouping the grid. Null
    *  means no topic was assigned, which is a state and reads as one. */
   topicLabel?: string | null
+  /** whether this video is on the mute list. Only ever true in the feed's `muted` view, since
+   *  every other view filters muted videos out before it reaches a card. */
+  muted?: boolean
+  /** Takes the entry rather than the row, because the strip in recent-feed.tsx toggles the same
+   *  videos from `config/muted.json` alone, where no RecentRow exists to pass. One signature, so
+   *  the two callers cannot drift into two ideas of what a mute is.
+   *  Omitted on the surfaces that only display cards (patterns), where a mute control would be a
+   *  button with nothing to hide it from. */
+  onToggleMute?: (entry: { video_id: string; title: string; channel_name: string }) => void
 }) {
   const len = durationText(v.duration_s)
-  return (
+  const card = (
     <a
       className="ycard"
       href={`https://www.youtube.com/watch?v=${v.video_id}`}
@@ -117,5 +128,38 @@ export function GridVideoCard({
         </span>
       </span>
     </a>
+  )
+
+  if (!onToggleMute) return card
+
+  /* A sibling of the card, never a child of it. The card is one `<a>` wrapping the whole tile, and
+     a `<button>` inside an `<a>` is invalid HTML — browsers reparent it out of the anchor, so the
+     control lands somewhere the CSS does not expect and the anchor still swallows the activation
+     on some of them. The wrapper is what carries `position: relative` instead, which is also what
+     lets the button sit over the thumbnail without joining the card's hover-scale.
+
+     It is in the DOM whether or not it is hovered, and only its opacity changes, so it is
+     tab-reachable and a screen reader reads it on every card. A control that exists only under a
+     pointer is a control a keyboard cannot reach. */
+  return (
+    <div className={muted ? "ycard-wrap is-muted" : "ycard-wrap"}>
+      {card}
+      <button
+        type="button"
+        className="ymute"
+        aria-pressed={muted}
+        title={
+          muted
+            ? "Unmute: put this video back on the feed"
+            : "Mute: take this video off the feed. It stays in the corpus and in every count, and the muted key above brings it back."
+        }
+        onClick={() =>
+          onToggleMute({ video_id: v.video_id, title: v.title, channel_name: v.channel_name })
+        }
+      >
+        <span aria-hidden="true">{muted ? "↺" : "✕"}</span>
+        <span className="sr-only">{muted ? `unmute ${v.title}` : `mute ${v.title}`}</span>
+      </button>
+    </div>
   )
 }

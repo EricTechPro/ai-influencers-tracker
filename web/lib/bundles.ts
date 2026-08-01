@@ -5,7 +5,10 @@ import { slimChannel, type SlimChannel } from "./growth"
 // shipped wholesale; the 59 MB comments monolith no longer exists, comments
 // are read as per-channel and per-topic slices under _db/comments/.
 // (app/assets/channels/[id]/route.ts also touches the filesystem, but only to
-// stream a single avatar image straight through; it never reads a bundle.)
+// stream a single avatar image straight through; it never reads a bundle. So
+// does lib/muted-store.ts, which is the one place in web/ that reads and writes
+// config/ — a mute is a decision, not derived data, so it has to survive the
+// build_data run that rewrites _db/.)
 import { existsSync, readdirSync, readFileSync } from "node:fs"
 import path from "node:path"
 import type {

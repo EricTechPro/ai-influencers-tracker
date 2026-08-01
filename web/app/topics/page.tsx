@@ -1,6 +1,8 @@
 import {
   channelAvatarUrl, channelVideos, loadChannels, loadMeta, loadRecent, loadTopicPages, videosById,
 } from "@/lib/bundles"
+import { entriesOf } from "@/lib/muted"
+import { loadMuted } from "@/lib/muted-store"
 import { RecentFeed } from "@/components/recent-feed"
 
 /**
@@ -72,10 +74,17 @@ export default function TopicsIndexPage() {
     Object.entries(allLabels).filter(([id]) => feedTopics.has(id))
   )
 
+  // config/muted.json, read per request. `force-dynamic` above is what makes that work: a mute is
+  // written from inside this running server, so a build-time read would go stale the moment the
+  // first ✕ was clicked. Passing it down rather than fetching it client-side is what keeps a muted
+  // card from flashing on screen before the first effect runs.
+  const muted = entriesOf(loadMuted())
+
   return (
     <section className="breakout">
       <RecentFeed
         bundle={recent}
+        initialMuted={muted}
         avatars={avatars}
         selfChannelId={meta.self_channel_id}
         topicsByVideo={topicsByVideo}

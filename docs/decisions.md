@@ -737,3 +737,91 @@ and every window toggle stays a client-side filter over it.
 `WINDOW_CHOICES` gains 1 and 3, and `windowsHeld` grew a lower bound: a window shorter than the
 newest video held is not offered, because a `1d` key over a feed last swept yesterday is an empty
 grid. That end went unguarded while the shortest choice was 7 and the sweep was never far behind.
+
+## 0014 — A mute is a decision the board can take, not a config file to go and edit
+
+### Context
+
+`config/exclusions.json` already answers "I have stopped making this kind of video": whole topics,
+whole channels, and title terms, hand-written and applied by `build_data` at build time. It is the
+right shape for a standing rule and the wrong shape for the thing `/topics` actually kept raising.
+
+The question the feed keeps asking is *what should I film next*, and the answer it keeps mixing in
+is videos Eric has already made. On 2026-08-01, the second card of the 14d feed was Dubibubi's
+"I Made Claude Opus 5 and Fable 5 Build the Same App" at 14.92x — a real breakout, correctly
+ranked, and not a thing to go and shoot, because that video exists on Eric's own channel. It is
+not a topic to exclude and not a channel to exclude. It is one video, and the answer is per video.
+
+Nothing in `exclusions.json` can express that without either taking down a whole subject Eric is
+still making or accumulating a title-term list that fires on videos nobody read. And the cost of
+the edit is the real problem: leaving the board, finding the id, editing JSON, rebuilding. That is
+not a thing anyone does while scanning a grid, so it does not get done, and the same card is on
+the same screen a week later.
+
+### Decision
+
+One video is muted by a control on its own card, and the list lives in `config/muted.json`.
+
+**A mute hides a card and nothing else.** The video stays in `_raw/`, in `_db/videos.json`, in
+`recent.json`, and in the `N scanned` count above the feed. No baseline, no multiplier, and no
+channel rollup moves. The corpus is the record of what the niche made and it does not change shape
+because Eric already made one of them.
+
+`config/muted.json` is the one file under `config/` this repo does not hand-author. **The
+load-bearing rule survives intact: the pipeline still never writes there.** The UI is the only
+writer, Python only ever reads, and the file stays a plain readable JSON object so a hand-edit is
+still the fallback. It sits in `config/` rather than `_db/` because a mute is a decision, and
+`_db/` is deleted and rebuilt by design.
+
+Reversibility is the other half, and it is not optional: muting the wrong card is one click, so
+unmuting has to be one click too, from the page where the mistake was made. Two surfaces do it —
+the **muted strip** above the tags, built from the file itself, and a **`muted N` key** in the
+format row that shows the cards.
+
+The strip is built from the file and not from the grid on purpose. A decision outlives the window
+its video sat in and eventually the bundle itself, so a strip built from the corpus would silently
+grow shorter than the file it claims to show.
+
+The `muted` key ignores the window, the format, the language, and the per-channel cap. You mute a
+video today, it ages out of every window the feed offers, and a review view that respected the
+window would then render an empty grid under a key reading `muted 12`. The other five key groups
+are hidden while that view is open, because none of them reaches it and a lit key that changes
+nothing is the invisible state this rail was rebuilt to remove.
+
+### Rejected alternatives
+
+- **An `unmuted` key beside `long` and `shorts`**, which is how it was first asked for. It reads
+  as a fourth format and is not one: either `long` also hides muted videos — making `unmuted` a
+  lie for two of the four keys — or it does not, making `unmuted` a key that changes nothing. The
+  three formats always hide muted videos, which is the whole point of muting one, and `muted` is
+  the fourth key instead: the review view, and the only place they are reachable.
+- **A `videos` array in `exclusions.json`.** One file, no new concept — and it makes a
+  hand-authored file machine-written, which is the rule `pipeline/` is held to. Two files, two
+  writers, one direction each.
+- **Writing `_db/` or a sidecar under `_synthesize/`.** Both are rebuilt from upstream, so the
+  next `build_data` silently discards every decision.
+- **localStorage.** No file to read, nothing the pipeline could ever act on, and the list dies
+  with the browser profile. This is config, not a UI preference.
+- **A `PUT` of the whole list.** Two tabs open on `/topics` is the normal case, and last-write-wins
+  means the second tab's save unmutes everything the first one muted while it was open. The route
+  takes one video and toggles it, re-reading the file each time, so concurrent tabs converge.
+- **Muting whole channels from the card.** `exclusions.json` already does it, and it is a standing
+  rule rather than a per-card judgement. Nothing here replaces it.
+
+### Scope
+
+`web/lib/muted.ts` (pure: parse, toggle, order), `web/lib/muted-store.ts` (the only reader and
+writer of `config/` in `web/`, atomic temp-then-rename), `web/app/api/mute/route.ts` (the app's
+only write route), `web/components/grid-video-card.tsx`, `web/components/recent-feed.tsx`,
+`web/app/topics/page.tsx`, `web/app/globals.css`.
+
+The mute button is a sibling of the card, not a child: the card is one `<a>` over the whole tile
+and a `<button>` inside an anchor is invalid HTML. It is hidden by opacity rather than by
+`display`, so it stays in the tab order and in the accessibility tree on every card.
+
+The page reads `config/muted.json` per request, which `force-dynamic` on `/topics` already allows,
+so a mute lands with no `build_data` run and no flash of the card it hid. The toggle is optimistic
+and reverts on a failed write — a feed filtered by a decision that never reached disk is a lie the
+next reload corrects silently.
+
+Nothing in `pipeline/` reads the file yet. When something does, it reads and never writes.

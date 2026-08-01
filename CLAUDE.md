@@ -30,6 +30,14 @@ the paid sweep, so the feed drifted two days behind a registry that was already 
 `_synthesize/patterns/<date>.json`, which no skill writes yet, so they render an honest empty
 state.
 
+A card on that feed can be **muted** — hidden from the grid, still in the corpus and in every
+count — from a control on the card itself. The list is `config/muted.json`, and it is the one file
+under `config/` the UI writes: `web/lib/muted-store.ts` is the only reader and writer of `config/`
+in `web/`, `web/app/api/mute/route.ts` is the app's only write route, and **`pipeline/` still
+never writes there.** `/topics` reads it per request, so a mute needs no rebuild. Unmuting is one
+click from either the muted strip above the tags or the `muted N` key in the format row. Decision
+0014.
+
 **Next is step 12** (`docs/spec.md` §10): comment classification, then the reply queue. **Step 13
 is a hard gate**: no extraction work begins until a 20-video manual spike measures artifact capture
 against a 50% floor.

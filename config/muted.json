@@ -1,0 +1,53 @@
+{
+  "version": 1,
+  "videos": {
+    "JQInc4V6SWg": {
+      "video_id": "JQInc4V6SWg",
+      "title": "I Made Claude Opus 5 and Fable 5 Build the Same App (Raw Results)",
+      "channel_name": "Dubibubi",
+      "muted_at": "2026-08-01T20:38:41.096Z"
+    },
+    "T9q5aOI9j6s": {
+      "video_id": "T9q5aOI9j6s",
+      "title": "Claude Opus 5 vs GPT 5.6 Sol? I Tested Them Head to Head",
+      "channel_name": "Dubibubi",
+      "muted_at": "2026-08-01T20:38:46.303Z"
+    },
+    "5t24ZZgYLBg": {
+      "video_id": "5t24ZZgYLBg",
+      "title": "Kimi K3 VS Claude Fable 5 (Raw Results)",
+      "channel_name": "Dubibubi",
+      "muted_at": "2026-08-01T20:39:02.113Z"
+    },
+    "lWF_F0Xg0BY": {
+      "video_id": "lWF_F0Xg0BY",
+      "title": "Codex VS Claude Fable VS Grok (Honest Results)",
+      "channel_name": "Dubibubi",
+      "muted_at": "2026-08-01T20:42:26.107Z"
+    },
+    "lplVBFr0Ndc": {
+      "video_id": "lplVBFr0Ndc",
+      "title": "Claude Fable 5 Use Cases You Must Do NOW (Or Lose Thousands in 1 Week)",
+      "channel_name": "Chase AI",
+      "muted_at": "2026-08-01T20:44:01.202Z"
+    },
+    "UBFHTHUs1wA": {
+      "video_id": "UBFHTHUs1wA",
+      "title": "Anthropic Engineers Just Fixed Claude Code and Nobody's Talking About it!",
+      "channel_name": "Duncan Rogoff | Learn Claude Code",
+      "muted_at": "2026-08-01T20:44:03.343Z"
+    },
+    "RGXRUH3oK6U": {
+      "video_id": "RGXRUH3oK6U",
+      "title": "Grok 4.5 Just Dropped and I Tested It Against Opus 4.8",
+      "channel_name": "Kacper Rutkiewicz | AI Made Simple",
+      "muted_at": "2026-08-01T20:44:05.318Z"
+    },
+    "wOfm7x0i3sw": {
+      "video_id": "wOfm7x0i3sw",
+      "title": "Open Source Is Back. Goodbye Claude.",
+      "channel_name": "Better Stack",
+      "muted_at": "2026-08-01T20:44:13.300Z"
+    }
+  }
+}
