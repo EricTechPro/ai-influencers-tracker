@@ -6,6 +6,11 @@ node_modules/
 __pycache__/
 .logs/
 
+# Tool caches. Both already self-ignore with a `*` file they write inside themselves;
+# listed here so the exclusion survives a tool that stops doing that.
+.pytest_cache/
+.ruff_cache/
+
 # Coverage artifacts, written by scripts/coverage.sh. Regenerable in under two seconds.
 .coverage
 htmlcov/

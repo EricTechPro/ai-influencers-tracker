@@ -567,6 +567,48 @@ definition**, an avatar cluster for who is on it, a hover tooltip that prints th
 line, and a row click through to the topic page. Ranked by score, sortable on every column, each row
 expandable into the derivation that produced it.
 
+### The recent feed, and muting a card
+
+`/topics` opens on the recent feed rather than on the taxonomy: one filtered, sorted, paged grid of
+what went up, ranked by `multiplier.py` (decision 0013). The filters are stamped keys rather than
+dropdowns — window, format, language, videos-per-channel, sort, and a tag strip — every one of them
+client-side over one already-loaded bundle, so none costs a request or a vidIQ credit.
+
+**A card can be muted, from a control on the card itself.** Decision 0014. The question this page
+asks is *what should I film next*, and the answer it keeps mixing in is videos Eric has already
+made — a competitor's frontier-model review is a real breakout, correctly ranked, and not a thing
+to go and shoot. That is not a topic to exclude and not a channel to exclude. It is one video.
+
+| | |
+|---|---|
+| what it hides | the card, and only the card |
+| what it never touches | `_raw/`, `_db/videos.json`, `recent.json`, the `N scanned` count, every baseline and rollup |
+| where the list lives | `config/muted.json` — the one file under `config/` the UI writes |
+| who writes it | `web/app/api/mute/route.ts`, the app's only write route. **`pipeline/` still never writes there** |
+| when it takes effect | the next render. `/topics` is `force-dynamic` and reads the file per request, so no rebuild |
+| how it comes back | one click, from either surface below |
+
+This is the per-video sibling of `config/exclusions.json` (§12), which stays hand-written and
+answers the standing rule — whole topics, whole channels, title terms. Two files, two writers, one
+direction each.
+
+**Reversibility is not optional.** Muting the wrong card is one click, so unmuting has to be one
+click too, from the page where the mistake was made:
+
+- **The muted strip**, above the tag line, built from `config/muted.json` rather than from the
+  grid. A decision outlives the window its video sat in and eventually the bundle itself, so a
+  strip built from the corpus would silently grow shorter than the file it claims to show.
+- **A `muted N` key** in the format row, which shows the cards. It ignores the window, the format,
+  the language and the per-channel cap deliberately: you mute a video today, it ages out of every
+  window the feed offers, and a review view that respected the window would render an empty grid
+  under a key reading `muted 12`. The other key groups are hidden while it is open, because none of
+  them reaches it.
+
+The format row is `all · long · shorts · muted N`, not `all · long · shorts · unmuted`. The three
+formats always hide muted videos, which is the whole point of muting one. An `unmuted` key reads as
+a fourth format and is not one — either `long` also hides muted videos, making `unmuted` a lie for
+two of the four keys, or it does not, making `unmuted` a key that changes nothing.
+
 ### Topic page
 
 Modeled on social-invest's ticker page, which turns out to be a near 1:1 template:
@@ -798,6 +840,7 @@ ingestion, then synthesize and build the dashboard.** Detail in [system.md](syst
 10  home            gamified top-5 leaderboard + opportunity table with derivations
     ═══ SPINE DONE — the Monday question is answered ═══
 11  channel pages   profile card, tabbed charts, comment table, comparison
+11b mute           per-video mute on the feed, config/muted.json, unmute from the board
 12  classify        comment categories, lag column, top-asks per channel
     ═══ GATE — step 13 must pass before 14 starts ═══
 13  the spike       20 videos by hand: reproduce one trunk/fork, MEASURE capture rate
@@ -813,6 +856,11 @@ matcher does nothing until 15 to 25 leaf topics exist, hand-written.
 
 **Comments moved from step 10 to step 6.** They are nearly free, they feed the channel page, and the
 corpus needs to be warm long before the unserved-branch check at step 16.
+
+**Muting is 11b rather than a numbered step.** It is not a slice of the spine and nothing after it
+depends on it — it is one surface, one file, and one route, added once the feed had been on screen
+long enough for the same already-made video to be on it three weeks running. Numbering it would
+renumber the gate at 13, which is quoted by number in four other places.
 
 **Step 13 is a hard gate, not homework.** No extraction work begins until a 20-video manual spike
 reproduces one hand-written trunk/fork and **artifact capture rate is measured** against a 50% floor.
@@ -896,7 +944,7 @@ No OAuth credentials are needed anywhere, by design (§7).
 
 ### Config files
 
-All hand-edited. **The pipeline never writes into these.**
+Hand-edited, with one exception noted below. **The pipeline never writes into any of these.**
 
 ```
 config/
@@ -904,12 +952,17 @@ config/
   channels.json          72 rows, GITIGNORED. NEEDS channel_id and niche columns.
   topics.json           topic tree, leaves derived as scoreable, each tagged tutorial|review
   excluded_repos.json   manual evergreen override, keyed by GitHub numeric id
+  exclusions.json       what Eric has taken off the board: topics, channels, title terms
   thresholds.json       every number the pipeline branches on
   targets.json          rank target, hunch flags — the only user state in the product
+  muted.json            per-video mutes. THE ONE FILE HERE THE UI WRITES (§7, decision 0014)
 ```
 
 `config/` is a directory rather than loose files at the root so the write-protection rule is
-enforceable by path: `test_anchors.py` asserts nothing under `config/` is ever opened for writing.
+enforceable by path: `test_anchors.py` runs a full build and hashes the tree before and after,
+which checks the invariant that matters — **the pipeline never writes into `config/`** — rather
+than grepping for `open()`. `muted.json` does not weaken it: the writer is `web/`, Python only ever
+reads, and the file stays a plain readable JSON object so a hand-edit remains the fallback.
 Full layout in [system.md](system.md) §2.
 
 The roster is whoever the operator chooses to watch, so `config/channels.json` is not committed. Copy

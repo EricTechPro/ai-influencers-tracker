@@ -2,8 +2,11 @@
 
 import { useCallback, useEffect, useId, useMemo, useState } from "react"
 import {
-  selectRecent, windowsHeld, type FormatKey, type RecentWindow,
+  selectRecent, windowsHeld, type RecentWindow,
 } from "@/lib/recent"
+import {
+  entriesOf, formatOf, isMutedView, toggleMuted, type FeedView, type MutedEntry, type MutedFile,
+} from "@/lib/muted"
 import type { RecentBundle, RecentRow } from "@/lib/types"
 import { langTabsFor } from "@/lib/language"
 import { agoText, fmtInt } from "@/lib/trust"
@@ -22,11 +25,18 @@ function heading(window: RecentWindow): string {
   return window === 7 ? "WHAT WENT UP THIS WEEK" : `WHAT WENT UP IN ${window} DAYS`
 }
 
-const FORMATS: { key: FormatKey; label: string }[] = [
+/** The three formats always hide muted videos, which is what muting one is for. `muted` is
+ *  appended to this row at render time, with its count, and only once something is muted — see
+ *  the FeedView doc in lib/muted.ts for why it is a fourth key here rather than an `unmuted` one. */
+const FORMATS: { key: FeedView; label: string }[] = [
   { key: "all", label: "all" },
   { key: "videos", label: "long" },
   { key: "shorts", label: "shorts" },
 ]
+
+/** How many muted videos the strip names before it collapses, matching TAGS_COLLAPSED's contract:
+ *  the button beside them says exactly how many it is holding back, so nothing is unreachable. */
+const MUTED_COLLAPSED = 8
 
 /** Sorts the rail offers. "breakout" is the list selectRecent already returns, so it is the
  *  default and costs nothing; the other three reorder it. */
@@ -69,10 +79,14 @@ export function RecentFeed({
   tagsByVideo,
   topicLabels,
   generatedAt,
+  initialMuted = [],
 }: {
   bundle: RecentBundle
   avatars: Record<string, string | null>
   selfChannelId: string
+  /** config/muted.json as the server read it, newest mute first. State from here on: the toggle
+   *  is optimistic, so the list the page renders is the client's, and this is only its seed. */
+  initialMuted?: MutedEntry[]
   /** video id -> topic ids, narrowed server-side to only the feed's own videos */
   topicsByVideo: Record<string, string[]>
   /** video id -> the uploader's own keywords, lowercased. Sparse: a video whose tags were never
@@ -88,7 +102,7 @@ export function RecentFeed({
   const floor = bundle.display_floor
   const defaultCap = bundle.per_channel_cap
   const [window, setWindow] = useState<RecentWindow>(7)
-  const [format, setFormat] = useState<FormatKey>("all")
+  const [view, setView] = useState<FeedView>("all")
   const [lang, setLang] = useState("all")
   const [sort, setSort] = useState<SortKey>("breakout")
   const [query, setQuery] = useState("")
@@ -100,8 +114,55 @@ export function RecentFeed({
   // facet list needs — the point of the button is that no tag is unreachable, not that the list
   // is short.
   const [tagsOpen, setTagsOpen] = useState(false)
+  const [mutedOpen, setMutedOpen] = useState(false)
   /** so the "+ N more" button can name the strip it opens */
   const tagStripId = useId()
+  const mutedStripId = useId()
+
+  // The mute list, held as the file shape the API speaks so a response can replace it whole. It
+  // starts as what the server read off disk, which is why a mute survives a reload with no flash
+  // of the card it hid: the very first HTML is already filtered.
+  const [muted, setMuted] = useState<MutedFile>(() => ({
+    version: 1,
+    videos: Object.fromEntries(initialMuted.map((e) => [e.video_id, e])),
+  }))
+  const mutedList = useMemo(() => entriesOf(muted), [muted])
+  const mutedIds = useMemo(() => new Set(mutedList.map((e) => e.video_id)), [mutedList])
+  const viewingMuted = isMutedView(view)
+
+  /**
+   * Mute or unmute one video, on the page first and on disk second.
+   *
+   * Optimistic, because the alternative is a card that sits there for a round trip after you have
+   * decided it is not a video you are going to make. The revert is the part that matters: a write
+   * that fails must put the card back rather than leave the feed looking filtered by a decision
+   * that never reached `config/muted.json`, which would be a lie the next reload silently
+   * corrects. On success the server's own list replaces the optimistic one, so a second tab's
+   * mutes land here too.
+   */
+  const onToggleMute = useCallback((entry: Omit<MutedEntry, "muted_at">) => {
+    let reverted: MutedFile | null = null
+    setMuted((prev) => {
+      reverted = prev
+      return toggleMuted(prev, entry, new Date().toISOString())
+    })
+    fetch("/api/mute", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(entry),
+    })
+      .then(async (res) => {
+        if (!res.ok) throw new Error(String(res.status))
+        const body = (await res.json()) as { muted: MutedEntry[] }
+        setMuted({
+          version: 1,
+          videos: Object.fromEntries(body.muted.map((e) => [e.video_id, e])),
+        })
+      })
+      .catch(() => {
+        if (reverted) setMuted(reverted)
+      })
+  }, [])
 
   // meta.generated_at, not `new Date()`. This is a client component, so `new Date()` was the
   // viewer's own clock: _db anchors to midnight UTC of the build's day, and a browser reading
@@ -121,15 +182,42 @@ export function RecentFeed({
   // current selection, the same rule the tag facets below follow: a facet that recounts itself as
   // you click it can only ever read its own selection back. This first pass is lang-agnostic and
   // exists only to be counted; the second is what the grid renders.
+  const format = formatOf(view)
   const { feed: allLangs } = useMemo(
     () => selectRecent(bundle, { window, format, perChannelCap: cap, floor, lang: "all" }, now),
     [bundle, window, format, cap, floor, now]
   )
-  const langs = useMemo(() => langTabsFor(allLangs), [allLangs])
-  const { feed } = useMemo(
+  // Counted over what the language keys would actually reach, which is never a muted video.
+  const langs = useMemo(
+    () => langTabsFor(allLangs.filter((v) => !mutedIds.has(v.video_id))),
+    [allLangs, mutedIds]
+  )
+  const { feed: selected } = useMemo(
     () => selectRecent(bundle, { window, format, perChannelCap: cap, floor, lang }, now),
     [bundle, window, format, cap, floor, lang, now]
   )
+
+  /**
+   * What the grid is built from, which is where a mute takes effect.
+   *
+   * Two shapes, because the `muted` key is a list of decisions rather than a slice of the feed.
+   * The three format keys hide muted videos from an otherwise normal selection. The `muted` key
+   * ignores the window, the format, the language, and the per-channel cap entirely: you mute a
+   * video today and it ages out of every window the feed still offers, and a review tab that then
+   * renders nothing under a key reading "muted 12" would be the exact failure this board is
+   * written against. It orders by when each one was muted, newest first, so the one you just
+   * clicked is the first one you can take back.
+   *
+   * A muted video whose id has left the bundle draws no card here — the strip below is built from
+   * the file rather than from the corpus, so it still names every one of them.
+   */
+  const feed = useMemo(() => {
+    if (!viewingMuted) return selected.filter((v) => !mutedIds.has(v.video_id))
+    const rank = new Map(mutedList.map((e, i) => [e.video_id, i]))
+    return bundle.videos
+      .filter((v) => rank.has(v.video_id))
+      .sort((a, b) => rank.get(a.video_id)! - rank.get(b.video_id)!)
+  }, [viewingMuted, selected, mutedIds, mutedList, bundle.videos])
 
   // Narrowing the window can empty the selected language: a 1d window over a board whose Chinese
   // channels did not post today holds no zh at all. Falling back to all beats leaving the page
@@ -138,6 +226,13 @@ export function RecentFeed({
   useEffect(() => {
     if (lang !== "all" && !langs.some((t) => t.key === lang)) setLang("all")
   }, [langs, lang])
+
+  // Unmuting the last one from inside the muted view removes the very key that is selected. Same
+  // rule as the language fallback above: a lit key that no longer exists leaves the grid empty
+  // with nothing on the page saying why.
+  useEffect(() => {
+    if (viewingMuted && mutedList.length === 0) setView("all")
+  }, [viewingMuted, mutedList.length])
 
   // Built from config rather than written 1, 2: changing outliers.per_channel_cap has to change
   // what the page offers, or the threshold is documentation for a decision it does not control.
@@ -213,7 +308,9 @@ export function RecentFeed({
           v.title.toLowerCase().includes(q) ||
           v.channel_name.toLowerCase().includes(q))
     )
-    if (sort === "breakout") return hits
+    // The muted view carries its own order — when each one was muted — and its sort group is not
+    // rendered, so a `sort` left over from before the key was clicked must not quietly reorder it.
+    if (sort === "breakout" || viewingMuted) return hits
     // Every alternative sort is stable over the breakout order, so rows that tie on views or on
     // momentum still fall back to the ranking the page opened with rather than to bundle order.
     const by: Record<Exclude<SortKey, "breakout">, (v: RecentRow) => number> = {
@@ -222,7 +319,7 @@ export function RecentFeed({
       newest: (v) => -Date.parse(v.published_at),
     }
     return [...hits].sort((a, b) => by[sort](a) - by[sort](b))
-  }, [feed, query, sort, tag, tagsByVideo])
+  }, [feed, query, sort, tag, tagsByVideo, viewingMuted])
 
   // Twelve is the 4x3 the grid is drawn as, so a page is exactly the block you see.
   const { slice, props: pagerProps } = usePager(rows, 12)
@@ -282,29 +379,47 @@ export function RecentFeed({
                 focusable so no keyboard reaches one either. It is a claim about the limit of what
                 is on disk — without it a key row that stops at 30d reads as a choice — so it is
                 worth its ~70px on the line. */}
-            <Keys label="window">
-              {windows.map((w) => (
-                <Key key={w} on={window === w} onClick={() => setWindow(w)} label={`${w}d`} />
-              ))}
-              <span className="kcap">holds {windows[windows.length - 1]}d</span>
-            </Keys>
+            {/* Every group but format is hidden in the muted view, because none of them reaches
+                it: that view is the mute list, not a window over the corpus. A key that stays lit
+                while it can no longer change anything is the same invisible state the tag strip
+                was rebuilt to remove, and here it would be five of them at once. */}
+            {!viewingMuted && (
+              <Keys label="window">
+                {windows.map((w) => (
+                  <Key key={w} on={window === w} onClick={() => setWindow(w)} label={`${w}d`} />
+                ))}
+                <span className="kcap">holds {windows[windows.length - 1]}d</span>
+              </Keys>
+            )}
 
             <Keys label="format">
               {FORMATS.map((f) => (
                 <Key
                   key={f.key}
-                  on={format === f.key}
-                  onClick={() => setFormat(f.key)}
+                  on={view === f.key}
+                  onClick={() => setView(f.key)}
                   label={f.label}
                 />
               ))}
+              {/* Only once something is muted. A "muted 0" key filters to an empty grid and is a
+                  count of a decision nobody has made yet — the ✕ on a card is what introduces the
+                  feature, and this key is what gets you back to what it hid. */}
+              {mutedList.length > 0 && (
+                <Key
+                  on={viewingMuted}
+                  onClick={() => setView(viewingMuted ? "all" : "muted")}
+                  label="muted"
+                  n={mutedList.length}
+                  title="Videos you have taken off the feed. They stay in the corpus and in every count on this page; this is where you put them back."
+                />
+              )}
             </Keys>
 
             {/* Only rendered once the window holds more than one language: "all" plus a single
                 key is two buttons that cannot change anything, and this line already carries four
                 groups, the count, and the search. On an all-English window it simply is not
                 there, which is the honest state — there is nothing to choose between. */}
-            {langs.length > 2 && (
+            {langs.length > 2 && !viewingMuted && (
               <Keys label="language">
                 {langs.map((t) => (
                   <Key
@@ -318,32 +433,36 @@ export function RecentFeed({
               </Keys>
             )}
 
-            <Keys label="videos per channel">
-              <Key on={cap === null} onClick={() => setCap(null)} label="all" />
-              {capChoices.map((n) => (
-                <Key
-                  key={n}
-                  on={cap === n}
-                  onClick={() => setCap(n)}
-                  label={`${n}`}
-                  title={`at most ${n} video${n === 1 ? "" : "s"} per channel before the rest fall to the back`}
-                />
-              ))}
-            </Keys>
+            {!viewingMuted && (
+              <Keys label="videos per channel">
+                <Key on={cap === null} onClick={() => setCap(null)} label="all" />
+                {capChoices.map((n) => (
+                  <Key
+                    key={n}
+                    on={cap === n}
+                    onClick={() => setCap(n)}
+                    label={`${n}`}
+                    title={`at most ${n} video${n === 1 ? "" : "s"} per channel before the rest fall to the back`}
+                  />
+                ))}
+              </Keys>
+            )}
 
             {/* "sort by" shortened to "sort": the four key labels already say it is an order and
                 the line has four groups plus the count and the search to fit. */}
-            <Keys label="sort">
-              {SORTS.map((s) => (
-                <Key
-                  key={s.key}
-                  on={sort === s.key}
-                  onClick={() => setSort(s.key)}
-                  label={s.label}
-                  title={s.tip}
-                />
-              ))}
-            </Keys>
+            {!viewingMuted && (
+              <Keys label="sort">
+                {SORTS.map((s) => (
+                  <Key
+                    key={s.key}
+                    on={sort === s.key}
+                    onClick={() => setSort(s.key)}
+                    label={s.label}
+                    title={s.tip}
+                  />
+                ))}
+              </Keys>
+            )}
 
             <span className="shopcount num">
               <b>{fmtInt(rows.length)}</b> {rows.length === 1 ? "video" : "videos"}
@@ -352,6 +471,64 @@ export function RecentFeed({
               )}
             </span>
           </div>
+
+          {/* Above the tags, and built from config/muted.json rather than from the grid below it.
+              That is the whole reason it exists next to the `muted` key: the key can only show
+              you the muted videos the bundle still carries, and a decision you made three weeks
+              ago outlives the window its video sat in. This names every one of them, and every
+              key in it is the undo for itself.
+              Muting the wrong card is one click, so getting it back has to be one click too, and
+              it has to be visible from the page you did it on — not behind a tab, and not in a
+              file you have to remember is there. */}
+          {mutedList.length > 0 && (
+            <div className="fbar mutedbar">
+              <div className="keys" role="group" aria-label="muted videos">
+                <span className="klabel">muted</span>
+                <span className="krow tags" id={mutedStripId}>
+                  {(mutedOpen ? mutedList : mutedList.slice(0, MUTED_COLLAPSED)).map((e) => (
+                    <button
+                      key={e.video_id}
+                      type="button"
+                      className="key kmuted"
+                      title={`${e.title}${e.channel_name ? ` — ${e.channel_name}` : ""}\n\nClick to unmute: this puts the video back on the feed.`}
+                      onClick={() =>
+                        onToggleMute({
+                          video_id: e.video_id,
+                          title: e.title,
+                          channel_name: e.channel_name,
+                        })
+                      }
+                    >
+                      <span className="kx" aria-hidden="true">
+                        ↺
+                      </span>
+                      {clipTitle(e.title)}
+                      <span className="sr-only">— unmute</span>
+                    </button>
+                  ))}
+                </span>
+              </div>
+
+              {mutedList.length > MUTED_COLLAPSED && (
+                <button
+                  type="button"
+                  className="kmore"
+                  aria-expanded={mutedOpen}
+                  aria-controls={mutedStripId}
+                  onClick={() => setMutedOpen((v) => !v)}
+                >
+                  {mutedOpen ? "less" : `+ ${fmtInt(mutedList.length - MUTED_COLLAPSED)} more`}
+                </button>
+              )}
+
+              {/* A mute hides a card. It does not touch the corpus, the scanned count, or any
+                  channel's baseline — and saying so here is cheaper than the reader assuming
+                  either way. */}
+              <span className="tcap">
+                off the feed, still in the corpus · click to unmute
+              </span>
+            </div>
+          )}
 
           {tagFacets.length > 0 && (
             <div className="fbar tagbar">
@@ -418,6 +595,8 @@ export function RecentFeed({
                     avatarUrl={avatars[v.channel_id] ?? null}
                     isSelf={v.channel_id === selfChannelId}
                     topicLabel={cardTopic(v.video_id)}
+                    muted={viewingMuted}
+                    onToggleMute={onToggleMute}
                   />
                 ))}
               </div>
@@ -465,6 +644,16 @@ function freshness(bundle: RecentBundle): string {
   // would be permanent furniture. The clock already says when.
   const ago = agoText(iso)
   return ago === "0d" ? `swept ${clock}` : `swept ${clock}, ${ago}`
+}
+
+/** How much of a title a muted key carries. Long enough to tell two videos on the same subject
+ *  apart, short enough that eight of them are a strip rather than a paragraph. The full title and
+ *  channel are on the key's own tooltip, and the ellipsis is the visible sign there is more —
+ *  CSS truncation alone would leave a key silently reading a title that is not the whole one. */
+const MUTED_TITLE_CHARS = 38
+
+function clipTitle(title: string): string {
+  return title.length <= MUTED_TITLE_CHARS ? title : `${title.slice(0, MUTED_TITLE_CHARS - 1)}…`
 }
 
 /** One facet: its name, then its keys.

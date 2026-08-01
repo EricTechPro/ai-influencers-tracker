@@ -887,6 +887,45 @@ select.chip:hover { border-color: var(--muted-foreground); }
 .ycard:hover { text-decoration: none; }
 .ycard:hover .ytitle { color: var(--primary); }
 
+/* The card is one anchor over the whole tile, so the mute control cannot live inside it — this
+   wrapper is what carries the positioning context instead. It is a plain box in the grid: no
+   padding, no background, nothing that changes how a card sits beside its neighbours. */
+.ycard-wrap { position: relative; }
+/* Top-right, the one corner of the thumbnail the card does not already use: SHORT sits top-left,
+   the multiplier and the duration along the bottom. */
+.ymute {
+  position: absolute; top: 5px; right: 5px; z-index: 2;
+  display: flex; align-items: center; justify-content: center;
+  width: 22px; height: 22px; padding: 0; border-radius: 4px; cursor: pointer;
+  border: 0; background: rgba(0,0,0,0.62); color: #fff;
+  font-size: 12px; line-height: 1; font-family: inherit;
+  /* Hidden until the card is hovered, so twelve ✕s do not compete with twelve thumbnails — but
+     hidden by opacity only. It stays in the layout, in the tab order, and in the accessibility
+     tree, and it comes back for anything that focuses it. A control that exists only under a
+     pointer is one a keyboard cannot reach. */
+  opacity: 0;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .ymute { transition: opacity 120ms ease, background-color 120ms ease; }
+}
+.ycard-wrap:hover .ymute, .ymute:focus-visible { opacity: 1; }
+.ymute:hover { background: rgba(0,0,0,0.85); }
+/* Already muted, which is only ever the `muted` view. Always visible there: in a grid where every
+   card is muted, the undo is the point of the screen and must not need a hover to find. */
+.ycard-wrap.is-muted .ymute { opacity: 1; background: var(--primary); }
+/* And the cards in that view read as set aside rather than as a normal feed, so the view cannot
+   be mistaken for the board itself. */
+.ycard-wrap.is-muted .ythumb { opacity: 0.55; }
+.ycard-wrap.is-muted:hover .ythumb { opacity: 1; }
+
+/* One muted video, in the strip above the tags. A key like any other, plus the ↺ that says what
+   clicking it does — every key in this strip is the undo for itself, which is not something a
+   row of filter keys otherwise implies. */
+.kmuted { max-width: 22rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.kmuted .kx { margin-right: 5px; opacity: 0.75; }
+.kmuted:hover { border-color: var(--primary); color: var(--primary); }
+.kmuted:hover .kx { opacity: 1; }
+
 .ythumb {
   position: relative; display: block; aspect-ratio: 16/9; overflow: hidden;
   background: var(--muted); border: 1px solid var(--border); border-radius: 8px;
@@ -963,11 +1002,11 @@ select.chip:hover { border-color: var(--muted-foreground); }
 /* A basis rather than 0. At `flex: 1 1 0` the strip never forced a wrap of its own row, so it
    simply absorbed whatever the label, the button and the coverage note left — on a 360px phone
    that was 60-90px, about one tag key. A real basis makes the row wrap instead of crushing it. */
-.tagbar .keys { flex: 1 1 24rem; min-width: 0; align-items: flex-start; }
-.tagbar { align-items: flex-start; }
+.tagbar .keys, .mutedbar .keys { flex: 1 1 24rem; min-width: 0; align-items: flex-start; }
+.tagbar, .mutedbar { align-items: flex-start; }
 /* The label, the button and the note sit on the strip's first row rather than in the middle of
    it, now that the strip is a block that can be several rows tall in either state. */
-.tagbar .klabel, .kmore, .tcap { margin-top: 4px; }
+.tagbar .klabel, .mutedbar .klabel, .kmore, .tcap { margin-top: 4px; }
 /* Says what it holds back, not that there is more. Underlined text rather than a bordered key:
    it selects nothing, and it must not read as one more facet value in a row of them. */
 .kmore {
