@@ -125,6 +125,23 @@ cd web && npm install && npm run dev    # → http://localhost:3002
 
 Port 3002, because 3001 is social-invest and both run at once.
 
+## Tests
+
+```bash
+pytest -q                 # every pipeline test, ~1s
+scripts/coverage.sh       # the same run, plus a source-only coverage report
+scripts/coverage.sh --html   # also writes htmlcov/index.html
+```
+
+`pytest-cov` is deliberately not installed. Rule 4 governs `pipeline/`, and a coverage plugin is a
+dev tool no shipped code imports, so `scripts/coverage.sh` builds a throwaway env with
+`uv run --no-project` instead. Nothing lands in the system Python or in this repo. It needs `uv`
+(`brew install uv`) and writes `.coverage`, which is gitignored.
+
+The report omits the test files and sorts worst-covered first, because the number that matters is
+which module is thin, not the total. Read it against rule 5: an API client sitting at 81% is the
+intended shape, and a scoring module dropping below 100% is the thing to look at.
+
 ## Cost
 
 One paid dependency. YouTube's API is free and carries almost everything, including all comments, at
