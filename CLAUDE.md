@@ -1,4 +1,4 @@
-Tracks 72 AI/automation YouTube channels and answers what to make next.
+Tracks 74 AI/automation YouTube channels and answers what to make next.
 
 **Build steps 0 to 11 are done.** `pipeline/`, its tests, and `_db/` all run for real today.
 `web/` is the Next.js dashboard on port 3002 (`cd web && npm run dev`; predev rebuilds `_db/`;
