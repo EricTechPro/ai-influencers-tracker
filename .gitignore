@@ -6,6 +6,10 @@ node_modules/
 __pycache__/
 .logs/
 
+# Coverage artifacts, written by scripts/coverage.sh. Regenerable in under two seconds.
+.coverage
+htmlcov/
+
 # The private roster. Copy config/channels.example.json to start one.
 config/channels.json
 
