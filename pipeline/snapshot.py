@@ -294,12 +294,20 @@ def run(today: dt.date | None = None, dry_run: bool = False) -> dict:
             "partial_run": search["partial_run"], "trending_ok": trending["ok"]}
 
 
-def main() -> int:
+def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="the daily free sweep")
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument("--date", help="YYYY-MM-DD, defaults to today UTC")
-    args = parser.parse_args()
-    day = util.parse_date(args.date) if args.date else None
+    parser.add_argument("--skip-if-done", action="store_true",
+                        help="exit 0 without sweeping if this day's snapshot already exists. "
+                             "RunAtLoad fires on every login, not once a day; this is what "
+                             "keeps a catch-up run from re-spending the day's quota.")
+    args = parser.parse_args(argv)
+    day = util.parse_date(args.date) if args.date else util.today()
+    if args.skip_if_done and snapshot_path(util.date_str(day)).exists():
+        print(f"date: {util.date_str(day)}")
+        print("skipped: snapshot already on disk")
+        return 0
     summary = run(today=day, dry_run=args.dry_run)
     for key, value in summary.items():
         print(f"{key}: {value}")

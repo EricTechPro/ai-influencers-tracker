@@ -168,3 +168,22 @@ def test_a_video_with_no_duration_does_not_kill_the_sweep(ait_root):
     assert row["duration_s"] is None
     assert row["type"] is None
     assert row["view_count"] == 5
+
+
+def test_skip_if_done_does_not_sweep_a_day_already_on_disk(ait_root, monkeypatch):
+    """RunAtLoad fires on every login, not once a day. Without this guard, catching up a 09:00
+    the machine slept through would re-sweep ~700 quota units every time Eric logs in."""
+    util.write_json(snapshot.snapshot_path(util.date_str(TODAY)),
+                    {"date": util.date_str(TODAY), "channels": {}})
+    swept = []
+    monkeypatch.setattr(snapshot, "run", lambda **kw: swept.append(kw) or {})
+    assert snapshot.main(["--skip-if-done", "--date", "2026-07-27"]) == 0
+    assert swept == []
+
+
+def test_skip_if_done_still_sweeps_a_day_with_no_snapshot(ait_root, monkeypatch):
+    """The catch-up case this exists for: 09:00 was missed, nothing is on disk, so it must run."""
+    swept = []
+    monkeypatch.setattr(snapshot, "run", lambda **kw: swept.append(kw) or {})
+    assert snapshot.main(["--skip-if-done", "--date", "2026-07-27"]) == 0
+    assert len(swept) == 1

@@ -6,14 +6,29 @@
   <key>Label</key><string>ca.erictech.ait-snapshot</string>
   <key>StartCalendarInterval</key>
   <dict><key>Hour</key><integer>9</integer><key>Minute</key><integer>0</integer></dict>
-  <key>WorkingDirectory</key>
-  <string>/Users/erictech/Desktop/EricOS/projects/ai-influencers-tracker</string>
+  <!-- No WorkingDirectory on purpose. launchd cannot chdir into ~/Desktop (TCC-protected):
+       the spawn dies as EX_CONFIG 78 with an empty stderr, because the failure happens before
+       the program starts. It CAN read and write the tree, so PYTHONPATH is enough to resolve
+       -m pipeline.snapshot, and config.root() walks up from __file__ rather than cwd, so
+       nothing in the pipeline ever needed a working directory. -->
+  <key>EnvironmentVariables</key>
+  <dict><key>PYTHONPATH</key><string>/Users/erictech/Desktop/EricOS/projects/ai-influencers-tracker</string></dict>
   <key>ProgramArguments</key>
-  <array><string>/opt/homebrew/bin/python3</string><string>-m</string><string>pipeline.snapshot</string></array>
+  <array><string>/opt/homebrew/bin/python3</string><string>-m</string><string>pipeline.snapshot</string><string>--skip-if-done</string></array>
+  <!-- Logs live outside the repo on purpose. launchd opens these two files as the target
+       program, and /opt/homebrew/bin/python3 has no TCC grant for ~/Desktop, so pointing them
+       at .logs/ inside the repo fails the spawn as EX_CONFIG 78 before python starts — empty
+       stderr, nothing in the log, exactly the silent failure this job had. /bin/sh can write
+       there because a system binary carries different attribution; Homebrew python cannot. -->
   <key>StandardOutPath</key>
-  <string>/Users/erictech/Desktop/EricOS/projects/ai-influencers-tracker/.logs/snapshot.log</string>
+  <string>/Users/erictech/Library/Logs/ait-snapshot.log</string>
   <key>StandardErrorPath</key>
-  <string>/Users/erictech/Desktop/EricOS/projects/ai-influencers-tracker/.logs/snapshot.err</string>
-  <key>RunAtLoad</key><false/>
+  <string>/Users/erictech/Library/Logs/ait-snapshot.err</string>
+  <!-- StartCalendarInterval fires only if the Mac is awake at 09:00; a missed occurrence is
+       dropped, never replayed. This is a clamshell laptop, so 09:00 is regularly slept through —
+       Aug 1 booted at 09:16 and Aug 2 not at all, and both days were simply lost. RunAtLoad
+       catches those up at the next login, and --skip-if-done keeps it from re-spending the
+       day's quota on every subsequent login. -->
+  <key>RunAtLoad</key><true/>
 </dict>
 </plist>
