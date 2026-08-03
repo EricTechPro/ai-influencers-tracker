@@ -27,6 +27,30 @@ const SORT_LABEL: Record<VideoSort, string> = {
   climbing: "still climbing",
 }
 
+export type MomentumFilter = "all" | MomentumState
+type MomentumState = "climbing" | "steady" | "flat" | "unmeasured"
+
+/**
+ * The badge on the card, as something you can filter down to.
+ *
+ * Sorting by climbing already floats those rows to the top, but a sort cannot answer "which of
+ * these are still pulling views" — it puts the flat ones underneath rather than out, and on a
+ * channel whose back catalogue is mostly flat the answer is buried under a page of them.
+ *
+ * `unmeasured` is offered as its own option rather than folded into flat. A video whose vph
+ * nobody returned is not a video nobody is watching, and the whole point of the fourth state is
+ * that the two are not the same claim.
+ */
+const MOMENTUM_LABEL: Record<MomentumFilter, string> = {
+  all: "any momentum",
+  climbing: "climbing",
+  steady: "steady",
+  flat: "flat",
+  unmeasured: "no data",
+}
+
+const MOMENTUM_ORDER: MomentumFilter[] = ["all", "climbing", "steady", "flat", "unmeasured"]
+
 /**
  * Descending on the chosen key, unmeasured last, video_id breaking every tie.
  *
@@ -72,22 +96,40 @@ export function ChannelVideos({
   onToggleMute?: (entry: { video_id: string; title: string; channel_name: string }) => void
 }) {
   const [by, setBy] = useState<VideoSort>(sorts[0] ?? "views")
+  const [momentum, setMomentum] = useState<MomentumFilter>("all")
+
+  // Muting and filtering both shrink the shelf, and they are not the same act — one is a decision
+  // you made about a video, the other is a question you asked of the set. Counted separately so
+  // the line underneath can say which did what.
+  const unmuted = useMemo(() => rows.filter((r) => !mutedIds.has(r.video_id)), [rows, mutedIds])
+
+  // Counted over the unmuted set, so an option never promises rows that a mute has already taken.
+  const counts = useMemo(() => {
+    const out = new Map<MomentumFilter, number>([["all", unmuted.length]])
+    for (const r of unmuted) out.set(r.momentum.state, (out.get(r.momentum.state) ?? 0) + 1)
+    return out
+  }, [unmuted])
 
   const shown = useMemo(() => {
-    const kept = rows.filter((r) => !mutedIds.has(r.video_id))
+    const kept = momentum === "all"
+      ? unmuted
+      : unmuted.filter((r) => r.momentum.state === momentum)
     return [...kept].sort((a, b) => {
       const ka = sortKey(a, by)
       const kb = sortKey(b, by)
       return ka[0] - kb[0] || ka[1] - kb[1] || ka[2].localeCompare(kb[2])
     })
-  }, [rows, mutedIds, by])
+  }, [unmuted, momentum, by])
 
   const { slice, props } = usePager(shown, perPage)
 
   return (
     <>
       <SectionKicker label={heading} />
-      {shown.length === 0 ? (
+      {/* An empty grid because of a filter is not an empty shelf, and the way out of it is the
+          control that emptied it — so the controls stay on screen and the message names the
+          filter rather than repeating the channel-has-nothing copy. */}
+      {unmuted.length === 0 ? (
         <div className="card pad">
           <p className="note" style={{ margin: 0 }}>{empty}</p>
         </div>
@@ -105,12 +147,39 @@ export function ChannelVideos({
                 ))}
               </select>
             </label>
+            <label style={{ fontSize: 12, display: "flex", alignItems: "center", gap: 6 }}>
+              show
+              <select value={momentum}
+                onChange={(e) => setMomentum(e.target.value as MomentumFilter)}
+                aria-label="filter videos by momentum">
+                {MOMENTUM_ORDER.map((m) => (
+                  // The count rides on the label so the shelf tells you what an option holds
+                  // before you pick it, rather than emptying and making you pick your way back.
+                  <option key={m} value={m} disabled={m !== "all" && !counts.get(m)}>
+                    {MOMENTUM_LABEL[m]} ({counts.get(m) ?? 0})
+                  </option>
+                ))}
+              </select>
+            </label>
+            {/* Two reasons a shelf is short, named separately. A count that folded a mute and a
+                filter into one "showing 3 of 20" would be hiding which of the two did it. */}
             <span className="note" style={{ marginLeft: "auto" }}>
-              {shown.length < rows.length
-                ? `showing ${shown.length} of ${rows.length} · ${rows.length - shown.length} muted`
-                : `${shown.length} videos`}
+              {momentum !== "all"
+                ? `${shown.length} ${MOMENTUM_LABEL[momentum]} of ${unmuted.length}`
+                : shown.length < rows.length
+                  ? `showing ${shown.length} of ${rows.length}`
+                  : `${shown.length} videos`}
+              {rows.length > unmuted.length ? ` · ${rows.length - unmuted.length} muted` : ""}
             </span>
           </div>
+          {shown.length === 0 && (
+            <div className="card pad">
+              <p className="note" style={{ margin: 0 }}>
+                None of this channel&rsquo;s {unmuted.length} uploads are{" "}
+                {MOMENTUM_LABEL[momentum]}.
+              </p>
+            </div>
+          )}
           <div className="ygrid">
             {slice.map((v) => (
               <GridVideoCard

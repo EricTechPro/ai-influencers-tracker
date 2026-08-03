@@ -73,6 +73,61 @@ describe("ChannelVideos", () => {
     expect(screen.getByText(/2 of 3/)).toBeTruthy()
   })
 
+  // Sorting by climbing floats those rows up; filtering takes the rest out. On a back catalogue
+  // that is mostly flat the difference is a page of scrolling.
+  const mixed = () => [
+    card({ video_id: "up", title: "Climbing one", momentum: { state: "climbing", per_day: 900, daily_share: 0.03, vph: 37 } }),
+    card({ video_id: "even", title: "Steady one", momentum: { state: "steady", per_day: 400, daily_share: 0.0006, vph: 16 } }),
+    card({ video_id: "dead", title: "Flat one", momentum: { state: "flat", per_day: 2, daily_share: 0.00001, vph: 0.1 } }),
+    card({ video_id: "blank", title: "Unmeasured one", momentum: { state: "unmeasured", per_day: null, daily_share: null, vph: null } }),
+  ]
+
+  it("filters the shelf down to one momentum state", () => {
+    render(<ChannelVideos heading="videos" rows={mixed()} avatarUrl={null} mutedIds={new Set()} />)
+    fireEvent.change(screen.getByLabelText(/filter videos by momentum/i), { target: { value: "climbing" } })
+    expect(screen.getByText("Climbing one")).toBeTruthy()
+    expect(screen.queryByText("Flat one")).toBeNull()
+    expect(screen.queryByText("Steady one")).toBeNull()
+  })
+
+  it("keeps unmeasured separate from flat, because no data is not the same claim as no views", () => {
+    render(<ChannelVideos heading="videos" rows={mixed()} avatarUrl={null} mutedIds={new Set()} />)
+    fireEvent.change(screen.getByLabelText(/filter videos by momentum/i), { target: { value: "flat" } })
+    expect(screen.getByText("Flat one")).toBeTruthy()
+    expect(screen.queryByText("Unmeasured one")).toBeNull()
+  })
+
+  it("says what each option holds before you pick it, so an empty one is not a dead end", () => {
+    render(<ChannelVideos heading="videos" rows={mixed()} avatarUrl={null} mutedIds={new Set()} />)
+    expect(screen.getByRole("option", { name: /climbing \(1\)/ })).toBeTruthy()
+    expect(screen.getByRole("option", { name: /any momentum \(4\)/ })).toBeTruthy()
+  })
+
+  it("counts a filter and a mute separately, because they thin the shelf for different reasons", () => {
+    render(<ChannelVideos heading="videos" rows={mixed()} avatarUrl={null}
+      mutedIds={new Set(["blank"])} />)
+    fireEvent.change(screen.getByLabelText(/filter videos by momentum/i), { target: { value: "climbing" } })
+    // Three unmuted, one of them climbing, and the muted row named as its own number rather than
+    // folded into the same fraction.
+    expect(screen.getByText(/1 climbing of 3/)).toBeTruthy()
+    expect(screen.getByText(/1 muted/)).toBeTruthy()
+  })
+
+  it("never counts a muted row into a filter option, or the option promises a card it cannot show", () => {
+    render(<ChannelVideos heading="videos" rows={mixed()} avatarUrl={null}
+      mutedIds={new Set(["up"])} />)
+    expect(screen.getByRole("option", { name: /climbing \(0\)/ })).toBeTruthy()
+  })
+
+  it("leaves the controls up when a filter empties the grid, since they are the way back out", () => {
+    render(<ChannelVideos heading="videos"
+      rows={[card({ momentum: { state: "flat", per_day: 1, daily_share: 0.00001, vph: 0.1 } })]}
+      avatarUrl={null} mutedIds={new Set()} />)
+    fireEvent.change(screen.getByLabelText(/filter videos by momentum/i), { target: { value: "steady" } })
+    expect(screen.getByLabelText(/filter videos by momentum/i)).toBeTruthy()
+    expect(screen.getByText(/none of this channel/i)).toBeTruthy()
+  })
+
   it("sorts by views by default, biggest first", () => {
     render(<ChannelVideos heading="most viewed" avatarUrl={null} mutedIds={new Set()} rows={[
       card({ video_id: "small", title: "Small", view_count: 100 }),
