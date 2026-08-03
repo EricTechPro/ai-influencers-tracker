@@ -13,10 +13,12 @@ import { existsSync, readdirSync, readFileSync } from "node:fs"
 import path from "node:path"
 import type {
   ChannelCommentsFile,
+  ChannelTopBundle,
   ChannelsBundle,
   Meta,
   OpportunitiesBundle,
   RecentBundle,
+  RecentRow,
   SnapshotsBundle,
   TopicCommentsFile,
   TopicPagesBundle,
@@ -55,6 +57,12 @@ export function loadTopicPages(): TopicPagesBundle {
 
 export function loadRecent(): RecentBundle {
   return load("recent.json")
+}
+
+/** One channel's biggest uploads, ever. Sliced server-side: the bundle holds every channel's
+ *  rows and only the one being rendered ever reaches the browser. */
+export function channelTop(channelId: string): RecentRow[] {
+  return load<ChannelTopBundle>("channel_top.json").channels[channelId] ?? []
 }
 
 export function loadSnapshots(): SnapshotsBundle {

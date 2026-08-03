@@ -1,4 +1,5 @@
 from . import (  # noqa: F401
+    channel_top,
     channels,
     comments,
     meta,

@@ -1138,3 +1138,128 @@ select.chip:hover { border-color: var(--muted-foreground); }
    shelves gone it belongs on the card, quiet enough not to compete with the title. */
 .ytopic { font-size: 11px; opacity: 0.6; overflow: hidden; text-overflow: ellipsis;
   white-space: nowrap; }
+
+/* ---- channel growth chart ------------------------------------------------
+   The card used to open with four toggle groups and put its headline number
+   underneath the plot, so the first thing read was the controls and the last
+   was the answer. Inverted: the delta leads at display size, the controls sit
+   under it as a quiet rail, and the plot is the evidence for the number above
+   it rather than a thing you decode on your own. */
+.chart-head {
+  display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap;
+  padding-bottom: 10px; margin-bottom: 10px; border-bottom: 1px solid var(--border);
+}
+.chart-figure {
+  font-size: 26px; font-weight: 700; line-height: 1;
+  font-variant-numeric: tabular-nums; letter-spacing: -0.02em;
+}
+.chart-figure.gain { color: var(--gain, var(--primary)); }
+.chart-sub { font-size: 11px; color: var(--muted-foreground); }
+.chart-rail { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+/* The rail's own select, matched to .tabs so a dropdown beside a toggle group does not
+   read as a different kind of control. */
+.chart-rail select {
+  font: inherit; font-size: 11px; line-height: 1.5; padding: 2px 6px;
+  border: 1px solid var(--border); border-radius: 3px;
+  background: var(--card); color: var(--foreground); cursor: pointer;
+}
+.chart-rail label { font-size: 11px; color: var(--muted-foreground); display: flex;
+                    align-items: center; gap: 5px; }
+/* The supporting figures. One weight below the hero and one above the note, because three numbers
+   at the same size is three numbers with no reading order. Separated by rules rather than middots:
+   a run-on dotted line is what this row looked like before and it read as one long number. */
+.chart-stats {
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 14px;
+  font-size: 12px; color: var(--muted-foreground);
+  font-variant-numeric: tabular-nums; margin-bottom: 12px;
+}
+.chart-stats > span + span {
+  padding-left: 14px; border-left: 1px solid var(--border);
+}
+.chart-stats b { font-weight: 600; color: var(--foreground); }
+.chart-stats b.gain { color: var(--gain, var(--primary)); }
+
+/* Axis labels sit on their gridline inside the plot, so they need no gutter and cost no width. */
+.axis-level {
+  position: absolute; left: 4.5%; transform: translateY(-100%);
+  pointer-events: none; opacity: 0.55; font-variant-numeric: tabular-nums;
+}
+
+/* One tick per upload day. Deliberately small and deliberately silent — it marks when, and the
+   card never claims it explains what happened after. */
+.upload-rail { position: relative; height: 13px; margin-top: 2px; }
+.upload-rail i {
+  position: absolute; top: 0; width: 1px; height: 6px;
+  background: var(--foreground); opacity: 0.32; transform: translateX(-0.5px);
+}
+.upload-count { opacity: 0.6; margin-top: 3px; }
+
+/* Round, because it lives in HTML rather than in the non-uniformly scaled SVG that turned every
+   circle into an ellipse. Hollow so a run of them reads as marks on the line, not as the line. */
+.upload-dot {
+  position: absolute; width: 7px; height: 7px; margin: -4px 0 0 -4px; padding: 0;
+  border-radius: 50%; border: 1.5px solid var(--primary); background: var(--card);
+  z-index: 1; cursor: pointer;
+}
+/* A 7px target is not a target. The hit area is grown with a pseudo-element so the dot can stay
+   small enough to sit on the line without covering it. */
+.upload-dot::after {
+  content: ""; position: absolute; inset: -6px; border-radius: 50%;
+}
+.upload-dot:hover, .upload-dot:focus-visible { background: var(--primary); outline: none; }
+.upload-dot:focus-visible { box-shadow: 0 0 0 2px var(--card), 0 0 0 4px var(--primary); }
+.upload-dot.on {
+  background: var(--primary); width: 9px; height: 9px; margin: -5px 0 0 -5px; z-index: 3;
+}
+
+/* The plot is a drag surface now. crosshair says "read a point", and suppressing selection stops
+   a drag from highlighting the axis labels sitting on top of it. */
+.chart-plot { cursor: crosshair; user-select: none; touch-action: pan-y; }
+
+/* The range control, on the card where the range is actually read. Pills rather than the tab group
+   used elsewhere: this row sits beside a display-size figure and needs to stay quiet next to it. */
+.range-pills { display: flex; gap: 2px; align-items: center; margin-left: auto; }
+.range-pills a, .zoom-reset {
+  font: inherit; font-size: 11px; line-height: 1.4; padding: 3px 8px;
+  border: 1px solid transparent; border-radius: 3px;
+  color: var(--muted-foreground); text-decoration: none; cursor: pointer; background: none;
+}
+.range-pills a:hover, .zoom-reset:hover { color: var(--foreground); background: var(--muted, transparent); }
+.range-pills a.on {
+  color: var(--card); background: var(--foreground); border-color: var(--foreground);
+}
+.zoom-reset { border-color: var(--border); margin-left: 6px; }
+
+/* The hover card. Sits over the plot rather than under it, because a readout that pushes the
+   chart down moves the thing the pointer is aimed at. */
+.upload-peek {
+  position: absolute; top: 4px; z-index: 4;
+  display: flex; gap: 8px; align-items: flex-start; max-width: 320px;
+  padding: 6px; border: 1px solid var(--border); border-radius: 4px;
+  background: var(--card); box-shadow: 0 6px 20px rgb(0 0 0 / 0.14);
+  cursor: default;
+}
+.upload-peek a { text-decoration: none; color: inherit; }
+.upload-peek a:hover b { text-decoration: underline; }
+.peek-close {
+  font: inherit; font-size: 13px; line-height: 1; padding: 2px 4px; margin: -2px -2px 0 0;
+  border: 0; background: none; color: var(--muted-foreground); cursor: pointer; flex: none;
+}
+.peek-close:hover { color: var(--foreground); }
+.upload-peek img { width: 96px; height: 54px; object-fit: cover; border-radius: 2px; flex: none; }
+.upload-peek > span { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.upload-peek b {
+  font-size: 11px; font-weight: 600; line-height: 1.3;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+
+.chart-legend { display: flex; gap: 14px; align-items: center; font-size: 11px;
+                color: var(--muted-foreground); margin-top: 6px; }
+.chart-legend .swatch { display: inline-block; width: 14px; height: 0; margin-right: 5px;
+                        vertical-align: middle; border-top: 2px solid currentColor; }
+.chart-legend .mine { color: var(--primary); }
+.chart-legend .theirs { opacity: 0.55; }
+.chart-legend .theirs .swatch { border-top-style: dashed; }
+/* The hover readout replaces the end labels, so the row must not collapse when it swaps. */
+.chart-foot { display: flex; justify-content: space-between; gap: 12px; min-height: 17px;
+              font-variant-numeric: tabular-nums; }
