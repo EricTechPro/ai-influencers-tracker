@@ -125,6 +125,7 @@ def build(today: dt.date | None = None) -> dict:
     bundles.opportunities.write(ctx)
     bundles.topic_pages.write(ctx)
     bundles.recent.write(ctx)
+    bundles.channel_top.write(ctx)
     bundles.meta.write(ctx)
     return {"date": util.date_str(today), "channels": len(ctx.roster),
             "videos": len(ctx.videos), "bundles": sorted(p.name for p in

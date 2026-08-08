@@ -1,4 +1,5 @@
-import { agoText, durationText, fmtInt, tierIndex } from "@/lib/trust"
+import { durationText, fmtInt, tierIndex } from "@/lib/trust"
+import { dateText, whenText } from "@/lib/when"
 import type { RecentRow } from "@/lib/types"
 import { Avatar } from "./avatar"
 
@@ -103,9 +104,11 @@ export function GridVideoCard({
       <span className="ybody">
         <Avatar src={avatarUrl} name={v.channel_name} size={34} />
         <span className="ymeta">
-          <span className="ytitle" title={v.title}>
+          {/* A real heading, not a styled span. The grid is a list of videos and a reader
+              tabbing or skimming by headings should land on the titles. */}
+          <h4 className="ytitle" title={v.title}>
             {v.title}
-          </span>
+          </h4>
           <span className={isSelf ? "ychan yself" : "ychan"}>
             {v.channel_name}
             {isSelf ? " · you" : ""}{" "}
@@ -120,9 +123,12 @@ export function GridVideoCard({
               {MOMENTUM_LABEL[v.momentum.state]}
             </span>
           </span>
-          <span className="ystat">
+          {/* YouTube's own stat line: count, then when, in the unit a reader thinks in. The
+              exact day rides in the title rather than replacing the rounding — "is this recent"
+              and "which upload was this" are different questions. */}
+          <span className="ystat" title={dateText(v.published_at)}>
             {v.view_count === null ? "views --" : `${fmtInt(v.view_count)} views`} ·{" "}
-            {agoText(v.published_at)}
+            {whenText(v.published_at)}
           </span>
           <span className="ytopic">{topicLabel ?? "no topic assigned"}</span>
         </span>

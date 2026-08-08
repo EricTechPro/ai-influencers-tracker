@@ -19,7 +19,7 @@ prove it rather than assert it.
 """
 from __future__ import annotations
 
-from .. import config, exclusions, language, momentum, multiplier, patterns, snapshot, util
+from .. import cards, config, exclusions, patterns, snapshot, util
 
 VERSION = 3
 # `lang` is deliberately absent. TRUST states one tier per field for the whole bundle, and lang
@@ -29,8 +29,9 @@ VERSION = 3
 TRUST = {"multiplier": "derived", "views_gained_24h": "derived", "momentum": "derived",
          "pattern": "inference", "existing_leaf": "derived"}
 
-CARD_KEYS = ("video_id", "title", "published_at", "view_count", "duration_s", "type",
-             "channel_id")
+# The card shape lives in cards.py now, shared with channel_top.json. Re-exported because
+# test_recent and the wireframes both name it here.
+CARD_KEYS = cards.CARD_KEYS
 
 
 def _sort_key(row: dict):
@@ -46,15 +47,13 @@ def _sort_key(row: dict):
 
 def build(ctx) -> dict:
     window_days = ctx.thresholds["outliers"]["feed_window_days"]
-    names = {row["channel_id"]: row["name"] for row in ctx.roster}
+    names = cards.names_for(ctx)
 
     # The feed obeys config/exclusions.json like every other display surface. It is the first
     # thing /topics shows, so a muted channel or an off-the-board title landing here would be
     # the loudest possible place for the rule to be forgotten.
     rules = exclusions.load()
-    now = util.parse_ts(ctx.generated_at)
-    thresholds = ctx.thresholds["momentum"]
-    lang_threshold = ctx.thresholds["language"]["zh_title_min_share"]
+    now = cards.now_for(ctx)
 
     videos = []
     for video in ctx.videos:
@@ -63,33 +62,9 @@ def build(ctx) -> dict:
         age = util.days_between(util.parse_ts(video["published_at"]).date(), ctx.today)
         if age < 0 or age > window_days:
             continue
-        mult = multiplier.for_video(video, ctx.baselines.get(video["channel_id"], {}))
-        # vph was vidIQ's. The same quantity is in our own dated series: views gained over the
-        # last 24 hours is exactly what vph*24 was estimating, measured rather than modelled.
-        # A video observed once has no delta, and momentum reads that as unmeasured — which is
-        # the honest state for a video nobody has watched change.
-        gained = ctx.traction.get(video["video_id"], {}).get("views_gained", {}).get("24h", {})
-        day = gained.get("value") if gained.get("state") == "ok" else None
-        lang, lang_tier = language.detect(video.get("title"),
-                                          video.get("default_audio_language"), lang_threshold,
-                                          video.get("description"))
-        videos.append({
-            **{k: video.get(k) for k in CARD_KEYS},
-            "channel_name": names.get(video["channel_id"]),
-            "multiplier": mult["value"],
-            "baseline": mult["baseline"],
-            "baseline_n": mult["baseline_n"],
-            "views_gained_24h": day,
-            "momentum": momentum.for_video(None if day is None else day / 24,
-                                           video.get("view_count"),
-                                           video.get("published_at"), now, thresholds),
-            "pattern_id": None,
-            # The scene this video is from, and which signal read it. Per video, not inherited
-            # from the channel: this feed mixes every channel on the board into one grid, which is
-            # exactly where a channel-level language stops being able to answer.
-            "lang": lang,
-            "lang_tier": lang_tier,
-        })
+        # pattern_id is the feed's alone: patterns are groupings across channels, and a channel
+        # page has nothing to highlight them against. It is stamped in below, after sorting.
+        videos.append({**cards.row(video, ctx, names, now), "pattern_id": None})
 
     videos.sort(key=_sort_key)
 

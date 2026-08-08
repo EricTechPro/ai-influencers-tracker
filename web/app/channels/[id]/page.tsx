@@ -1,18 +1,19 @@
 import Link from "next/link"
 import { notFound } from "next/navigation"
 import {
-  channelAvatarUrl, channelVideos, loadChannelComments, loadChannels, loadMeta, loadSnapshots,
-  videosById,
+  channelAvatarUrl, channelTop, channelVideos, loadChannelComments, loadChannels, loadMeta,
+  loadSnapshots,
 } from "@/lib/bundles"
+import { entriesOf } from "@/lib/muted"
+import { loadMuted } from "@/lib/muted-store"
 import { CADENCE_FORMULA, cadenceDays } from "@/lib/channel"
 import { bucketText, fmtInt } from "@/lib/trust"
 import { parseWindow, withWindow } from "@/lib/window"
 import { Avatar } from "@/components/avatar"
 import { Chip, Derived } from "@/components/trust"
 import { ChannelGrowth } from "@/components/channel-growth"
+import { ChannelShelves } from "@/components/channel-shelves"
 import { CommentTable } from "@/components/comment-table"
-import { StillPulling } from "@/components/still-pulling"
-import { WindowTable } from "@/components/window-table"
 import { SectionKicker } from "@/components/section-kicker"
 
 export default async function ChannelPage({
@@ -35,20 +36,23 @@ export default async function ChannelPage({
   const cadence = cadenceDays(uploads.map((v) => v.published_at))
 
   const comments = loadChannelComments(channel.channel_id)
-  const growing = videosById(channel.still_growing_video_ids)
-    .sort((a, b) => (b.view_count ?? 0) - (a.view_count ?? 0))
-  const stillRows = growing.map((v) => ({
-    video_id: v.video_id,
-    title: v.title,
-    published_at: v.published_at,
-    view_count: v.view_count,
-    gained7d: v.traction.views_gained["7d"] ?? null,
-    multiplier: v.multiplier.value,
-    topic_id: (v.topic_assignments as { topic_id: string }[])[0]?.topic_id ?? null,
-    comments: comments?.videos[v.video_id] ?? null,
-  }))
   const meta = loadMeta()
   const channelsWithComments = meta.comment_health.channels_with_comments
+  // The biggest uploads, at any age. channel_top.json exists because the recent feed is bounded
+  // by feed_window_days and a channel's breakout is almost always older than that window.
+  const top = channelTop(channel.channel_id)
+  const mutedEntries = entriesOf(loadMuted())
+  // Who this channel can be laid over. Ranked by 90-day growth so the fastest movers are the
+  // first names in the list, with Eric's own channel pinned first: comparing against yourself is
+  // the reason the control exists.
+  const allSnapshots = loadSnapshots().channels
+  const peers = bundle.channels
+    .filter((c) => c.channel_id !== channel.channel_id
+      && (allSnapshots[c.channel_id]?.series.length ?? 0) >= 2)
+    .sort((a, b) => Number(b.is_self) - Number(a.is_self)
+      || (a.rank.growth["90d"] ?? 999) - (b.rank.growth["90d"] ?? 999))
+    .map((c) => ({ channel_id: c.channel_id, name: c.name,
+                   series: allSnapshots[c.channel_id]?.series ?? [] }))
 
   return (
     <section>
@@ -103,17 +107,29 @@ export default async function ChannelPage({
       </div>
 
       <SectionKicker label="growth" />
-      <WindowTable channel={channel} videos={uploads} generatedAt={meta.generated_at} />
+      {/* The six-window table used to sit here. Every number in it is a pair of points the chart
+          already draws, and reading a delta off a row meant holding six rows in your head to see
+          a shape. The chart is the shape. */}
       <ChannelGrowth
         series={snapshots}
         delta={channel.subscriber_delta}
         rate={channel.subscriber_growth_rate}
         bucket={channel.subscriber_bucket}
         win={win}
+        name={channel.name}
+        peers={peers}
+        uploads={uploads.map((v) => ({ video_id: v.video_id, title: v.title,
+                                       published_at: v.published_at, view_count: v.view_count }))}
+        rank={growthRank}
+        fieldSize={bundle.channels.length}
       />
 
-      <SectionKicker label="still pulling views" />
-      <StillPulling rows={stillRows} channelClassified={comments?.channel.totals.classified ?? 0} />
+      <ChannelShelves
+        videos={top}
+        avatarUrl={channelAvatarUrl(channel.channel_id)}
+        isSelf={channel.is_self}
+        initialMuted={mutedEntries}
+      />
 
       <details>
         <summary>

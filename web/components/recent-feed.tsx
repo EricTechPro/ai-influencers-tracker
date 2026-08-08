@@ -5,8 +5,9 @@ import {
   selectRecent, windowsHeld, type RecentWindow,
 } from "@/lib/recent"
 import {
-  entriesOf, formatOf, isMutedView, toggleMuted, type FeedView, type MutedEntry, type MutedFile,
+  formatOf, isMutedView, type FeedView, type MutedEntry,
 } from "@/lib/muted"
+import { useMuteList } from "@/lib/use-mute"
 import type { RecentBundle, RecentRow } from "@/lib/types"
 import { langTabsFor } from "@/lib/language"
 import { agoText, fmtInt } from "@/lib/trust"
@@ -119,50 +120,10 @@ export function RecentFeed({
   const tagStripId = useId()
   const mutedStripId = useId()
 
-  // The mute list, held as the file shape the API speaks so a response can replace it whole. It
-  // starts as what the server read off disk, which is why a mute survives a reload with no flash
-  // of the card it hid: the very first HTML is already filtered.
-  const [muted, setMuted] = useState<MutedFile>(() => ({
-    version: 1,
-    videos: Object.fromEntries(initialMuted.map((e) => [e.video_id, e])),
-  }))
-  const mutedList = useMemo(() => entriesOf(muted), [muted])
-  const mutedIds = useMemo(() => new Set(mutedList.map((e) => e.video_id)), [mutedList])
+  // The mute list. The hook is shared with the channel page so both surfaces mean the same
+  // thing by a mute, including the revert on a failed write.
+  const { muted, setMuted, mutedList, mutedIds, onToggleMute } = useMuteList(initialMuted)
   const viewingMuted = isMutedView(view)
-
-  /**
-   * Mute or unmute one video, on the page first and on disk second.
-   *
-   * Optimistic, because the alternative is a card that sits there for a round trip after you have
-   * decided it is not a video you are going to make. The revert is the part that matters: a write
-   * that fails must put the card back rather than leave the feed looking filtered by a decision
-   * that never reached `config/muted.json`, which would be a lie the next reload silently
-   * corrects. On success the server's own list replaces the optimistic one, so a second tab's
-   * mutes land here too.
-   */
-  const onToggleMute = useCallback((entry: Omit<MutedEntry, "muted_at">) => {
-    let reverted: MutedFile | null = null
-    setMuted((prev) => {
-      reverted = prev
-      return toggleMuted(prev, entry, new Date().toISOString())
-    })
-    fetch("/api/mute", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(entry),
-    })
-      .then(async (res) => {
-        if (!res.ok) throw new Error(String(res.status))
-        const body = (await res.json()) as { muted: MutedEntry[] }
-        setMuted({
-          version: 1,
-          videos: Object.fromEntries(body.muted.map((e) => [e.video_id, e])),
-        })
-      })
-      .catch(() => {
-        if (reverted) setMuted(reverted)
-      })
-  }, [])
 
   // meta.generated_at, not `new Date()`. This is a client component, so `new Date()` was the
   // viewer's own clock: _db anchors to midnight UTC of the build's day, and a browser reading

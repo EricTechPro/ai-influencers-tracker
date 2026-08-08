@@ -417,6 +417,19 @@ export interface RecentCoverage {
   unscored_channel_ids: string[]
 }
 
+/** channel_top.json: each channel's most-viewed uploads, in card shape, at any age.
+ *  Ranked on view_count, not multiplier — "biggest ever" is a different order than "beat its own
+ *  normal", and a channel page asks the first. See pipeline/bundles/channel_top.py. */
+export interface ChannelTopBundle {
+  version: number
+  generated_at: string
+  /** how many rows a channel carries at most; a thinner channel yields what it has, never padded */
+  top_n: number
+  /** channel_id -> that channel's rows, biggest first */
+  channels: Record<string, RecentRow[]>
+  trust: Record<string, string>
+}
+
 export interface RecentBundle {
   version: number
   generated_at: string

@@ -319,7 +319,7 @@ def test_all_the_bundles_are_written(ait_root):
     seed_topic_corpus(ait_root)
     build_data.build(today=TODAY)
     assert sorted(p.name for p in config.db_dir().glob("*.json")) == [
-        "channels.json", "meta.json", "opportunities.json", "recent.json",
+        "channel_top.json", "channels.json", "meta.json", "opportunities.json", "recent.json",
         "snapshots.json", "topic_pages.json", "video_snapshots.json", "videos.json"]
     assert not (config.db_dir() / "comments.json").exists()
     assert (config.db_dir() / "comments" / "channel" / "UCcole.json").exists()
