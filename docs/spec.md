@@ -981,16 +981,32 @@ downstream keys on `channel_id`; `handle` becomes display metadata.
 ```
 Label              ca.erictech.ait-snapshot
 StartCalendarInterval  hour 9, minute 0
-WorkingDirectory   ~/Desktop/EricOS/projects/ai-influencers-tracker
-ProgramArguments   python3 -m pipeline.snapshot
-StandardOutPath    .logs/snapshot.log
-StandardErrorPath  .logs/snapshot.err
+RunAtLoad          true
+EnvironmentVariables   PYTHONPATH=~/Desktop/EricOS/projects/ai-influencers-tracker
+ProgramArguments   python3 -m pipeline.snapshot --skip-if-done
+StandardOutPath    ~/Library/Logs/ait-snapshot.log
+StandardErrorPath  ~/Library/Logs/ait-snapshot.err
 ```
 
 ```bash
-launchctl load -w ~/Library/LaunchAgents/ca.erictech.ait-snapshot.plist
-launchctl list | grep ait-snapshot
+sh scripts/install_ait_snapshot_launchd.sh
+launchctl print gui/$(id -u)/ca.erictech.ait-snapshot | grep 'last exit code'
 ```
+
+**Two things this job must not go back to**, both found on 2026-08-02 after Aug 1 and Aug 2 were
+silently lost:
+
+- **No `WorkingDirectory`, and logs outside the repo.** launchd cannot `chdir` into `~/Desktop`
+  and cannot open a stdout path there as `/opt/homebrew/bin/python3`, which has no TCC grant for
+  it. Either one fails the spawn as `EX_CONFIG 78` *before* python starts, so stderr is empty and
+  the log is untouched — the failure looks exactly like the job never being scheduled. It can
+  still read and write the tree once running, and `config.root()` walks up from `__file__`, so
+  `PYTHONPATH` alone is enough.
+- **`RunAtLoad` plus `--skip-if-done`.** `StartCalendarInterval` fires only if the Mac is awake at
+  09:00 and a missed occurrence is dropped, never replayed. This is a clamshell laptop: Aug 1
+  booted at 09:16 and Aug 2 was asleep through the window, and both days were simply lost.
+  `RunAtLoad` catches them up at the next login; `--skip-if-done` stops that from re-spending
+  ~700 quota units on every subsequent login.
 
 Gap detection runs on every invocation, so a missed day is backfilled rather than silently averaged.
 
