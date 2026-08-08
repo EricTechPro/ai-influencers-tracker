@@ -123,29 +123,86 @@ in `.claude/settings.json` — that denial is deliberate, not a misconfiguration
 
 ## Commits
 
-Same shape as `projects/social-invest/`, which is the reference history. Read a few of its commits
-before writing one here.
+> Stamped by `git-history-cleaner`. The canonical text lives in that skill's `references/rule.md` —
+> edit it there and re-run, never here. Everything below the first heading is shared with every
+> governed repo; the scope names and check commands are this repo's.
 
-`type(scope): subject` — types are `feat` `fix` `docs` `refactor` `data` `chore` `test`. Use `data`
-for a sweep's `_raw/`/`_synthesize/`/`_db/` churn; it is what the daily launchd run produces and it
-is not a `chore`.
+**`main` carries one commit per Section and nothing else.**
 
-**Scope is the surface that owns the code, never the feature it implements.** One name per surface:
-`ait-web`, `pipeline`, the five skill names, or `ait` for the whole project. Not `(topics)`,
-`(growth)`, `(feed)` — those are features, and the same file ends up under three scopes. `(web)` is
-the old spelling of `ait-web`; use `ait-web`.
+A **Section** is one coherent body of work — what you would describe in a sentence and revert as a
+unit. Size is free: Section 5 here is 41 files, Section 11 is 5. The boundary is the question the
+work answers changing, not a file count, a sprint, or a release.
 
-Subject: lowercase, no trailing period, the outcome in domain terms rather than the files touched.
+Two payoffs the rest of this serves: reverting a body of work is one `git revert`, and finding when
+something changed means reading twenty subjects instead of fourteen hundred.
 
-**Every commit that changes code needs a body**, and the body carries the evidence:
+`docs/section-map.md` is this repo's current map.
 
-- What the mechanism actually was, not that something was wrong. Name the concrete row, value, or
-  date that exposed it (`ethanfinancenote:ASTS:2026-05-12 — entry 60, exit 57.375`).
-- Why this fix and not the obvious one, when they differ.
-- Prose paragraphs. Bullets only for genuinely parallel items.
-- A closing verification line: what ran and what passed (`484 pass, 216 in web`). Report a
-  pre-existing failure as pre-existing rather than omitting it. Never claim a check that did not run.
+### Nobody commits to `main`
 
-`data:` bodies enumerate what landed, with counts and the handles or channels involved.
+Work on `section/<n>-<slug>`, open a pull request, **squash merge** it. That is the only way a
+commit reaches `main`, which is what makes a loose commit on `main` structurally impossible rather
+than merely discouraged.
 
-Footer is `Co-Authored-By:` plus `Claude-Session:`, as in the sibling history.
+Number the Section one above the highest already on `main`. The next one here is **Section 16**.
+
+### The Section commit
+
+```
+Section 15 — The channel page (#42)
+
+One sortable shelf, one growth card, and uploads drawn against the curve
+they sit under. Replaces the six-window delta table.
+
+Verified: 538 pytest, 390 web, ruff + tsc clean.
+```
+
+- **Subject** — `Section N — Title`, em dash, title in domain terms. What the work achieved, not
+  the files it touched. GitHub appends `(#42)` on squash merge; keep it.
+- **Body** — three to five lines. What changed and what it replaces. **Stop there.** The mechanism,
+  the numbers, and the reasoning belong to the branch commits, which the PR keeps.
+- **`Verified:`** — one closing line, what ran and what passed (`pytest -q`, `npx vitest run` from
+  `web/`, `ruff check pipeline test_anchors.py scripts`). Report a pre-existing failure as
+  pre-existing. Name only checks that actually ran.
+
+### The branch commits
+
+Inside a section branch, commit as freely as you like in `type(scope): subject` form. This is where
+the detail goes, and the PR is what preserves it.
+
+- **Types** — `feat` `fix` `docs` `refactor` `data` `chore` `test`. Use `data` for a sweep's
+  `_raw/`/`_synthesize/`/`_db/` churn; it is what the daily launchd run produces and it is not a
+  `chore`.
+- **Scope is the surface that owns the code, never the feature it implements.** One name per
+  surface: `ait-web`, `pipeline`, the five skill names, or `ait` for the whole project. Not
+  `(topics)`, `(growth)`, `(feed)` — those are features, and the same file ends up under three
+  scopes. `(web)` is the old spelling of `ait-web`; use `ait-web`.
+- **Subject** — lowercase, no trailing period, the outcome in domain terms.
+- **Body** — prose paragraphs, on any commit that changes code. Name the concrete row, value, or
+  date that exposed the problem. Say why this fix and not the obvious one, where they differ.
+  Bullets only for genuinely parallel items.
+- **Footer** — `Co-Authored-By:` and `Claude-Session:`.
+
+Delete the branch after merging. GitHub keeps the PR's commits, and the PR number in the Section
+subject is the way back to them.
+
+The exception is `section/14-sweep-catchup` and `section/15-channel-page`, which are **permanent**:
+they hold history that was already on `main` before the rule landed, so no PR can ever be opened
+for them.
+
+### Data stays off `main`
+
+App-written state and daily sweep output are not work and get no Section. `config/muted.json` lives
+on the `data/muted` branch. A `data:` or `config:` commit on `main` is a violation like any other.
+
+### Checking
+
+```bash
+git log --format='%s' main | grep -vE '^Section [0-9]+ — |^Initial commit$|^End of course$'
+```
+
+Silence means clean. Any line it prints is a commit that should have been part of a Section — run
+`git-history-cleaner` to map it into one.
+
+`Initial commit` and `End of course` are the two permitted exceptions, both recorded in
+`docs/section-map.md`.
