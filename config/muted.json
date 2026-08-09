@@ -93,7 +93,7 @@
     },
     "aR97E7aKEgg": {
       "video_id": "aR97E7aKEgg",
-      "title": "700 萬人下載的 /grill-me，Matt Pocock 到底寫了什麼？",
+      "title": "700 \u842c\u4eba\u4e0b\u8f09\u7684 /grill-me\uff0cMatt Pocock \u5230\u5e95\u5beb\u4e86\u4ec0\u9ebc\uff1f",
       "channel_name": "Gary Chen",
       "muted_at": "2026-08-06T23:56:53.396Z"
     },
@@ -117,21 +117,45 @@
     },
     "ZW7R3qNw4nk": {
       "video_id": "ZW7R3qNw4nk",
-      "title": "Build Anything with Kimi K3, Here’s How",
+      "title": "Build Anything with Kimi K3, Here\u2019s How",
       "channel_name": "David Ondrej",
       "muted_at": "2026-08-07T02:14:04.599Z"
     },
     "FrAAxWbxSyE": {
       "video_id": "FrAAxWbxSyE",
-      "title": "Context Engineering的全新规则：Claude 5 时代，Claude Code 删掉了 80% 系统提示词",
+      "title": "Context Engineering\u7684\u5168\u65b0\u89c4\u5219\uff1aClaude 5 \u65f6\u4ee3\uff0cClaude Code \u5220\u6389\u4e86 80% \u7cfb\u7edf\u63d0\u793a\u8bcd",
       "channel_name": "01Coder",
       "muted_at": "2026-08-07T02:14:05.836Z"
     },
     "W973FsTECa8": {
       "video_id": "W973FsTECa8",
-      "title": "18 万星 Skills 项目的工程链三件套之三 to-tickets - 把 spec 拆成 agent 能稳定开工的工单",
+      "title": "18 \u4e07\u661f Skills \u9879\u76ee\u7684\u5de5\u7a0b\u94fe\u4e09\u4ef6\u5957\u4e4b\u4e09 to-tickets - \u628a spec \u62c6\u6210 agent \u80fd\u7a33\u5b9a\u5f00\u5de5\u7684\u5de5\u5355",
       "channel_name": "01Coder",
       "muted_at": "2026-08-07T02:14:07.065Z"
+    },
+    "CHEMPZ87FLw": {
+      "video_id": "CHEMPZ87FLw",
+      "title": "Jack Dorsey's New App Is Coming for Slack and GitHub (buzz)",
+      "channel_name": "Better Stack",
+      "muted_at": "2026-08-08T16:44:49.465Z"
+    },
+    "XJyjgQTuiUE": {
+      "video_id": "XJyjgQTuiUE",
+      "title": "\u4f60\u6562\u4fe1\uff1f2.8\u4e07\u4ebf\u53c2\u6570\u7684Kimi K3\uff0cUnsloth\u628a\u5b83\u538b\u7f29\u5230\u4e86600GB\uff0c\u672c\u5730\u600e\u4e48\u8dd1\uff1f",
+      "channel_name": "01Coder",
+      "muted_at": "2026-08-08T16:44:55.516Z"
+    },
+    "_1IM9ZpmEWc": {
+      "video_id": "_1IM9ZpmEWc",
+      "title": "Anthropic \u5927\u795e\u7684\u7528 AI \u5fc3\u6cd5\uff1a\u5148\u756b\u51fa\u4f60\u7684\u77e5\u8b58\u5730\u5716",
+      "channel_name": "Paula \u5bf6\u62c9",
+      "muted_at": "2026-08-08T16:46:29.578Z"
+    },
+    "E_jqbJU-BRI": {
+      "video_id": "E_jqbJU-BRI",
+      "title": "GPT-5.6 \u6b63\u5f0f\u5f00\u653e\uff1aSol / Terra / Luna \u4e09\u6863\u5168\u7ebf\u53ef\u7528\uff0cultra \u7adf\u662f 4 \u4e2a\u667a\u80fd\u4f53\u5e76\u884c",
+      "channel_name": "01Coder",
+      "muted_at": "2026-08-08T16:46:34.793Z"
     }
   }
 }
