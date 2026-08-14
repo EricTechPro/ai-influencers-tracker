@@ -144,7 +144,12 @@ Work on `section/<n>-<slug>`, open a pull request, **squash merge** it. That is 
 commit reaches `main`, which is what makes a loose commit on `main` structurally impossible rather
 than merely discouraged.
 
-Number the Section one above the highest already on `main`. The next one here is **Section 18**.
+Number the Section one above the highest already on `main`. Do not hardcode it here — a written
+number is wrong the moment the section it names lands, which it has been three times. Read it:
+
+```bash
+git log --format='%s' main | grep -oE '^Section [0-9]+' | head -1   # add one
+```
 
 ### The Section commit
 
