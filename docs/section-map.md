@@ -29,10 +29,22 @@ work — what you would describe in a sentence and revert as a unit.
 | — | End of course | `a7d0a05` | 08-01 | — | 0 |
 | 14 | The 09:00 sweep survives a missed morning | `6797a49` | 08-07 | `section/14-sweep-catchup` | 5 |
 | 15 | The channel page | `95b8be7` | 08-07 | `section/15-channel-page` | 25 |
+| 16 | The commit rule, stamped | `ccf1047` | 08-07 | deleted after merge | 2 |
+| 17 | The Codex offload | `ad98a80` | 08-14 | deleted after merge | 5 |
 
-Every commit on `main` appears exactly once. Running
-`git log --format='%s' main | grep -vE '^Section [0-9]+ — |^Initial commit$|^End of course$'`
-returns nothing.
+From Section 16 on, the branch column reads "deleted after merge" by design: the PR is
+what preserves the branch commits, so the branch itself is disposable. Sections 14 and 15
+are the exception named in `CLAUDE.md` — their branches are permanent because they hold
+history that predates the rule and can never get a PR.
+
+Every commit on `main` appears exactly once, **except one**: `ab042f5 config: mute another
+24 videos from the opportunity feed` (08-07) sits between Sections 16 and 17. It is the
+"Still open" item below arriving exactly as predicted — the 09:00 sweep wrote to `main`
+again. So the check now returns that one line rather than nothing:
+
+```
+git log --format='%s' main | grep -vE '^Section [0-9]+ — |^Initial commit$|^End of course$'
+```
 
 ## What the rewrite did
 
@@ -73,8 +85,12 @@ and those branches can be deleted.
 `main`.** Until it is pointed at `data/muted` or left untracked, `main` grows a fresh violation on
 the next run that touches it. Not part of this cleanup — it needs a decision.
 
-`AGENTS.md` has not yet been stamped with the canonical rule, so an agent working here still reads
-the older hand-written `## Commits` section, which does not know about Sections.
+That prediction has since come true once: `ab042f5` (08-07) landed on `main` between Sections 16
+and 17, and the `data/muted` branch exists but is not what the sweep writes to. It is now the only
+line the check returns.
+
+~~`AGENTS.md` has not yet been stamped with the canonical rule.~~ Closed by Section 16 — `AGENTS.md`
+is a symlink to `CLAUDE.md`, so stamping one stamped both.
 
 ## What the detail column found
 

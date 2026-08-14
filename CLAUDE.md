@@ -144,7 +144,7 @@ Work on `section/<n>-<slug>`, open a pull request, **squash merge** it. That is 
 commit reaches `main`, which is what makes a loose commit on `main` structurally impossible rather
 than merely discouraged.
 
-Number the Section one above the highest already on `main`. The next one here is **Section 16**.
+Number the Section one above the highest already on `main`. The next one here is **Section 18**.
 
 ### The Section commit
 
